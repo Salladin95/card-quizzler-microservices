@@ -1,0 +1,15 @@
+version: '3'
+services:
+  rabbitmq:
+    image: "rabbitmq:management"
+    ports:
+      - "5672:5672"  # RabbitMQ default port
+      - "15672:15672"  # RabbitMQ Management Plugin
+    environment:
+      RABBITMQ_DEFAULT_USER: "khalid"
+      RABBITMQ_DEFAULT_PASS: "12345"
+    deploy:
+      mode: replicated
+      replicas: 1
+    volumes:
+      - ./db-data/rabbitmq/:/var/lib/rabbitmq/
