@@ -1,4 +1,5 @@
 syntax = "proto3";
+package auth;
 option go_package = "github.com/Salladin95/card-quizzler-microservices/auth-service/auth";
 
 message SignInPayload {

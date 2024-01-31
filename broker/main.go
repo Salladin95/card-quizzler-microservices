@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	serverPort       = 8080
-	defaultRabbitURL = "amqp://khalid:12345@localhost:5672/"
+	serverPort = 80
+	//defaultRabbitURL = "amqp://khalid:12345@localhost:5672"
+	defaultRabbitURL = "amqp://khalid:12345@rabbitmq:5672" // from container
 )
 
 type App struct {

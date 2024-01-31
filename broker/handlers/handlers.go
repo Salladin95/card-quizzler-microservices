@@ -1,7 +1,12 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/broker-service/auth"
 	"github.com/labstack/echo/v4"
+	"net/http"
+	"time"
 )
 
 const (
@@ -9,10 +14,84 @@ const (
 	SignUpKey = "auth.sign-up.command"
 )
 
+type SignInDto struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"min=6,required"`
+}
+
+type SighUpDto struct {
+	Name     string `json:"name"  validate:"required,min=1"`
+	Password string `json:"password"  validate:"required,min=6"`
+	Email    string `json:"email"  validate:"required,email"`
+	Birthday string `json:"birthday"  validate:"required,min=1"`
+}
+
+type JsonResponse struct {
+	message string
+}
+
 func (bh *brokerHandlers) SignIn(c echo.Context) error {
-	return bh.pushToQueueFromEndpoint(c, SignInKey)
+	fmt.Println("******* broker - start processing signIn request ***************")
+	var signInDTO SignInDto
+
+	// Read the request body and unmarshal it into the corresponding DTO
+	if err := c.Bind(&signInDTO); err != nil {
+		return fmt.Errorf("Error binding request body: %v\n", err)
+	}
+
+	ah, err := bh.GetGRPCClientConn()
+
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	res, err := ah.SignIn(ctx, &auth.SignInRequest{
+		Payload: &auth.SignInPayload{
+			Email:    signInDTO.Email,
+			Password: signInDTO.Password,
+		},
+	})
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, JsonResponse{message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, JsonResponse{message: res.GetMessage()})
 }
 
 func (bh *brokerHandlers) SignUp(c echo.Context) error {
-	return bh.pushToQueueFromEndpoint(c, SignUpKey)
+	fmt.Println("******* broker - start processing signUp request ********")
+	var signUpDTO SighUpDto
+
+	// Read the request body and unmarshal it into the corresponding DTO
+	if err := c.Bind(&signUpDTO); err != nil {
+		return fmt.Errorf("Error binding request body: %v\n", err)
+	}
+
+	ah, err := bh.GetGRPCClientConn()
+
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	res, err := ah.SignUp(ctx, &auth.SignUpRequest{
+		Payload: &auth.SignUpPayload{
+			Email:    signUpDTO.Email,
+			Password: signUpDTO.Password,
+			Name:     signUpDTO.Name,
+			Birthday: signUpDTO.Birthday,
+		},
+	})
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, JsonResponse{message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, JsonResponse{message: res.GetMessage()})
 }
