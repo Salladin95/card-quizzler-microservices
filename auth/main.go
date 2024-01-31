@@ -1,11 +1,14 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
+	auth "github.com/Salladin95/card-quizzler-microservices/auth-service/proto"
 	"github.com/Salladin95/rmqtools"
 	"github.com/rabbitmq/amqp091-go"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"os"
 )
 
@@ -13,41 +16,23 @@ type App struct {
 	rabbit *amqp091.Connection
 }
 
-const (
-	AmqpExchange = "broker"
-	AmqpQueue    = "broker-queue"
-
-	SignInKey = "auth.sign-in.command"
-	SignUpKey = "auth.sign-up.command"
-)
-
-type SignInDto struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"min=6,required"`
-}
-
-type SighUpDto struct {
-	Name     string `json:"name"  validate:"required,min=1"`
-	Password string `json:"password"  validate:"required,min=6"`
-	Email    string `json:"email"  validate:"required,email"`
-	Birthday string `json:"birthday"  validate:"required,min=1"`
-}
-
 func main() {
 	rabbitURL := os.Getenv("RABBITMQ_URL")
 	if rabbitURL == "" {
-		rabbitURL = "amqp://khalid:12345@localhost:5672/"
+		rabbitURL = defaultRabbitURL
 	}
+
 	rabbitConn, err := rmqtools.ConnectToRabbit(rabbitURL)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 	defer rabbitConn.Close()
+
 	app := App{rabbit: rabbitConn}
+	go app.gRPCListen()
 
 	consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)
-
 	if err != nil {
 		log.Panic(err)
 	}
@@ -57,28 +42,39 @@ func main() {
 	}
 }
 
-func handlePayload(key string, payload []byte) {
-	fmt.Print("START PROCESSING MESSAGE")
-	switch key {
-	case SignInKey:
-		fmt.Printf("******* - %v\n\n", payload)
-		var signInDto SignInDto
-		err := json.Unmarshal(payload, &signInDto)
-		if err != nil {
-			log.Panic(err)
-		}
-		fmt.Println("******************* SIGN IN *****************")
-		fmt.Printf("MESSAGE FROM QUEUE - %s\n", key)
-		fmt.Printf("payload - %v\n\n", signInDto)
-	case SignUpKey:
-		var signUpDto SighUpDto
-		err := json.Unmarshal(payload, &signUpDto)
-		if err != nil {
-			log.Panic(err)
-		}
-		fmt.Println("******************* SIGN UP *****************")
-		fmt.Printf("MESSAGE FROM QUEUE - %v", key)
-	default:
-		log.Panic("handlePayload: unknown payload name")
+type AuthServer struct {
+	auth.UnimplementedAuthServer
+}
+
+func (as *AuthServer) SignIn(ctx context.Context, req *auth.SignInRequest) (*auth.SignInResponse, error) {
+	payload := req.GetPayload()
+	log.Printf("sign in: incoming payload - %v\n\n", payload)
+
+	// return response
+	res := &auth.SignInResponse{Message: fmt.Sprintf("sign-in: get your payload - %v", payload)}
+	return res, nil
+}
+
+func (as *AuthServer) SignUp(ctx context.Context, req *auth.SignUpRequest) (*auth.SignUpResponse, error) {
+	payload := req.GetPayload()
+	log.Printf("sign up: incoming payload - %v\n\n", payload)
+	// return response
+	res := &auth.SignUpResponse{Message: fmt.Sprintf("sign-up: get your payload - %v", payload)}
+	return res, nil
+}
+
+func (app *App) gRPCListen() {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", gRPCPort))
+	if err != nil {
+		log.Fatalf("failed to listen tcp port - %s. Err - %s", gRPCPort, err.Error())
+	}
+
+	gRPCServer := grpc.NewServer()
+	auth.RegisterAuthServer(gRPCServer, &AuthServer{})
+
+	log.Printf("gRPC Server started on port %s", gRPCPort)
+
+	if err := gRPCServer.Serve(listener); err != nil {
+		log.Fatalf("Failed to listen for gRPC: %v", err)
 	}
 }
