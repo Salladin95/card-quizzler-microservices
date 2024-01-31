@@ -1,3 +1,5 @@
+github.com/Salladin95/goErrorHandler v1.0.1 h1:eiMoomKkmG8nFR2U0ZjLhaTTRyyCMcQ+qaBPdj81Jw8=
+github.com/Salladin95/goErrorHandler v1.0.1/go.mod h1:eAVwKXEE+2n0Q1lrEeE2BLroyfs4brl59RvrcRU8Ezo=
 github.com/Salladin95/rmqtools v1.0.6 h1:FoQBuYeTLFXyC724QfN2Kn0GmKKagjquRjPQnOTH5+A=
 github.com/Salladin95/rmqtools v1.0.6/go.mod h1:iAeYLhDHwaHGvuMiy7QRIl6NhQ08KhTh6JCazG2UIjY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

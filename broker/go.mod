@@ -3,6 +3,7 @@ module github.com/Salladin95/card-quizzler-microservices/broker-service
 go 1.21.5
 
 require (
+	github.com/Salladin95/goErrorHandler v1.0.1
 	github.com/Salladin95/rmqtools v1.0.6
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/rabbitmq/amqp091-go v1.9.0
