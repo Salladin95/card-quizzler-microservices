@@ -8,21 +8,25 @@ import (
 	"os"
 )
 
+// main is the entry point of the application.
 func main() {
+	// Load application configuration.
 	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 
+	// Connect to RabbitMQ server using the provided URL.
 	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.AppCfg.RABBIT_URL)
-
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 
+	// Ensure the RabbitMQ connection is closed when the main function exits.
 	defer rabbitConn.Close()
-	app := server.NewApp(cfg.AppCfg, rabbitConn)
-	app.Start()
+
+	// Create a new instance of the application using the loaded configuration and RabbitMQ connection & start it
+	server.NewApp(cfg.AppCfg, rabbitConn).Start()
 }

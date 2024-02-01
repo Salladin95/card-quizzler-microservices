@@ -50,20 +50,33 @@ type AuthServer struct {
 }
 
 func (as *AuthServer) SignIn(ctx context.Context, req *auth.SignInRequest) (*auth.SignInResponse, error) {
-	fmt.Println("**** SIGN IN **** STH IS HAPPENING")
-	payload := req.GetPayload()
-	log.Printf("sign in: incoming payload - %v\n\n", payload)
+	reqPayload := req.GetPayload()
+	signInDto := SignInDto{Email: reqPayload.Email, Password: reqPayload.Password}
+
+	err := signInDto.Verify()
+
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("sign in: incoming reqPayload - %v\n\n", reqPayload)
 
 	// return response
-	res := &auth.SignInResponse{Message: fmt.Sprintf("sign-in: get your payload - %v", payload)}
+	res := &auth.SignInResponse{Message: fmt.Sprintf("sign-in: get your reqPayload - %v", reqPayload)}
 	return res, nil
 }
 
 func (as *AuthServer) SignUp(ctx context.Context, req *auth.SignUpRequest) (*auth.SignUpResponse, error) {
-	payload := req.GetPayload()
-	log.Printf("sign up: incoming payload - %v\n\n", payload)
-	// return response
-	res := &auth.SignUpResponse{Message: fmt.Sprintf("sign-up: get your payload - %v", payload)}
+	reqPayload := req.GetPayload()
+	signUpDto := SignUpDto{Email: reqPayload.Email, Password: reqPayload.Password, Name: reqPayload.Name, Birthday: reqPayload.Birthday}
+
+	err := signUpDto.Verify()
+
+	if err != nil {
+		return nil, err
+	}
+
+	res := &auth.SignUpResponse{Message: fmt.Sprintf("sign-up: get your payload - %v", reqPayload)}
 	return res, nil
 }
 
