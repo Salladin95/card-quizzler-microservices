@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -12,11 +13,12 @@ import (
 func (bh *brokerHandlers) pushToQueue(ctx context.Context, name string, data []byte) error {
 	emitter, err := rmqtools.NewEventEmitter(bh.rabbit, AmqpExchange)
 	if err != nil {
-		return err
+		return goErrorHandler.OperationFailure("create event emitter", err)
+
 	}
 	err = emitter.Push(ctx, name, data)
 	if err != nil {
-		return err
+		return goErrorHandler.OperationFailure("push event", err)
 	}
 	return nil
 }
@@ -26,13 +28,13 @@ func (bh *brokerHandlers) pushToQueueFromEndpoint(c echo.Context, key string) er
 
 	// Read the request body and unmarshal it into the corresponding DTO
 	if err := c.Bind(&requestDTO); err != nil {
-		return fmt.Errorf("Error binding request body: %v\n", err)
+		return goErrorHandler.BindRequestToBodyFailure(err)
 	}
 
 	// Marshal the DTO struct into JSON
 	marshalledDto, err := json.Marshal(requestDTO)
 	if err != nil {
-		return err
+		return goErrorHandler.OperationFailure("marshal dto", err)
 	}
 
 	err = bh.pushToQueue(c.Request().Context(), key, marshalledDto)

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/config"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
 	"github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
@@ -31,15 +31,13 @@ func NewHandlers(cfg config.AppCfg, rabbit *amqp091.Connection) BrokerHandlersIn
 }
 
 func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
-	fmt.Printf("******* broker; connecting to gRPC on url - %s ********\n", bh.config.AUTH_SERVICE_URL)
 	conn, err := grpc.Dial(bh.config.AUTH_SERVICE_URL, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	fmt.Printf("******* broker; connected to gRPC on url - %s !!!!!!\n", bh.config.AUTH_SERVICE_URL)
 	if err != nil {
-		return nil, err
+		return nil, goErrorHandler.OperationFailure("connect to gRPC", err)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get auth client error - %v", err)
+		return nil, goErrorHandler.OperationFailure("get auth client", err)
 	}
 	return conn, nil
 }

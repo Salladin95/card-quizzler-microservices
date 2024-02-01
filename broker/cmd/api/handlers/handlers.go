@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/auth"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
@@ -36,7 +37,7 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 
 	// Read the request body and unmarshal it into the corresponding DTO
 	if err := c.Bind(&signInDTO); err != nil {
-		return fmt.Errorf("Error binding request body: %v\n", err)
+		return goErrorHandler.BindRequestToBodyFailure(err)
 	}
 
 	clientConn, err := bh.GetGRPCClientConn()
@@ -57,6 +58,7 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 		},
 	})
 
+	// TODO: REFACTOR ERROR HANDLING
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, JsonResponse{message: err.Error()})
 	}
@@ -70,7 +72,7 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 
 	// Read the request body and unmarshal it into the corresponding DTO
 	if err := c.Bind(&signUpDTO); err != nil {
-		return fmt.Errorf("Error binding request body: %v\n", err)
+		return goErrorHandler.BindRequestToBodyFailure(err)
 	}
 
 	clientConn, err := bh.GetGRPCClientConn()
@@ -92,6 +94,7 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 		},
 	})
 
+	// TODO: REFACTOR ERROR HANDLING
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, JsonResponse{message: err.Error()})
 	}
