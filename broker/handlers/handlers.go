@@ -39,13 +39,15 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 		return fmt.Errorf("Error binding request body: %v\n", err)
 	}
 
-	ah, err := bh.GetGRPCClientConn()
-
+	clientConn, err := bh.GetGRPCClientConn()
+	defer clientConn.Close()
 	if err != nil {
 		return err
 	}
+	ah := auth.NewAuthClient(clientConn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	// Use a longer timeout for the gRPC call, adjust as needed
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	res, err := ah.SignIn(ctx, &auth.SignInRequest{
@@ -59,7 +61,7 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, JsonResponse{message: err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, JsonResponse{message: res.GetMessage()})
+	return c.JSON(http.StatusOK, res)
 }
 
 func (bh *brokerHandlers) SignUp(c echo.Context) error {
@@ -71,11 +73,12 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 		return fmt.Errorf("Error binding request body: %v\n", err)
 	}
 
-	ah, err := bh.GetGRPCClientConn()
-
+	clientConn, err := bh.GetGRPCClientConn()
+	defer clientConn.Close()
 	if err != nil {
 		return err
 	}
+	ah := auth.NewAuthClient(clientConn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

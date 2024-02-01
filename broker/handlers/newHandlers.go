@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/Salladin95/card-quizzler-microservices/broker-service/auth"
 	"github.com/labstack/echo/v4"
 	"github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
@@ -12,7 +11,8 @@ import (
 
 const (
 	AmqpExchange          = "broker"
-	defaultAuthServiceURL = "auth-service:8090"
+	defaultAuthServiceURL = "localhost:8090" //local
+	//defaultAuthServiceURL = "auth-service:8090" //from container
 )
 
 type BrokerHandlersInterface interface {
@@ -30,7 +30,7 @@ func NewHandlers(rabbit *amqp091.Connection) BrokerHandlersInterface {
 	}
 }
 
-func (bh *brokerHandlers) GetGRPCClientConn() (auth.AuthClient, error) {
+func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	authUrl := os.Getenv("AUTH_SERVICE_URL")
 	if authUrl == "" {
 		authUrl = defaultAuthServiceURL
@@ -45,7 +45,7 @@ func (bh *brokerHandlers) GetGRPCClientConn() (auth.AuthClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get auth client error - %v", err)
 	}
-	defer conn.Close()
-
-	return auth.NewAuthClient(conn), nil
+	return conn, nil
+	//defer conn.Close()
+	//return auth.NewAuthClient(conn), nil
 }

@@ -31,6 +31,6 @@ message SignUpResponse {
 }
 
 service Auth {
-  rpc SignIn(SignInRequest) returns(SignInResponse);
-  rpc SignUp(SignUpRequest) returns(SignUpResponse);
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+  rpc SignUp(SignUpRequest) returns (SignUpResponse);
 }

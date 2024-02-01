@@ -10,6 +10,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 type App struct {
@@ -31,15 +33,16 @@ func main() {
 
 	app := App{rabbit: rabbitConn}
 	go app.gRPCListen()
+	waitForTerminationSignal()
 
-	consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)
-	if err != nil {
-		log.Panic(err)
-	}
-	err = consumer.Listen([]string{SignInKey, SignUpKey}, handlePayload)
-	if err != nil {
-		log.Panic(err)
-	}
+	//consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+	//err = consumer.Listen([]string{SignInKey, SignUpKey}, handlePayload)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
 }
 
 type AuthServer struct {
@@ -47,6 +50,7 @@ type AuthServer struct {
 }
 
 func (as *AuthServer) SignIn(ctx context.Context, req *auth.SignInRequest) (*auth.SignInResponse, error) {
+	fmt.Println("**** SIGN IN **** STH IS HAPPENING")
 	payload := req.GetPayload()
 	log.Printf("sign in: incoming payload - %v\n\n", payload)
 
@@ -77,4 +81,11 @@ func (app *App) gRPCListen() {
 	if err := gRPCServer.Serve(listener); err != nil {
 		log.Fatalf("Failed to listen for gRPC: %v", err)
 	}
+}
+
+func waitForTerminationSignal() {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	<-signals
+	log.Println("Received termination signal. Shutting down gracefully.")
 }
