@@ -1,4 +1,4 @@
-package main
+package entities
 
 import (
 	"github.com/Salladin95/goErrorHandler"

@@ -1,104 +1,41 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	auth "github.com/Salladin95/card-quizzler-microservices/auth-service/proto"
+	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/server"
 	"github.com/Salladin95/rmqtools"
-	"github.com/rabbitmq/amqp091-go"
-	"google.golang.org/grpc"
 	"log"
-	"net"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
-type App struct {
-	rabbit *amqp091.Connection
-}
-
+// main is the entry point of the application.
 func main() {
-	rabbitURL := os.Getenv("RABBITMQ_URL")
-	if rabbitURL == "" {
-		rabbitURL = defaultRabbitURL
-	}
+	// Load application configuration.
+	cfg, err := config.NewConfig()
 
-	rabbitConn, err := rmqtools.ConnectToRabbit(rabbitURL)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
+
+	// Connect to RabbitMQ server using the provided URL.
+	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.AppCfg.RABBIT_URL)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	// Ensure the RabbitMQ connection is closed when the main function exits.
 	defer rabbitConn.Close()
 
-	app := App{rabbit: rabbitConn}
-	go app.gRPCListen()
-	waitForTerminationSignal()
-
-	//consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)
-	//if err != nil {
-	//	log.Panic(err)
-	//}
-	//err = consumer.Listen([]string{SignInKey, SignUpKey}, handlePayload)
-	//if err != nil {
-	//	log.Panic(err)
-	//}
+	// Create a new instance of the application using the loaded configuration and RabbitMQ connection & start it
+	server.NewApp(cfg.AppCfg, rabbitConn).Start()
 }
 
-type AuthServer struct {
-	auth.UnimplementedAuthServer
-}
-
-func (as *AuthServer) SignIn(ctx context.Context, req *auth.SignInRequest) (*auth.SignInResponse, error) {
-	reqPayload := req.GetPayload()
-	signInDto := SignInDto{Email: reqPayload.Email, Password: reqPayload.Password}
-
-	err := signInDto.Verify()
-
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("sign in: incoming reqPayload - %v\n\n", reqPayload)
-
-	// return response
-	res := &auth.SignInResponse{Message: fmt.Sprintf("sign-in: get your reqPayload - %v", reqPayload)}
-	return res, nil
-}
-
-func (as *AuthServer) SignUp(ctx context.Context, req *auth.SignUpRequest) (*auth.SignUpResponse, error) {
-	reqPayload := req.GetPayload()
-	signUpDto := SignUpDto{Email: reqPayload.Email, Password: reqPayload.Password, Name: reqPayload.Name, Birthday: reqPayload.Birthday}
-
-	err := signUpDto.Verify()
-
-	if err != nil {
-		return nil, err
-	}
-
-	res := &auth.SignUpResponse{Message: fmt.Sprintf("sign-up: get your payload - %v", reqPayload)}
-	return res, nil
-}
-
-func (app *App) gRPCListen() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", gRPCPort))
-	if err != nil {
-		log.Fatalf("failed to listen tcp port - %s. Err - %s", gRPCPort, err.Error())
-	}
-
-	gRPCServer := grpc.NewServer()
-	auth.RegisterAuthServer(gRPCServer, &AuthServer{})
-
-	log.Printf("gRPC Server started on port %s", gRPCPort)
-
-	if err := gRPCServer.Serve(listener); err != nil {
-		log.Fatalf("Failed to listen for gRPC: %v", err)
-	}
-}
-
-func waitForTerminationSignal() {
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-	<-signals
-	log.Println("Received termination signal. Shutting down gracefully.")
-}
+//consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)
+//if err != nil {
+//	log.Panic(err)
+//}
+//err = consumer.Listen([]string{SignInKey, SignUpKey}, handlePayload)
+//if err != nil {
+//	log.Panic(err)
+//}
