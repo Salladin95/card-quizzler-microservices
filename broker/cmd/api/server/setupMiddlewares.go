@@ -1,7 +1,7 @@
-package main
+package server
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/broker-service/middlewares"
+	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/middlewares"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )

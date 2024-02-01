@@ -25,11 +25,11 @@ down:
 ## build_broker: builds the broker binary as a linux executable
 build_broker:
 	@echo Building broker binary...
-	chdir broker && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${BROKER_BINARY} ./
+	chdir broker && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${BROKER_BINARY} ./cmd/api
 	@echo Done!
 
 ## build_auth: builds the auth binary as a linux executable
 build_auth:
 	@echo Building auth binary...
-	chdir auth && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${AUTH_BINARY} ./
+	chdir auth && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${AUTH_BINARY} ./cmd/api
 	@echo Done!
