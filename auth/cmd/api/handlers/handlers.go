@@ -32,15 +32,9 @@ func (authServer *AuthServer) SignIn(ctx context.Context, req *auth.SignInReques
 		return nil, err
 	}
 
-	u, err := authServer.Repo.GetByEmail(ctx, signInDto.Email)
+	_, err = authServer.Repo.GetByEmail(ctx, signInDto.Email)
 
 	if err != nil {
-		return nil, goErrorHandler.IncorrectLoginOrPassword()
-	}
-
-	err = authServer.Repo.CompareHashAndPassword(u.Password, signInDto.Password)
-
-	if err != nil || u.Email != signInDto.Email {
 		return nil, goErrorHandler.IncorrectLoginOrPassword()
 	}
 
@@ -56,6 +50,7 @@ func (authServer *AuthServer) SignUp(ctx context.Context, req *auth.SignUpReques
 
 	// Create a SignUpDto from the request payload.
 	signUpDto := user.SignUpDto{Email: reqPayload.Email, Password: reqPayload.Password, Name: reqPayload.Name, Birthday: reqPayload.Birthday}
+	createUserDto := user.CreateUserDto{Email: reqPayload.Email, Password: reqPayload.Password, Name: reqPayload.Name}
 
 	// Verify the SignUpDto structure.
 	err := signUpDto.Verify()
@@ -63,14 +58,13 @@ func (authServer *AuthServer) SignUp(ctx context.Context, req *auth.SignUpReques
 		return nil, err
 	}
 
-	err = authServer.Repo.CreateUser(ctx, signUpDto)
+	_, err = authServer.Repo.CreateUser(ctx, createUserDto)
 
 	if err != nil {
 		return nil, err
 	}
-
 	// Create and return a gRPC response message.
-	res := &auth.SignUpResponse{Message: fmt.Sprint("new user is created")}
+	res := &auth.SignUpResponse{Message: fmt.Sprint("user has signed up")}
 	return res, nil
 }
 

@@ -35,11 +35,19 @@ func main() {
 	// Initialize a Firebase client using the provided configuration
 	fireBaseApp := fireBase.NewFireBaseApp(cfg.FireBaseCfg)
 
+	// Connect to the auth
+	authClient, err := fireBaseApp.Auth(ctx)
+	if err != nil {
+		// Log the error and exit the program if connection fails
+		log.Fatalf("error getting Auth client: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Connect to the Firestore database
 	firestore, err := fireBaseApp.Firestore(ctx)
 	if err != nil {
 		// Log the error and exit the program if connection fails
-		log.Println("Error connecting to Firestore:", err)
+		log.Fatalf("error connecting to Firestore: %v", err)
 		os.Exit(1)
 	}
 
@@ -47,7 +55,7 @@ func main() {
 	defer firestore.Close()
 
 	// Create a new instance of the application using the loaded configuration and RabbitMQ connection & start it
-	server.NewApp(cfg.AppCfg, rabbitConn, firestore).Start()
+	server.NewApp(cfg.AppCfg, rabbitConn, firestore, authClient).Start()
 }
 
 //consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)

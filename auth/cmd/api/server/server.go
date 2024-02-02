@@ -2,6 +2,7 @@ package server
 
 import (
 	"cloud.google.com/go/firestore"
+	fireBaseAuth "firebase.google.com/go/v4/auth"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/handlers"
@@ -15,9 +16,10 @@ import (
 
 // App represents the main application structure.
 type App struct {
-	rabbit    *amqp091.Connection // RabbitMQ connection instance
-	config    config.AppCfg       // Application configuration
-	firestore *firestore.Client   // Firestore client instance
+	rabbit             *amqp091.Connection  // RabbitMQ connection instance
+	config             config.AppCfg        // Application configuration
+	firestoreClient    *firestore.Client    // Firestore client instance
+	fireBaseAuthClient *fireBaseAuth.Client // Firebase auth client instance
 }
 
 // IApp defines the interface for the main application.
@@ -26,11 +28,12 @@ type IApp interface {
 }
 
 // NewApp creates a new instance of the application.
-func NewApp(cfg config.AppCfg, rabbit *amqp091.Connection, firestore *firestore.Client) IApp {
+func NewApp(cfg config.AppCfg, rabbit *amqp091.Connection, firestore *firestore.Client, fireBaseAuthClient *fireBaseAuth.Client) IApp {
 	return &App{
-		rabbit:    rabbit,
-		firestore: firestore,
-		config:    cfg,
+		rabbit:             rabbit,
+		firestoreClient:    firestore,
+		config:             cfg,
+		fireBaseAuthClient: fireBaseAuthClient,
 	}
 }
 
@@ -52,7 +55,7 @@ func (app *App) gRPCListen() {
 	gRPCServer := grpc.NewServer()
 
 	// Register the AuthServer implementation with the gRPC server.
-	auth.RegisterAuthServer(gRPCServer, &handlers.AuthServer{Repo: user.NewUserRepository(app.firestore)})
+	auth.RegisterAuthServer(gRPCServer, &handlers.AuthServer{Repo: user.NewUserRepository(app.firestoreClient, app.fireBaseAuthClient)})
 
 	// Log a message indicating that the gRPC server has started.
 	log.Printf("gRPC Server started on port %s", app.config.GrpcPort)
