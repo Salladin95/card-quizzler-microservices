@@ -10,7 +10,6 @@ import (
 // AppCfg represents the configuration settings for the application.
 type AppCfg struct {
 	BROKER_SERVICE_PORT string `validate:"required"` // Port for the broker service
-	AUTH_SERVICE_PORT   string `validate:"required"` // Port for the auth service
 	AUTH_SERVICE_URL    string `validate:"required"` // URL for the auth service
 	RABBIT_URL          string `validate:"required"` // URL for RabbitMQ
 }
@@ -24,12 +23,10 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	// Load environment variables from a .env file.
 	env := loadEnv()
-	log.Infof("raw env - %v\n", env)
 
 	// Create an AppCfg instance from the loaded environment variables.
 	appCfg := AppCfg{
 		BROKER_SERVICE_PORT: env["BROKER_SERVICE_PORT"],
-		AUTH_SERVICE_PORT:   env["AUTH_SERVICE_PORT"],
 		AUTH_SERVICE_URL:    env["AUTH_SERVICE_URL"],
 		RABBIT_URL:          env["RABBITMQ_URL"],
 	}
