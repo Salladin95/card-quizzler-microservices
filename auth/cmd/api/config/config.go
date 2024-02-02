@@ -9,13 +9,20 @@ import (
 
 // AppCfg represents the configuration settings for the application.
 type AppCfg struct {
-	GRPC_PORT  string `validate:"required"` // Port for the auth service
-	RABBIT_URL string `validate:"required"` // URL for RabbitMQ
+	GrpcPort  string `validate:"required"` // Port for the auth service
+	RabbitUrl string `validate:"required"` // URL for RabbitMQ
+}
+
+// FireBaseCfg represents the configuration settings for the firebase.
+type FireBaseCfg struct {
+	FireBaseAccKey    string `validate:"required"` // PATH TO FIRE BASE ACC KEY FILE
+	FireBaseProjectId string `validate:"required"` // IF OF FIREBASE PROJECT
 }
 
 // Config holds the complete configuration for the application.
 type Config struct {
-	AppCfg AppCfg // Application configuration settings
+	AppCfg      AppCfg      // Application configuration settings
+	FireBaseCfg FireBaseCfg // Firebase configuration settings
 }
 
 // NewConfig creates a new configuration instance by loading environment variables and validating them.
@@ -25,8 +32,14 @@ func NewConfig() (*Config, error) {
 
 	// Create an AppCfg instance from the loaded environment variables.
 	appCfg := AppCfg{
-		GRPC_PORT:  env["GRPC_PORT"],
-		RABBIT_URL: env["RABBITMQ_URL"],
+		GrpcPort:  env["GRPC_PORT"],
+		RabbitUrl: env["RABBITMQ_URL"],
+	}
+
+	// Create an AppCfg instance from the loaded environment variables.
+	fireBaseCfg := FireBaseCfg{
+		FireBaseAccKey:    env["FIRE_BASE_ACC_KEY"],
+		FireBaseProjectId: env["FIRE_BASE_PROJECT_ID"],
 	}
 
 	// Validate the AppCfg structure using the validator package.
@@ -37,7 +50,8 @@ func NewConfig() (*Config, error) {
 
 	// Create a new Config instance with the validated AppCfg.
 	return &Config{
-		AppCfg: appCfg,
+		AppCfg:      appCfg,
+		FireBaseCfg: fireBaseCfg,
 	}, nil
 }
 

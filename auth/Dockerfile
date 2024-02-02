@@ -9,4 +9,5 @@ FROM alpine
 WORKDIR /app
 COPY --from=build /go/src/app/main authApp
 COPY .env ./
+COPY card-quizzler-auth-firebase-adminsdk-g782y-a1214226bc.json ./
 CMD ["./authApp"]
