@@ -70,11 +70,10 @@ func (updateDto *UpdateDto) Verify() error {
 }
 
 type Response struct {
-	ID        uuid.UUID  `json:"id"`
-	Name      string     `json:"name"`
-	Email     string     `json:"email"`
-	Birthday  string     `json:"birthday"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Birthday  string    `json:"birthday"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }

@@ -18,19 +18,18 @@ message SignInRequest {
   SignInPayload payload = 1;
 }
 
-message SignInResponse {
-  string message = 1;
-}
 
 message SignUpRequest {
   SignUpPayload payload = 1;
 }
 
-message SignUpResponse {
-  string message = 1;
+message Response {
+  bytes data = 1;
+  int64 code = 2;
+  string message = 3;
 }
 
 service Auth {
-  rpc SignIn(SignInRequest) returns (SignInResponse);
-  rpc SignUp(SignUpRequest) returns (SignUpResponse);
+  rpc SignIn(SignInRequest) returns (Response);
+  rpc SignUp(SignUpRequest) returns (Response);
 }

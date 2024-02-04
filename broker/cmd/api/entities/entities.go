@@ -3,6 +3,8 @@ package entities
 import (
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
+	"time"
 )
 
 // SignInDto represents the data transfer object for user sign-in requests.
@@ -50,4 +52,14 @@ func (signUpDto *SignUpDto) Verify() error {
 // JsonResponse represents a simple JSON response message structure.
 type JsonResponse struct {
 	Message string `json:"message"` // Message field for JSON response messages
+	Data    any    `json:"message"` // Message field for JSON response data
+}
+
+type UserResponse struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Birthday  string    `json:"birthday"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }

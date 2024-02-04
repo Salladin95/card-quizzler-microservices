@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/auth"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/lib"
 	"github.com/labstack/echo/v4"
-	"net/http"
 	"time"
 )
 
@@ -49,7 +49,15 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, res)
+	resCode := int(res.GetCode())
+	if resCode >= 400 {
+		return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage()})
+	}
+
+	var userResponse entities.UserResponse
+	data := json.Unmarshal(res.GetData(), userResponse)
+
+	return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage(), Data: data})
 }
 
 func (bh *brokerHandlers) SignUp(c echo.Context) error {
@@ -92,5 +100,13 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, entities.JsonResponse{Message: res.GetMessage()})
+	resCode := int(res.GetCode())
+	if resCode >= 400 {
+		return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage()})
+	}
+
+	var userResponse entities.UserResponse
+	data := json.Unmarshal(res.GetData(), userResponse)
+
+	return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage(), Data: data})
 }
