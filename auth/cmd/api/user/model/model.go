@@ -6,12 +6,11 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID  `json:"id" validate:"uuid"`
-	Name      string     `json:"name" validate:"required"`
-	Password  string     `json:"password" validate:"required"`
-	Email     string     `json:"email" validate:"required,email"`
-	Birthday  string     `json:"birthday" validate:"required"`
-	CreatedAt time.Time  `json:"createdAt" validate:"required"`
-	UpdatedAt time.Time  `json:"updatedAt" validate:"required"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	ID        uuid.UUID `bson:"id" json:"id"`
+	Name      string    `bson:"name" json:"name"`
+	Password  string    `bson:"password" json:"password"`
+	Email     string    `bson:"email" json:"email"`
+	Birthday  string    `bson:"birthday" json:"birthday"`
+	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }

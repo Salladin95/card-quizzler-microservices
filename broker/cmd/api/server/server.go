@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"firebase.google.com/go/v4/auth"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/config"
 	"github.com/labstack/echo/v4"
@@ -16,9 +17,10 @@ import (
 
 // App represents the main application structure.
 type App struct {
-	server *echo.Echo       // Echo HTTP server instance
-	rabbit *amqp.Connection // RabbitMQ connection instance
-	config config.AppCfg    // Application configuration
+	server       *echo.Echo       // Echo HTTP server instance
+	rabbit       *amqp.Connection // RabbitMQ connection instance
+	config       config.AppCfg    // Application configuration
+	firebaseAuth *auth.Client
 }
 
 // IApp defines the interface for the main application.
@@ -27,11 +29,12 @@ type IApp interface {
 }
 
 // NewApp creates a new instance of the application.
-func NewApp(cfg config.AppCfg, rabbit *amqp.Connection) IApp {
+func NewApp(cfg config.AppCfg, rabbit *amqp.Connection, firebaseAuth *auth.Client) IApp {
 	return &App{
-		server: echo.New(), // Initialize Echo server
-		rabbit: rabbit,
-		config: cfg,
+		server:       echo.New(), // Initialize Echo server
+		rabbit:       rabbit,
+		config:       cfg,
+		firebaseAuth: firebaseAuth,
 	}
 }
 
@@ -45,7 +48,7 @@ func (app *App) Start() {
 
 	// Start the Echo server in a goroutine.
 	go func() {
-		serverAddr := fmt.Sprintf(":%s", app.config.BROKER_SERVICE_PORT)
+		serverAddr := fmt.Sprintf(":%s", app.config.BrokerServicePort)
 		if err := app.server.Start(serverAddr); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Println("********* SHUTTING DOWN THE SERVER **********")
 		}

@@ -49,12 +49,6 @@ func (signUpDto *SignUpDto) Verify() error {
 	return nil
 }
 
-type CreateUserDto struct {
-	Name     string `json:"name" validate:"required,min=1"`     // Name field with validation rules
-	Password string `json:"password" validate:"required,min=6"` // Password field with validation rules
-	Email    string `json:"email" validate:"required,email"`    // Email field with validation rules
-}
-
 type UpdateDto struct {
 	Name     string `json:"name" validate:"min=1,omitempty"`
 	Email    string `json:"email" validate:"email,omitempty"`

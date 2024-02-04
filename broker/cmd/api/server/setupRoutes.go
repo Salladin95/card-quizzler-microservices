@@ -2,18 +2,29 @@ package server
 
 import (
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/handlers"
+	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/middlewares"
+	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 // setupRoutes configures and defines API routes for the Echo server.
 func (app *App) setupRoutes() {
-	// Create a group of routes with the "/v1/api" prefix.
 	routes := app.server.Group("/v1/api")
-	// Initialize handlers for the API routes.
-	bHandlers := handlers.NewHandlers(app.config, app.rabbit)
+	brokerHandlers := handlers.NewHandlers(app.config, app.rabbit)
 
 	// ****************** AUTH **********************
-	// Define a route for user sign-in.
-	routes.POST("/auth/sign-in", bHandlers.SignIn)
-	// Define a route for user sign-up.
-	routes.POST("/auth/sign-up", bHandlers.SignUp)
+	routes.POST("/auth/sign-in", brokerHandlers.SignIn)
+	routes.POST("/auth/sign-up", brokerHandlers.SignUp)
+
+	// ***************** PROTECTED ROUTES ************
+	protectedRoutes := routes.Group("")
+	protectedRoutes.Use(middlewares.TokenValidationMiddleWare(app.firebaseAuth))
+
+	// ****************** PROFILE *********************
+	protectedRoutes.POST("/user/profile", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]interface {
+		}{
+			"message": "here we go again",
+		})
+	})
 }

@@ -3,7 +3,7 @@ package fireBase
 import (
 	"context"
 	firebase "firebase.google.com/go/v4"
-	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/config"
 	"google.golang.org/api/option"
 	"log"
 	"os"
@@ -11,7 +11,7 @@ import (
 )
 
 // NewFireBaseApp creates a new Firebase App based on the provided configuration.
-func NewFireBaseApp(cfg config.MongoCfg) *firebase.App {
+func NewFireBaseApp(cfg config.FireBaseCfg) *firebase.App {
 	// Get the current working directory
 	root, err := os.Getwd()
 	if err != nil {

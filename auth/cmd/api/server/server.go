@@ -1,14 +1,13 @@
 package server
 
 import (
-	"cloud.google.com/go/firestore"
-	fireBaseAuth "firebase.google.com/go/v4/auth"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/handlers"
 	user "github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/repository"
 	auth "github.com/Salladin95/card-quizzler-microservices/auth-service/proto"
 	"github.com/rabbitmq/amqp091-go"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -16,10 +15,9 @@ import (
 
 // App represents the main application structure.
 type App struct {
-	rabbit             *amqp091.Connection  // RabbitMQ connection instance
-	config             config.AppCfg        // Application configuration
-	firestoreClient    *firestore.Client    // Firestore client instance
-	fireBaseAuthClient *fireBaseAuth.Client // Firebase auth client instance
+	rabbit *amqp091.Connection
+	config *config.Config
+	db     *mongo.Client
 }
 
 // IApp defines the interface for the main application.
@@ -28,12 +26,15 @@ type IApp interface {
 }
 
 // NewApp creates a new instance of the application.
-func NewApp(cfg config.AppCfg, rabbit *amqp091.Connection, firestore *firestore.Client, fireBaseAuthClient *fireBaseAuth.Client) IApp {
+func NewApp(
+	cfg *config.Config,
+	rabbit *amqp091.Connection,
+	db *mongo.Client,
+) IApp {
 	return &App{
-		rabbit:             rabbit,
-		firestoreClient:    firestore,
-		config:             cfg,
-		fireBaseAuthClient: fireBaseAuthClient,
+		rabbit: rabbit,
+		config: cfg,
+		db:     db,
 	}
 }
 
@@ -46,19 +47,19 @@ func (app *App) Start() {
 // gRPCListen sets up a gRPC server and listens for incoming requests on the specified port.
 func (app *App) gRPCListen() {
 	// Create a TCP listener for the specified gRPC port.
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", app.config.GrpcPort))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", app.config.AppCfg.GrpcPort))
 	if err != nil {
-		log.Fatalf("failed to listen tcp port - %s. Err - %s", app.config.GrpcPort, err.Error())
+		log.Fatalf("failed to listen tcp port - %s. Err - %s", app.config.AppCfg.GrpcPort, err.Error())
 	}
 
 	// Create a new gRPC server instance.
 	gRPCServer := grpc.NewServer()
 
 	// Register the AuthServer implementation with the gRPC server.
-	auth.RegisterAuthServer(gRPCServer, &handlers.AuthServer{Repo: user.NewUserRepository(app.firestoreClient, app.fireBaseAuthClient)})
+	auth.RegisterAuthServer(gRPCServer, &handlers.AuthServer{Repo: user.NewUserRepository(app.db, app.config.MongoCfg)})
 
 	// Log a message indicating that the gRPC server has started.
-	log.Printf("gRPC Server started on port %s", app.config.GrpcPort)
+	log.Printf("gRPC Server started on port %s", app.config.AppCfg.GrpcPort)
 
 	// Start serving gRPC requests on the listener.
 	if err := gRPCServer.Serve(listener); err != nil {

@@ -9,14 +9,21 @@ import (
 
 // AppCfg represents the configuration settings for the application.
 type AppCfg struct {
-	BROKER_SERVICE_PORT string `validate:"required"` // Port for the broker service
-	AUTH_SERVICE_URL    string `validate:"required"` // URL for the auth service
-	RABBIT_URL          string `validate:"required"` // URL for RabbitMQ
+	BrokerServicePort string `validate:"required"` // Port for the broker service
+	AuthServiceUrl    string `validate:"required"` // URL for the auth service
+	RabbitUrl         string `validate:"required"` // URL for RabbitMQ
+}
+
+// FireBaseCfg represents the configuration settings for the firebase.
+type FireBaseCfg struct {
+	FireBaseAccKey    string `validate:"required"` // PATH TO FIRE BASE ACC KEY FILE
+	FireBaseProjectId string `validate:"required"` // IF OF FIREBASE PROJECT
 }
 
 // Config holds the complete configuration for the application.
 type Config struct {
-	AppCfg AppCfg // Application configuration settings
+	AppCfg      AppCfg // Application configuration settings
+	FireBaseCfg FireBaseCfg
 }
 
 // NewConfig creates a new configuration instance by loading environment variables and validating them.
@@ -26,20 +33,30 @@ func NewConfig() (*Config, error) {
 
 	// Create an AppCfg instance from the loaded environment variables.
 	appCfg := AppCfg{
-		BROKER_SERVICE_PORT: env["BROKER_SERVICE_PORT"],
-		AUTH_SERVICE_URL:    env["AUTH_SERVICE_URL"],
-		RABBIT_URL:          env["RABBITMQ_URL"],
+		BrokerServicePort: env["BROKER_SERVICE_PORT"],
+		AuthServiceUrl:    env["AUTH_SERVICE_URL"],
+		RabbitUrl:         env["RABBITMQ_URL"],
 	}
 
 	// Validate the AppCfg structure using the validator package.
 	validate := validator.New()
-	if err := validate.Struct(appCfg); err != nil {
+
+	// Create an AppCfg instance from the loaded environment variables.
+	fireBaseCfg := FireBaseCfg{
+		FireBaseAccKey:    env["FIRE_BASE_ACC_KEY"],
+		FireBaseProjectId: env["FIRE_BASE_PROJECT_ID"],
+	}
+
+	// Validate the AppCfg structure using the validator package.
+	validate = validator.New()
+	if err := validate.Struct(fireBaseCfg); err != nil {
 		return nil, err
 	}
 
 	// Create a new Config instance with the validated AppCfg.
 	return &Config{
-		AppCfg: appCfg,
+		AppCfg:      appCfg,
+		FireBaseCfg: fireBaseCfg,
 	}, nil
 }
 

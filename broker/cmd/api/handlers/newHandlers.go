@@ -37,7 +37,7 @@ func NewHandlers(cfg config.AppCfg, rabbit *amqp.Connection) BrokerHandlersInter
 // GetGRPCClientConn establishes a gRPC client connection using the specified URL and returns the connection.
 func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	// Dial a gRPC server using the provided URL and insecure transport credentials
-	conn, err := grpc.Dial(bh.config.AUTH_SERVICE_URL, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.Dial(bh.config.AuthServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		// Handle the error and return an OperationFailure error using the goErrorHandler package
 		return nil, goErrorHandler.OperationFailure("connect to gRPC", err)

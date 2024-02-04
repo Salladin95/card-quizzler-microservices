@@ -1,10 +1,10 @@
 package user
 
 import (
-	"cloud.google.com/go/firestore"
-	fireBaseAuth "firebase.google.com/go/v4/auth"
+	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/config"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func NewUserRepository(dbClient *firestore.Client, authClient *fireBaseAuth.Client) Repository {
-	return &repository{dbClient: dbClient, authClient: authClient}
+func NewUserRepository(db *mongo.Client, cfg config.MongoCfg) Repository {
+	return &repository{db: db, dbCfg: cfg}
 }
