@@ -15,13 +15,18 @@ func (app *App) setupRoutes() {
 	// ****************** AUTH **********************
 	routes.POST("/auth/sign-in", brokerHandlers.SignIn)
 	routes.POST("/auth/sign-up", brokerHandlers.SignUp)
-
+	// ****************** REFRESH *********************
+	refreshRoute := routes.Group(
+		"/auth/refresh",
+		middlewares.RefreshTokenValidator(app.config.JwtCfg.JWTRefreshSecret),
+	)
+	refreshRoute.GET("", brokerHandlers.Refresh)
 	// ***************** PROTECTED ROUTES ************
 	protectedRoutes := routes.Group("")
-	protectedRoutes.Use(middlewares.TokenValidationMiddleWare(app.firebaseAuth))
-
+	protectedRoutes.Use(middlewares.AccessTokenValidator(app.config.JwtCfg.JWTAccessSecret))
 	// ****************** PROFILE *********************
-	protectedRoutes.POST("/user/profile", func(c echo.Context) error {
+	// TODO: REPLACE MOCK HANDLER
+	protectedRoutes.GET("/user/profile", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface {
 		}{
 			"message": "here we go again",

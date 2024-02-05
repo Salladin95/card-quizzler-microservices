@@ -43,23 +43,21 @@ func NewConfig() (*Config, error) {
 	}
 
 	// Create an AppCfg instance from the loaded environment variables.
-	fireBaseCfg := MongoCfg{
+	mongoCfg := MongoCfg{
 		MongoUrl:          env["MONGO_URL"],
 		MongoUsername:     env["MONGO_USERNAME"],
 		MongoUserPassword: env["MONGO_PASSWORD"],
 		MongoDbName:       env["MONGO_DB"],
 	}
 
-	// Validate the AppCfg structure using the validator package.
-	validate = validator.New()
-	if err := validate.Struct(fireBaseCfg); err != nil {
+	if err := validate.Struct(mongoCfg); err != nil {
 		return nil, err
 	}
 
 	// Create a new Config instance with the validated AppCfg.
 	return &Config{
 		AppCfg:   appCfg,
-		MongoCfg: fireBaseCfg,
+		MongoCfg: mongoCfg,
 	}, nil
 }
 

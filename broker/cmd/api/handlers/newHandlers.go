@@ -18,16 +18,17 @@ const (
 type BrokerHandlersInterface interface {
 	SignIn(c echo.Context) error
 	SignUp(c echo.Context) error
+	Refresh(c echo.Context) error
 }
 
 // brokerHandlers implements the BrokerHandlersInterface.
 type brokerHandlers struct {
-	rabbit *amqp.Connection // AMQP connection for the broker
-	config config.AppCfg    // Application configuration
+	rabbit *amqp.Connection
+	config *config.Config
 }
 
 // NewHandlers creates a new instance of BrokerHandlersInterface.
-func NewHandlers(cfg config.AppCfg, rabbit *amqp.Connection) BrokerHandlersInterface {
+func NewHandlers(cfg *config.Config, rabbit *amqp.Connection) BrokerHandlersInterface {
 	return &brokerHandlers{
 		rabbit: rabbit,
 		config: cfg,
@@ -37,7 +38,7 @@ func NewHandlers(cfg config.AppCfg, rabbit *amqp.Connection) BrokerHandlersInter
 // GetGRPCClientConn establishes a gRPC client connection using the specified URL and returns the connection.
 func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	// Dial a gRPC server using the provided URL and insecure transport credentials
-	conn, err := grpc.Dial(bh.config.AuthServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.Dial(bh.config.AppCfg.AuthServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		// Handle the error and return an OperationFailure error using the goErrorHandler package
 		return nil, goErrorHandler.OperationFailure("connect to gRPC", err)

@@ -8,7 +8,6 @@ import (
 	user "github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/entities"
 	repo "github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/repository"
 	auth "github.com/Salladin95/card-quizzler-microservices/auth-service/proto"
-	"github.com/Salladin95/goErrorHandler"
 	"log"
 	"net/http"
 )
@@ -21,67 +20,44 @@ type AuthServer struct {
 
 // SignIn handles the gRPC request for user sign-in.
 func (authServer *AuthServer) SignIn(ctx context.Context, req *auth.SignInRequest) (*auth.Response, error) {
+	fmt.Println("******* auth service - start processing signin request ********")
 	// Extract payload from the gRPC request.
 	reqPayload := req.GetPayload()
-
 	// Create a SignInDto from the request payload.
 	signInDto := user.SignInDto{Email: reqPayload.Email, Password: reqPayload.Password}
-
 	// Verify the SignInDto structure.
 	err := signInDto.Verify()
 	if err != nil {
 		return &auth.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-
 	fetchedUser, err := authServer.Repo.GetByEmail(ctx, signInDto.Email)
-
 	if err != nil {
-		log.Printf("********* [sign-in]: user with email is not found - %s\n", signInDto.Email)
 		return &auth.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-
 	isPasswordInvalid := authServer.Repo.CompareHashAndPassword(fetchedUser.Password, signInDto.Password)
-
 	if fetchedUser.Email != signInDto.Email || isPasswordInvalid != nil {
-		log.Printf("********* [sign-in]: email - %s\n", signInDto.Email)
-		log.Printf("********* [sign-in]: password - %s\n", signInDto.Password)
-		log.Println("********* Authentication failed ***************")
 		return &auth.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-
-	marshalledUer, err := json.Marshal(fetchedUser)
-	if err != nil {
-		goErrorHandler.OperationFailure("marshal user", err)
-		return &auth.Response{Code: http.StatusInternalServerError, Message: err.Error()}, nil
-	}
-
-	return &auth.Response{Data: marshalledUer, Message: "user has signed in", Code: http.StatusOK}, nil
+	return buildUserResponse(fetchedUser, http.StatusOK, "user has signed in")
 }
 
 // SignUp handles the gRPC request for user sign-up.
 func (authServer *AuthServer) SignUp(ctx context.Context, req *auth.SignUpRequest) (*auth.Response, error) {
+	fmt.Println("******* auth service - start processing signUp request ********")
 	// Extract payload from the gRPC request.
 	reqPayload := req.GetPayload()
-
 	// Create a SignUpDto from the request payload.
 	signUpDto := user.SignUpDto{Email: reqPayload.Email, Password: reqPayload.Password, Name: reqPayload.Name, Birthday: reqPayload.Birthday}
-
 	// Verify the SignUpDto structure.
 	err := signUpDto.Verify()
 	if err != nil {
 		return &auth.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-
-	signedUser, err := authServer.Repo.CreateUser(ctx, signUpDto)
+	newUser, err := authServer.Repo.CreateUser(ctx, signUpDto)
 	if err != nil {
 		return &auth.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-	marshalledUer, err := json.Marshal(signedUser)
-	if err != nil {
-		goErrorHandler.OperationFailure("marshal user", err)
-		return &auth.Response{Code: http.StatusInternalServerError, Message: err.Error()}, nil
-	}
-	return &auth.Response{Data: marshalledUer, Code: http.StatusOK, Message: "user has signed up"}, nil
+	return buildUserResponse(newUser, http.StatusCreated, "user has signed up")
 }
 
 func HandleRabbitPayload(key string, payload []byte) {

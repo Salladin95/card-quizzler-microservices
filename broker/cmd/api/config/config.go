@@ -5,25 +5,27 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/gommon/log"
 	"os"
+	"time"
 )
 
 // AppCfg represents the configuration settings for the application.
 type AppCfg struct {
-	BrokerServicePort string `validate:"required"` // Port for the broker service
-	AuthServiceUrl    string `validate:"required"` // URL for the auth service
-	RabbitUrl         string `validate:"required"` // URL for RabbitMQ
+	BrokerServicePort string `validate:"required"`
+	AuthServiceUrl    string `validate:"required"`
+	RabbitUrl         string `validate:"required"`
 }
 
-// FireBaseCfg represents the configuration settings for the firebase.
-type FireBaseCfg struct {
-	FireBaseAccKey    string `validate:"required"` // PATH TO FIRE BASE ACC KEY FILE
-	FireBaseProjectId string `validate:"required"` // IF OF FIREBASE PROJECT
+type JwtCfg struct {
+	AccessTokenExpTime  time.Duration `validate:"required"`
+	JWTAccessSecret     string        `validate:"required"`
+	RefreshTokenExpTime time.Duration `validate:"required"`
+	JWTRefreshSecret    string        `validate:"required"`
 }
 
 // Config holds the complete configuration for the application.
 type Config struct {
-	AppCfg      AppCfg // Application configuration settings
-	FireBaseCfg FireBaseCfg
+	AppCfg AppCfg
+	JwtCfg JwtCfg
 }
 
 // NewConfig creates a new configuration instance by loading environment variables and validating them.
@@ -38,25 +40,30 @@ func NewConfig() (*Config, error) {
 		RabbitUrl:         env["RABBITMQ_URL"],
 	}
 
-	// Validate the AppCfg structure using the validator package.
-	validate := validator.New()
+	accessTokenExpireTime := parseDuration(env, "JWT_ACCESS_TOKEN_EXP", time.Hour*48)
+	refreshTokenExpireTime := parseDuration(env, "JWT_REFRESH_TOKEN_EXP", time.Hour*72)
 
-	// Create an AppCfg instance from the loaded environment variables.
-	fireBaseCfg := FireBaseCfg{
-		FireBaseAccKey:    env["FIRE_BASE_ACC_KEY"],
-		FireBaseProjectId: env["FIRE_BASE_PROJECT_ID"],
+	jwtCfg := JwtCfg{
+		AccessTokenExpTime:  accessTokenExpireTime,
+		RefreshTokenExpTime: refreshTokenExpireTime,
+		JWTAccessSecret:     env["JWT_ACCESS_SECRET"],
+		JWTRefreshSecret:    env["JWT_REFRESH_SECRET"],
 	}
 
 	// Validate the AppCfg structure using the validator package.
-	validate = validator.New()
-	if err := validate.Struct(fireBaseCfg); err != nil {
+	validate := validator.New()
+
+	if err := validate.Struct(appCfg); err != nil {
+		return nil, err
+	}
+	if err := validate.Struct(jwtCfg); err != nil {
 		return nil, err
 	}
 
 	// Create a new Config instance with the validated AppCfg.
 	return &Config{
-		AppCfg:      appCfg,
-		FireBaseCfg: fireBaseCfg,
+		AppCfg: appCfg,
+		JwtCfg: jwtCfg,
 	}, nil
 }
 
@@ -70,4 +77,13 @@ func loadEnv() map[string]string {
 	}
 
 	return config
+}
+
+// Parse duration parses hours
+func parseDuration(config map[string]string, key string, defaultValue time.Duration) time.Duration {
+	duration, err := time.ParseDuration(config[key] + "h")
+	if err != nil {
+		return defaultValue
+	}
+	return duration
 }
