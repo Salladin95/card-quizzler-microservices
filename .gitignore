@@ -23,6 +23,6 @@ go.work
 .idea
 db-data
 .env*
-tmp
+*/tmp
 
 *firebase-adminsdk*

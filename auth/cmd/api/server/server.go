@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/handlers"
+	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/cachedRepository"
 	user "github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/repository"
 	auth "github.com/Salladin95/card-quizzler-microservices/auth-service/proto"
+	"github.com/go-redis/redis"
 	"github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
@@ -18,6 +20,7 @@ type App struct {
 	rabbit *amqp091.Connection
 	config *config.Config
 	db     *mongo.Client
+	redis  *redis.Client
 }
 
 // IApp defines the interface for the main application.
@@ -30,11 +33,13 @@ func NewApp(
 	cfg *config.Config,
 	rabbit *amqp091.Connection,
 	db *mongo.Client,
+	redisClient *redis.Client,
 ) IApp {
 	return &App{
 		rabbit: rabbit,
 		config: cfg,
 		db:     db,
+		redis:  redisClient,
 	}
 }
 
@@ -55,8 +60,11 @@ func (app *App) gRPCListen() {
 	// Create a new gRPC server instance.
 	gRPCServer := grpc.NewServer()
 
+	// Create user repository
+	userRepo := user.NewUserRepository(app.db, app.config.MongoCfg)
+
 	// Register the AuthServer implementation with the gRPC server.
-	auth.RegisterAuthServer(gRPCServer, &handlers.AuthServer{Repo: user.NewUserRepository(app.db, app.config.MongoCfg)})
+	auth.RegisterAuthServer(gRPCServer, &handlers.AuthServer{Repo: cachedRepository.NewCachedUserRepo(app.redis, userRepo)})
 
 	// Log a message indicating that the gRPC server has started.
 	log.Printf("gRPC Server started on port %s", app.config.AppCfg.GrpcPort)

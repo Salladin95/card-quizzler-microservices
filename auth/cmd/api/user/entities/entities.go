@@ -49,13 +49,14 @@ func (signUpDto *SignUpDto) Verify() error {
 	return nil
 }
 
+// UpdateDto represents the data transfer object for user update requests
 type UpdateDto struct {
 	Name     string `json:"name" validate:"min=1,omitempty"`
 	Email    string `json:"email" validate:"email,omitempty"`
 	Password string `json:"password" validate:"omitempty,min=6"`
 }
 
-// Verify validates the structure and content of the SignUpDto.
+// Verify validates the structure and content of the UpdateDto.
 func (updateDto *UpdateDto) Verify() error {
 	// Create a new validator instance.
 	validate := validator.New()
@@ -69,6 +70,7 @@ func (updateDto *UpdateDto) Verify() error {
 	return nil
 }
 
+// Response represents user response structure
 type Response struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`

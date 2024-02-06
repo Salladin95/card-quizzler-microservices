@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/lib"
 	userEntities "github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/entities"
 	user "github.com/Salladin95/card-quizzler-microservices/auth-service/cmd/api/user/model"
 	"github.com/Salladin95/goErrorHandler"
@@ -92,7 +93,7 @@ func (repo *repository) CreateUser(ctx context.Context, createUserDto userEntiti
 	if err == nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrBadRequest, fmt.Errorf("user with email - %s already exists", createUserDto.Email))
 	}
-	hashedPassword, err := repo.HashPassword(createUserDto.Password)
+	hashedPassword, err := lib.HashPassword(createUserDto.Password)
 	if err != nil {
 		return nil, err
 	}

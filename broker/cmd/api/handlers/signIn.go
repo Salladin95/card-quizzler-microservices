@@ -56,6 +56,9 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 
 	// Generate a token pair for the signed-in user
 	tokens, err := GenerateTokenPair(signedInUser.Name, signedInUser.Email, signedInUser.ID, bh.config.JwtCfg)
+	if err != nil {
+		return err
+	}
 
 	// Set the refresh token as an HTTP-only cookie
 	SetHttpOnlyCookie(

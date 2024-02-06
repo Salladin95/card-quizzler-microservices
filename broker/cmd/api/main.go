@@ -42,13 +42,11 @@ func main() {
 // It takes the address of the Redis server as a parameter.
 func connectToRedis(addr string) *redis.Client {
 	// Create a new Redis client with specified options
-	client := redis.NewClient(&redis.Options{
-		Addr:         addr,            // Address of the Redis server
+	return redis.NewClient(&redis.Options{
+		Addr:         addr,
 		WriteTimeout: 5 * time.Second, // Maximum time to wait for write operations
 		ReadTimeout:  5 * time.Second, // Maximum time to wait for read operations
 		DialTimeout:  3 * time.Second, // Maximum time to wait for a connection to be established
-		MaxRetries:   6,               // Maximum number of retries before giving up on a command
+		MaxRetries:   3,               // Maximum number of retries before giving up on a command
 	})
-
-	return client
 }

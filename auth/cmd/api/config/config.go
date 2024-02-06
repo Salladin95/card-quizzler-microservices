@@ -10,6 +10,8 @@ import (
 type AppCfg struct {
 	GrpcPort  string `validate:"required"`
 	RabbitUrl string `validate:"required"`
+	RedisUrl  string `validate:"required"`
+	RedisPort string `validate:"required"`
 }
 
 type MongoCfg struct {
@@ -34,6 +36,8 @@ func NewConfig() (*Config, error) {
 	appCfg := AppCfg{
 		GrpcPort:  env["GRPC_PORT"],
 		RabbitUrl: env["RABBITMQ_URL"],
+		RedisUrl:  env["REDIS_URL"],
+		RedisPort: env["REDIS_PORT"],
 	}
 
 	// Validate the AppCfg structure using the validator package.

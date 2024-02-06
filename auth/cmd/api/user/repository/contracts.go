@@ -20,5 +20,4 @@ type Repository interface {
 	CreateUser(ctx context.Context, createUserDto userEntities.SignUpDto) (*user.User, error)
 	UpdateUser(ctx context.Context, uid string, updateUserDto userEntities.UpdateDto) (*user.User, error)
 	DeleteUser(ctx context.Context, uid string) error
-	CompareHashAndPassword(hash string, password string) error
 }
