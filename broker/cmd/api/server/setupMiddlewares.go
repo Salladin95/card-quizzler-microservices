@@ -16,8 +16,14 @@ func (app *App) setupMiddlewares() {
 		// TODO: FIX IN PRODUCTION - AllowOrigins should be limited to specific domains.
 		// Specify the allowed origins. In production, replace ["https://*", "http://*"] with specific domain(s).
 		AllowOrigins: []string{"https://*", "http://*"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXCSRFToken, echo.HeaderAuthorization},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE},
-		MaxAge:       300, // Set the maximum age for preflight requests.
+		AllowHeaders: []string{
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
+			echo.HeaderXCSRFToken,
+			echo.HeaderAuthorization,
+		},
+		MaxAge: 300, // Set the maximum age for preflight requests.
 	}))
 }

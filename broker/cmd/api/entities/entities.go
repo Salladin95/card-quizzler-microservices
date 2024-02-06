@@ -46,6 +46,12 @@ type JwtUser struct {
 	Id    uuid.UUID `json:"id"`
 }
 
+// TokenPair represents a pair of JWTs: access token and refresh token.
+type TokenPair struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
 type JwtUserClaims struct {
 	JwtUser
 	jwt.RegisteredClaims

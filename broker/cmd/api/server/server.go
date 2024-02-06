@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/config"
+	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
@@ -19,6 +20,7 @@ type App struct {
 	server *echo.Echo       // Echo HTTP server instance
 	rabbit *amqp.Connection // RabbitMQ connection instance
 	config *config.Config   // Application configuration
+	redis  *redis.Client    // Redis client
 }
 
 // IApp defines the interface for the main application.
@@ -27,11 +29,12 @@ type IApp interface {
 }
 
 // NewApp creates a new instance of the application.
-func NewApp(cfg *config.Config, rabbit *amqp.Connection) IApp {
+func NewApp(cfg *config.Config, rabbit *amqp.Connection, redisClient *redis.Client) IApp {
 	return &App{
-		server: echo.New(), // Initialize Echo server
+		server: echo.New(),
 		rabbit: rabbit,
 		config: cfg,
+		redis:  redisClient,
 	}
 }
 

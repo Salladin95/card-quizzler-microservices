@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/broker-service/cmd/api/config"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
@@ -23,22 +24,32 @@ type BrokerHandlersInterface interface {
 
 // brokerHandlers implements the BrokerHandlersInterface.
 type brokerHandlers struct {
-	rabbit *amqp.Connection
-	config *config.Config
+	rabbit       *amqp.Connection
+	config       *config.Config
+	cacheManager cacheManager.CacheManager
 }
 
 // NewHandlers creates a new instance of BrokerHandlersInterface.
-func NewHandlers(cfg *config.Config, rabbit *amqp.Connection) BrokerHandlersInterface {
+func NewHandlers(
+	cfg *config.Config,
+	rabbit *amqp.Connection,
+	cacheManager cacheManager.CacheManager,
+) BrokerHandlersInterface {
 	return &brokerHandlers{
-		rabbit: rabbit,
-		config: cfg,
+		rabbit:       rabbit,
+		config:       cfg,
+		cacheManager: cacheManager,
 	}
 }
 
 // GetGRPCClientConn establishes a gRPC client connection using the specified URL and returns the connection.
 func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	// Dial a gRPC server using the provided URL and insecure transport credentials
-	conn, err := grpc.Dial(bh.config.AppCfg.AuthServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.Dial(
+		bh.config.AppCfg.AuthServiceUrl,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
 	if err != nil {
 		// Handle the error and return an OperationFailure error using the goErrorHandler package
 		return nil, goErrorHandler.OperationFailure("connect to gRPC", err)

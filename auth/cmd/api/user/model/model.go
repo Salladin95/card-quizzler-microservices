@@ -16,6 +16,7 @@ type User struct {
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
+// ToResponse converts a User object to a response object, omitting the password field
 func (u *User) ToResponse() *user.Response {
 	return &user.Response{
 		ID:        u.ID,
