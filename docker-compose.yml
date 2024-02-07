@@ -1,42 +1,32 @@
 version: '3'
 services:
   broker-service:
-    container_name: broker-service-container
-    image: broker-image
+    container_name: api-service-container
+    image: api-service-image
     build:
-      context: ./broker
+      context: ./api-service
       dockerfile: Dockerfile
     ports:
-      - ${BROKER_SERVICE_PORT}:80
+      - ${API_SERVICE_PORT}:80
     depends_on:
-      #      - redis
-      #      - db
+      - redis
       - rabbitmq
+      #      - db
     networks:
       - myapp-network
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:${BROKER_SERVICE_PORT}/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  auth-service:
-    container_name: auth-service-container
-    image: auth-image
+  user-service:
+    container_name: user-service-container
+    image: user-service-image
     build:
-      context: ./auth
+      context: ./user-service
       dockerfile: Dockerfile
     depends_on:
-      #      - redis
-      #      - db
+      - redis
       - rabbitmq
+      #      - db
     networks:
       - myapp-network
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:${AUTH_SERVICE_PORT}/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   rabbitmq:
     image: "rabbitmq:management"
