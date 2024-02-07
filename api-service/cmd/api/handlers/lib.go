@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
 	"github.com/golang-jwt/jwt/v5"
@@ -126,4 +128,16 @@ func SetHttpOnlyCookie(c echo.Context, name, value string, exp time.Duration, pa
 
 	// Set the cookie in the Echo context
 	c.SetCookie(cookie)
+}
+
+func buildResponse(c echo.Context, res *userService.Response, unmarshalTo interface{}) error {
+	code := res.GetCode()
+	if code >= http.StatusBadRequest {
+		return c.JSON(int(res.GetCode()), entities.JsonResponse{Message: res.GetMessage()})
+	}
+	err := lib.UnmarshalData(res.GetData(), &unmarshalTo)
+	if err != nil {
+		return err
+	}
+	return c.JSON(int(res.GetCode()), entities.JsonResponse{Message: res.GetMessage(), Data: unmarshalTo})
 }

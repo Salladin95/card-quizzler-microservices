@@ -13,7 +13,7 @@ import (
 // It takes a context and a gRPC request (user-service.SignInRequest) as input.
 // The function returns a gRPC response (user-service.Response) and an error.
 // The response includes a status code and a message.
-func (auth *UserService) SignIn(ctx context.Context, req *userService.SignInRequest) (*userService.Response, error) {
+func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the sign-in request
 	fmt.Println("******* user-service service - start processing signin request ********")
 	// Extract payload from the gRPC request
@@ -27,7 +27,7 @@ func (auth *UserService) SignIn(ctx context.Context, req *userService.SignInRequ
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
 	// Fetch user by email from the repository
-	fetchedUser, err := auth.Repo.GetByEmail(ctx, signInDto.Email)
+	fetchedUser, err := us.Repo.GetByEmail(ctx, signInDto.Email)
 	if err != nil {
 		// Return a response with the mapped error status code and message if fetching user fails
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
@@ -36,17 +36,17 @@ func (auth *UserService) SignIn(ctx context.Context, req *userService.SignInRequ
 	isPasswordInvalid := lib.CompareHashAndPassword(fetchedUser.Password, signInDto.Password)
 	if fetchedUser.Email != signInDto.Email || isPasswordInvalid != nil {
 		// Return a response with the mapped error status code and message if authentication fails
-		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
+		return buildFailedResponse(err)
 	}
 	// Build and return a user response with a success code and message
-	return buildUserResponse(fetchedUser, http.StatusOK, "user has signed in")
+	return buildSuccessfulResponse(fetchedUser.ToResponse(), http.StatusOK, "user has signed in")
 }
 
 // SignUp is a gRPC service method that handles the user sign-up request.
 // It takes a context and a gRPC request (user-service.SignUpRequest) as input.
 // The function returns a gRPC response (user-service.Response) and an error.
 // The response includes a status code and a message.
-func (auth *UserService) SignUp(ctx context.Context, req *userService.SignUpRequest) (*userService.Response, error) {
+func (us *UserServer) SignUp(ctx context.Context, req *userService.SignUpRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the sign-up request
 	fmt.Println("******* user-service service - start processing signUp request ********")
 	// Extract payload from the gRPC request
@@ -65,11 +65,11 @@ func (auth *UserService) SignUp(ctx context.Context, req *userService.SignUpRequ
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
 	// Create a new user by calling the CreateUser method in the repository
-	newUser, err := auth.Repo.CreateUser(ctx, signUpDto)
+	newUser, err := us.Repo.CreateUser(ctx, signUpDto)
 	if err != nil {
 		// Return a response with the mapped error status code and message if user creation fails
-		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
+		return buildFailedResponse(err)
 	}
 	// Build and return a user response with a success code and message
-	return buildUserResponse(newUser, http.StatusCreated, "user has signed up")
+	return buildSuccessfulResponse(newUser.ToResponse(), http.StatusCreated, "user has signed up")
 }

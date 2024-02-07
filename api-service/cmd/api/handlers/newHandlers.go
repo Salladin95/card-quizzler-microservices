@@ -20,6 +20,9 @@ type BrokerHandlersInterface interface {
 	SignIn(c echo.Context) error
 	SignUp(c echo.Context) error
 	Refresh(c echo.Context) error
+	GetUsers(c echo.Context) error
+	GetUserById(c echo.Context) error
+	GetProfile(c echo.Context) error
 }
 
 // brokerHandlers implements the BrokerHandlersInterface.

@@ -29,6 +29,10 @@ message SignUpRequest {
   SignUpPayload payload = 1;
 }
 
+message UpdateUserRequest {
+  UpdateUserPayload payload = 1;
+}
+
 message ID {
   string id = 1;
 }
@@ -49,7 +53,7 @@ message Response {
 service UserService {
   rpc SignIn(SignInRequest) returns (Response);
   rpc SignUp(SignUpRequest) returns (Response);
-  rpc UpdateUser(UpdateUserPayload) returns (Response);
+  rpc UpdateUser(UpdateUserRequest) returns (Response);
   rpc GetUsers(EmptyRequest) returns (Response);
   rpc GetUserById(ID) returns (Response);
   rpc GetUserByEmail(Email) returns (Response);

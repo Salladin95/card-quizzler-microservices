@@ -43,3 +43,13 @@ func UnmarshalData(data []byte, unmarshalTo interface{}) error {
 	}
 	return nil
 }
+
+// MarshalData marshals data into a JSON-encoded byte slice.
+// It returns the marshalled data []byte and an error if any issues occur during the marshaling process.
+func MarshalData(data interface{}) ([]byte, error) {
+	marshalledData, err := json.Marshal(data)
+	if err != nil {
+		return nil, goErrorHandler.OperationFailure("marshal data", err)
+	}
+	return marshalledData, nil
+}

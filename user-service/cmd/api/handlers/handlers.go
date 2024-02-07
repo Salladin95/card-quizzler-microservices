@@ -10,9 +10,9 @@ import (
 	"log"
 )
 
-type UserService struct {
+type UserServer struct {
 	userService.UnimplementedUserServiceServer
-	Repo cachedRepository.CachedRepository // User repository
+	Repo cachedRepository.CachedRepository
 }
 
 func HandleRabbitPayload(key string, payload []byte) {

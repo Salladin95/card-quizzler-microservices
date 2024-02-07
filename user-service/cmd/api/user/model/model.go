@@ -28,3 +28,11 @@ func (u *User) ToResponse() *user.Response {
 		UpdatedAt: u.UpdatedAt,
 	}
 }
+
+func ToUserResponses(users []*User) []*user.Response {
+	userResponses := make([]*user.Response, len(users))
+	for i, user := range users {
+		userResponses[i] = user.ToResponse()
+	}
+	return userResponses
+}

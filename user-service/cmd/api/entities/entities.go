@@ -1,4 +1,4 @@
-package entities
+package appEntities
 
 // JsonResponse represents a simple JSON response message structure.
 type JsonResponse struct {
