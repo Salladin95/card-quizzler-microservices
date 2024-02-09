@@ -32,7 +32,7 @@ func AccessTokenValidator(cacheManager cacheManager.CacheManager, secret string)
 			if err != nil || cachedAccessToken != accessToken {
 				log.Infof("********* Received access token and cached token don't match ***********")
 				clearCookies(c)
-				cacheManager.ClearUserData(claims.Id.String())
+				cacheManager.ClearDataByUID(claims.Id.String())
 				return goErrorHandler.NewError(
 					goErrorHandler.ErrUnauthorized,
 					fmt.Errorf("received access token and cached token don't match"),

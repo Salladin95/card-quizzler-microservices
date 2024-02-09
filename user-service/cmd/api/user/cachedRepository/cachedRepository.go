@@ -2,69 +2,94 @@ package cachedRepository
 
 import (
 	"context"
+	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	userEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	userRepo "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/repository"
 	"github.com/go-redis/redis"
+	"github.com/rabbitmq/amqp091-go"
 	"log"
 	"time"
 )
 
 type cachedRepository struct {
-	redisClient *redis.Client       // redisClient is a Redis client used for caching
-	repo        userRepo.Repository // repo is the underlying repository from which to fetch data
-	userKey     string              // userKey is the key used to store/retrieve user data from cache
-	exp         time.Duration       // exp is the expiration time for cached data
+	redisClient *redis.Client       // redisClient is the Redis client used for caching.
+	rabbitConn  *amqp091.Connection // rabbitConn is the AMQP connection used for firing events.
+	repo        userRepo.Repository // repo is the underlying repository from which to fetch data.
+	userKey     string              // userKey is the key used to store and retrieve user data from the cache.
+	exp         time.Duration       // exp is the expiration time for cached data.
 }
 
-// GetUsers retrieves user data either from cache or the underlying repository.
+type LogMessage struct {
+	Message string `json:"message"`
+}
+
+// GetUsers retrieves user data either from the cache or the underlying repository.
+// It first attempts to read users from the cache. If successful, it returns the cached users.
+// If reading from the cache fails (cache miss), it fetches users from the underlying repository,
+// caches the fetched users, and publishes an event to RabbitMQ indicating that users were fetched.
+// It returns the fetched users or an error if fetching users from the repository fails.
 func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) {
-	var cachedUsers []*user.User
-	// Try to read users from cache
-	err := cr.readCacheByKey(&cachedUsers, cr.userKey)
+	var users []*user.User
+
+	// Try to read users from the cache
+	err := cr.readCacheByKey(&users, cr.userKey)
 	if err != nil {
 		// If cache read fails, fetch users from the underlying repository
-		users, err := cr.repo.GetUsers(ctx)
+		users, err = cr.repo.GetUsers(ctx)
 		if err != nil {
 			return nil, err
 		}
+
 		// Cache the fetched users
 		cr.SetCacheByKey(cr.userKey, users)
-		log.Println("users retrieved from repository")
-		return users, nil
 	}
-	// If cache read succeeds, return users from cache
-	log.Println("users retrieved from cache")
-	return cachedUsers, nil
+
+	// Publish an event to RabbitMQ indicating that users were fetched
+	cr.pushToQueue(ctx, constants.FetchedUsersKey, users)
+	cr.pushToQueue(ctx, constants.LogCommand, LogMessage{
+		Message: "[user-service] Users have been retrieved retrieved",
+	})
+	return users, nil
 }
 
-// GetById retrieves a user by their ID, either from cache or the underlying repository.
+// GetById retrieves a user by their ID, either from the cache or the underlying repository.
+// It first attempts to read the user from the cache using the hash key derived from the user ID.
+// If successful, it returns the cached user.
+// If reading from the cache fails (cache miss), it fetches the user from the underlying repository
+// and caches the fetched user using both the hash key and email as cache keys.
+// Additionally, it publishes an event to RabbitMQ indicating that the user was fetched.
+// It returns the fetched user or an error if fetching the user from the repository fails.
 func (cr *cachedRepository) GetById(ctx context.Context, uid string) (*user.User, error) {
-	var cachedUser *user.User
-	// Try to read user from cache using the hash key derived from the user ID
-	err := cr.readCacheByKey(&cachedUser, cr.userHashKey(uid))
+	var user *user.User
+
+	// Try to read the user from the cache using the hash key derived from the user ID
+	err := cr.readCacheByKey(&user, cr.userHashKey(uid))
 	if err != nil {
-		// If cache read fails, fetch user from the underlying repository
-		user, err := cr.repo.GetById(ctx, uid)
+		// If cache read fails, fetch the user from the underlying repository
+		user, err = cr.repo.GetById(ctx, uid)
 		if err != nil {
 			return nil, err
 		}
+
 		// Cache the fetched user using both the hash key and email as cache keys
 		cr.SetCacheByKey(cr.userHashKey(uid), user)
 		cr.SetCacheByKey(user.Email, user)
-		log.Println("user retrieved from repository")
-		return user, nil
 	}
-	// If cache read succeeds, return user from cache
-	log.Printf("user - %v has been extracted from cache\n", cachedUser)
-	return cachedUser, nil
+
+	// Publish an event to RabbitMQ indicating that the user was fetched
+	cr.pushToQueue(ctx, constants.FetchedUserKey, user)
+
+	// If cache read succeeds, return the user from the cache
+	log.Println("[user-service] User has been retrieved")
+	return user, nil
 }
 
 // GetByEmail retrieves a user by their email, either from cache or the underlying repository.
 func (cr *cachedRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
-	var cachedUser *user.User
+	var user *user.User
 	// Try to read user from cache using the email as cache key
-	err := cr.readCacheByKey(&cachedUser, email)
+	err := cr.readCacheByKey(&user, email)
 	if err != nil {
 		// If cache read fails, fetch user from the underlying repository
 		user, err := cr.repo.GetByEmail(ctx, email)
@@ -74,15 +99,20 @@ func (cr *cachedRepository) GetByEmail(ctx context.Context, email string) (*user
 		// Cache the fetched user using both the hash key derived from user ID and email as cache keys
 		cr.SetCacheByKey(cr.userHashKey(user.ID.String()), user)
 		cr.SetCacheByKey(email, user)
-		return user, nil
 	}
+
+	cr.pushToQueue(ctx, constants.FetchedUserKey, user)
 	// If cache read succeeds, return user from cache
-	log.Printf("user - %v has been extracted from cache\n", cachedUser)
-	return cachedUser, nil
+	log.Println("[user-service] User has been extracted from cache")
+	return user, nil
 }
 
 // CreateUser creates a new user using the provided user data.
-// It caches the newly created user and clears the user list cache.
+// It first creates the user using the underlying repository.
+// If successful, it caches the newly created user using both the hash key derived from the user ID
+// and the email as cache keys. Additionally, it publishes an event to RabbitMQ indicating that the user was created.
+// It then clears the cache for the user list.
+// It returns the newly created user or an error if creating the user fails.
 func (cr *cachedRepository) CreateUser(
 	ctx context.Context,
 	createUserDto userEntities.SignUpDto,
@@ -92,16 +122,26 @@ func (cr *cachedRepository) CreateUser(
 	if err != nil {
 		return nil, err
 	}
-	// Cache the newly created user using both the hash key derived from user ID and email as cache keys
+
+	// Cache the newly created user using both the hash key derived from the user ID and the email as cache keys
 	cr.SetCacheByKey(cr.userHashKey(createdUser.ID.String()), createdUser)
 	cr.SetCacheByKey(createdUser.Email, createdUser)
+
+	// Publish an event to RabbitMQ indicating that the user was created
+	cr.pushToQueue(ctx, constants.CreatedUserKey, createdUser)
+
 	// Clear the cache for the user list
 	cr.clearCacheByKey(cr.userKey)
+
 	return createdUser, nil
 }
 
 // UpdateUser updates an existing user with the provided data.
-// It caches the updated user and clears the user list cache.
+// It first updates the user using the underlying repository.
+// If successful, it caches the updated user using both the hash key derived from the user ID
+// and the email as cache keys. Additionally, it publishes an event to RabbitMQ indicating that the user was updated.
+// It then clears the cache for the user list.
+// It returns the updated user or an error if updating the user fails.
 func (cr *cachedRepository) UpdateUser(
 	ctx context.Context, uid string,
 	updateUserDto userEntities.UpdateDto,
@@ -111,30 +151,42 @@ func (cr *cachedRepository) UpdateUser(
 	if err != nil {
 		return nil, err
 	}
-	// Cache the updated user using both the hash key derived from user ID and email as cache keys
+
+	// Cache the updated user using both the hash key derived from user ID and the email as cache keys
 	cr.SetCacheByKey(cr.userHashKey(updatedUser.ID.String()), updatedUser)
 	cr.SetCacheByKey(updatedUser.Email, updatedUser)
+
+	// Publish an event to RabbitMQ indicating that the user was updated
+	cr.pushToQueue(ctx, constants.UpdatedUserKey, updatedUser)
+
 	// Clear the cache for the user list
 	cr.clearCacheByKey(cr.userKey)
+
 	return updatedUser, nil
 }
 
 // DeleteUser deletes a user with the specified ID.
-// It retrieves the user first to clear its cache, then deletes the user and clears the user list cache.
+// It first retrieves the user to clear its cache.
+// If successful, it deletes the user using the underlying repository.
+// Additionally, it clears the cache for the deleted user and the user list.
+// It also publishes an event to RabbitMQ indicating that the user was deleted.
+// It returns nil if the operation succeeds, otherwise it returns an error.
 func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 	// Retrieve the user to clear its cache
-	u, getUserErr := cr.GetById(ctx, uid)
+	u, err := cr.GetById(ctx, uid)
+
 	// Delete the user using the underlying repository
-	err := cr.repo.DeleteUser(ctx, uid)
+	err = cr.repo.DeleteUser(ctx, uid)
 	if err != nil {
 		return err
 	}
+
 	// Clear the cache for the deleted user and the user list
 	cr.clearCacheByKey(cr.userHashKey(uid))
+	cr.clearCacheByKey(u.Email)
 	cr.clearCacheByKey(cr.userKey)
-	// If there was an error while retrieving the user, clear the cache for the user's email
-	if getUserErr != nil {
-		cr.clearCacheByKey(u.Email)
-	}
+
+	// Publish an event to RabbitMQ indicating that the user was deleted
+	cr.pushToQueue(ctx, constants.DeletedUserKey, u)
 	return nil
 }

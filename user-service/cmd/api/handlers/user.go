@@ -16,6 +16,7 @@ func (us *UserServer) GetUsers(ctx context.Context, _ *userService.EmptyRequest)
 
 	// Fetch all users from the repository
 	fetchedUsers, err := us.Repo.GetUsers(ctx)
+
 	if err != nil {
 		// If an error occurs during user retrieval, build and return a failed response
 		return buildFailedResponse(err)

@@ -64,7 +64,10 @@ func (app *App) gRPCListen() {
 	userRepo := user.NewUserRepository(app.db, app.config.MongoCfg)
 
 	// Register the AuthServer implementation with the gRPC server.
-	userService.RegisterUserServiceServer(gRPCServer, &handlers.UserServer{Repo: cachedRepository.NewCachedUserRepo(app.redis, userRepo)})
+	userService.RegisterUserServiceServer(
+		gRPCServer,
+		&handlers.UserServer{Repo: cachedRepository.NewCachedUserRepo(app.redis, app.rabbit, userRepo)},
+	)
 
 	// Log a message indicating that the gRPC server has started.
 	log.Printf("gRPC Server started on port %s", app.config.AppCfg.GrpcPort)

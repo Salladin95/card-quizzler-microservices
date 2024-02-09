@@ -7,25 +7,22 @@ import (
 )
 
 // setupRoutes configures and defines API routes for the Echo server.
-func (app *App) setupRoutes() {
-	cacheManager := cacheManager.NewCacheManager(app.redis, app.config)
-	brokerHandlers := handlers.NewHandlers(app.config, app.rabbit, cacheManager)
+func (app *App) setupRoutes(handlers handlers.BrokerHandlersInterface, cacheManager cacheManager.CacheManager) {
 	routes := app.server.Group("/v1/api")
-
 	// ****************** AUTH **********************
-	routes.POST("/auth/sign-in", brokerHandlers.SignIn)
-	routes.POST("/auth/sign-up", brokerHandlers.SignUp)
+	routes.POST("/auth/sign-in", handlers.SignIn)
+	routes.POST("/auth/sign-up", handlers.SignUp)
 	// ****************** REFRESH *********************
 	refreshRoute := routes.Group(
 		"/user-service/refresh",
 		middlewares.RefreshTokenValidator(cacheManager, app.config.JwtCfg.JWTRefreshSecret),
 	)
-	refreshRoute.GET("", brokerHandlers.Refresh)
+	refreshRoute.GET("", handlers.Refresh)
 	// ***************** PROTECTED ROUTES ************
 	protectedRoutes := routes.Group("")
 	protectedRoutes.Use(middlewares.AccessTokenValidator(cacheManager, app.config.JwtCfg.JWTAccessSecret))
 	// ****************** PROFILE *********************
-	protectedRoutes.GET("/user/profile", brokerHandlers.GetProfile)
-	protectedRoutes.GET("/user/:id", brokerHandlers.GetUserById)
-	protectedRoutes.GET("/user/", brokerHandlers.GetUsers)
+	protectedRoutes.GET("/user/profile", handlers.GetProfile)
+	protectedRoutes.GET("/user/:id", handlers.GetUserById)
+	protectedRoutes.GET("/user/", handlers.GetUsers)
 }

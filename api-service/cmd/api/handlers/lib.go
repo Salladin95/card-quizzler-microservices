@@ -130,7 +130,7 @@ func SetHttpOnlyCookie(c echo.Context, name, value string, exp time.Duration, pa
 	c.SetCookie(cookie)
 }
 
-func buildResponse(c echo.Context, res *userService.Response, unmarshalTo interface{}) error {
+func handleGRPCResponse(c echo.Context, res *userService.Response, unmarshalTo interface{}) error {
 	code := res.GetCode()
 	if code >= http.StatusBadRequest {
 		return c.JSON(int(res.GetCode()), entities.JsonResponse{Message: res.GetMessage()})
@@ -140,4 +140,11 @@ func buildResponse(c echo.Context, res *userService.Response, unmarshalTo interf
 		return err
 	}
 	return c.JSON(int(res.GetCode()), entities.JsonResponse{Message: res.GetMessage(), Data: unmarshalTo})
+}
+
+func handleCacheResponse(c echo.Context, data any) error {
+	return c.JSON(http.StatusOK, entities.JsonResponse{
+		Message: "success",
+		Data:    data,
+	})
 }

@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/handlers"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -40,19 +43,26 @@ func NewApp(cfg *config.Config, rabbit *amqp.Connection, redisClient *redis.Clie
 
 // Start initializes and starts the application.
 func (app *App) Start() {
+	lib.Logger.Println("********* START SERVER ***************")
 	// Setup middlewares for the Echo server.
 	app.setupMiddlewares()
-
-	// Setup routes for the Echo server.
-	app.setupRoutes()
 
 	// Start the Echo server in a goroutine.
 	go func() {
 		serverAddr := fmt.Sprintf(":%s", app.config.AppCfg.ApiServicePort)
 		if err := app.server.Start(serverAddr); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Println("********* SHUTTING DOWN THE SERVER **********")
+			lib.Logger.Println("********* SHUTTING DOWN THE SERVER **********")
 		}
 	}()
+
+	cacheManager := cacheManager.NewCacheManager(app.redis, app.config, app.rabbit)
+	handlers := handlers.NewHandlers(app.config, app.rabbit, cacheManager)
+
+	// Setup routes for the Echo server.
+	app.setupRoutes(handlers, cacheManager)
+
+	go cacheManager.ListenForUpdates()
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
 	// Use a buffered channel to avoid missing signals as recommended for signal.Notify

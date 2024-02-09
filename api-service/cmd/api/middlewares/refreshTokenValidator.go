@@ -23,7 +23,7 @@ func RefreshTokenValidator(cacheManager cacheManager.CacheManager, secret string
 			claims, err := validateTokenString(refreshToken, secret)
 			if err != nil {
 				clearCookies(c)
-				cacheManager.ClearUserData(claims.Id.String())
+				cacheManager.ClearDataByUID(claims.Id.String())
 				return err
 			}
 
@@ -34,7 +34,7 @@ func RefreshTokenValidator(cacheManager cacheManager.CacheManager, secret string
 			if err != nil || cachedRefreshToken != refreshToken {
 				log.Infof("********* Received token and token from cache don't match ***********")
 				clearCookies(c)
-				cacheManager.ClearUserData(claims.Id.String())
+				cacheManager.ClearDataByUID(claims.Id.String())
 				return goErrorHandler.NewError(
 					goErrorHandler.ErrUnauthorized,
 					fmt.Errorf("received token and token from cache don't match"),

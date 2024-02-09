@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/server"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
@@ -33,6 +34,8 @@ func main() {
 
 	// Defer the closure of the Redis connection
 	defer redisConn.Close()
+
+	lib.InitLogger()
 
 	// Create a new instance of the application using the loaded configuration and RabbitMQ connection & start it
 	server.NewApp(cfg, rabbitConn, redisConn).Start()

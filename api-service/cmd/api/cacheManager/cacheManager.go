@@ -5,7 +5,8 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-redis/redis"
-	"github.com/labstack/gommon/log"
+	"github.com/rabbitmq/amqp091-go"
+	"time"
 )
 
 const (
@@ -14,23 +15,33 @@ const (
 
 // cacheManager represents a manager for handling caching operations using Redis.
 type cacheManager struct {
-	redisClient *redis.Client  // Redis client for cache operations
-	cfg         *config.Config // Application configuration
+	redisClient *redis.Client       // Redis client for cache operations
+	cfg         *config.Config      // Application configuration
+	rabbitConn  *amqp091.Connection // rabbitConn is the AMQP connection used for firing events.
+	exp         time.Duration       // exp is the expiration time for cached data.
+	userKey     string              // userKey is the key used to store and retrieve user data from the cache.
 }
 
 // CacheManager is an interface defining methods for caching operations.
 type CacheManager interface {
 	AccessToken(uid string) (string, error)
 	RefreshToken(uid string) (string, error)
-	ClearUserData(uid string) error
+	ClearDataByUID(uid string) error
 	SetTokenPair(uid string, tokenPair *entities.TokenPair) error
+	GetUsers() ([]*entities.UserResponse, error)
+	GetUserById(uid string) (*entities.UserResponse, error)
+	GetUserByEmail(email string) (*entities.UserResponse, error)
+	ListenForUpdates()
 }
 
 // NewCacheManager creates a new CacheManager instance with the provided Redis client and configuration.
-func NewCacheManager(redisClient *redis.Client, cfg *config.Config) CacheManager {
+func NewCacheManager(redisClient *redis.Client, cfg *config.Config, rabbitConn *amqp091.Connection) CacheManager {
 	return &cacheManager{
 		redisClient: redisClient,
 		cfg:         cfg,
+		exp:         60 * time.Minute,
+		rabbitConn:  rabbitConn,
+		userKey:     "api-service_user",
 	}
 }
 
@@ -51,7 +62,6 @@ func (cm *cacheManager) setAccessToken(uid, token string) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("set access token cache", err)
 	}
-	log.Infof("token - %s has been set to cache", token)
 	return nil
 }
 
@@ -61,7 +71,6 @@ func (cm *cacheManager) setRefreshToken(uid, token string) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("set access token cache", err)
 	}
-	log.Infof("token - %s has been set to cache", token)
 	return nil
 }
 
@@ -71,7 +80,6 @@ func (cm *cacheManager) AccessToken(uid string) (string, error) {
 	if err != nil {
 		return "", goErrorHandler.OperationFailure("get access token from cache", err)
 	}
-	log.Infof("token - %s has been extracted from cache", token)
 	return token, nil
 }
 
@@ -81,11 +89,15 @@ func (cm *cacheManager) RefreshToken(uid string) (string, error) {
 	if err != nil {
 		return "", goErrorHandler.OperationFailure("get refresh token from cache", err)
 	}
-	log.Infof("token - %s has been extracted from cache", token)
 	return token, nil
 }
 
-// ClearUserData drops user related cache
-func (cm *cacheManager) ClearUserData(uid string) error {
+// ClearDataByUID ClearUserData drops user related cache
+func (cm *cacheManager) ClearDataByUID(uid string) error {
 	return cm.redisClient.Del(cm.userHashKey(uid)).Err()
+}
+
+// ClearDataByKey drops data by provided key
+func (cm *cacheManager) ClearDataByKey(key string) error {
+	return cm.redisClient.Del(key).Err()
 }

@@ -1,10 +1,37 @@
 package cachedRepository
 
 import (
+	"context"
 	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
+	"github.com/Salladin95/rmqtools"
 )
+
+// pushToQueue pushes data to a named queue in RabbitMQ using an EventEmitter.
+// It takes a context, the name of the queue, and the data to be pushed.
+// It returns an error if any operation fails.
+func (cr *cachedRepository) pushToQueue(ctx context.Context, name string, data interface{}) error {
+	// Create a new EventEmitter for the specified AMQP exchange.
+	emitter, err := rmqtools.NewEventEmitter(cr.rabbitConn, constants.AmqpExchange)
+	if err != nil {
+		return goErrorHandler.OperationFailure("create event emitter", err)
+	}
+
+	// Marshal the data into JSON format.
+	mData, err := lib.MarshalData(data)
+	if err != nil {
+		return err
+	}
+
+	// Push the data to the named queue using the EventEmitter.
+	err = emitter.Push(ctx, name, mData)
+	if err != nil {
+		return goErrorHandler.OperationFailure("push event", err)
+	}
+	return nil
+}
 
 // readCacheByHashedKey retrieves the value from the Redis hash and unmarshals it into the provided readTo parameter.
 // It uses the specified key and hash key to read the value from the Redis hash.
@@ -21,7 +48,6 @@ func (cr *cachedRepository) readCacheByHashedKey(readTo interface{}, key, hashKe
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -39,7 +65,6 @@ func (cr *cachedRepository) readCacheByKey(readTo interface{}, key string) error
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -59,7 +84,6 @@ func (cr *cachedRepository) SetCacheByKey(key string, data interface{}) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure(fmt.Sprintf("set cache by key - %s", key), err)
 	}
-	fmt.Printf("set cache - %v by key - %s\n", data, key)
 	return nil
 }
 

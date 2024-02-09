@@ -30,8 +30,10 @@ func main() {
 	// Connect to RabbitMQ server using the provided URL.
 	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.AppCfg.RabbitUrl)
 	if err != nil {
-		log.Println(err)
+		log.Println("Error connecting to RabbitMQ:", err)
 		os.Exit(1)
+	} else {
+		log.Println("RabbitMQ connection established successfully!")
 	}
 	// Ensure the RabbitMQ connection is closed when the main function exits.
 	defer rabbitConn.Close()
@@ -86,12 +88,3 @@ func connectToRedis(addr string) *redis.Client {
 		MaxRetries:   3,               // Maximum number of retries before giving up on a command
 	})
 }
-
-//consumer, err := rmqtools.NewConsumer(app.rabbit, AmqpExchange, AmqpQueue)
-//if err != nil {
-//	log.Panic(err)
-//}
-//err = consumer.Listen([]string{SignInKey, SignUpKey}, handlePayload)
-//if err != nil {
-//	log.Panic(err)
-//}

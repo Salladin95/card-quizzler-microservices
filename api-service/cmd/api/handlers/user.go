@@ -15,6 +15,12 @@ import (
 func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 	fmt.Println("******* api-service - start processing GetUsers request ***************")
 
+	users, err := bh.cacheManager.GetUsers()
+
+	if err == nil {
+		return handleCacheResponse(c, users)
+	}
+
 	// Obtain a gRPC client connection using the GetGRPCClientConn method from brokerHandlers.
 	clientConn, err := bh.GetGRPCClientConn()
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
@@ -31,10 +37,8 @@ func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetUsers", err)
 	}
-
-	// TODO: ADD CACHING
 	var unmarshalTo []*entities.UserResponse
-	return buildResponse(c, res, unmarshalTo)
+	return handleGRPCResponse(c, res, unmarshalTo)
 }
 
 func (bh *brokerHandlers) GetUserById(c echo.Context) error {
@@ -44,6 +48,12 @@ func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		return goErrorHandler.OperationFailure("parse id", err)
+	}
+
+	user, err := bh.cacheManager.GetUserById(uid.String())
+
+	if err == nil {
+		return handleCacheResponse(c, user)
 	}
 
 	// Obtain a gRPC client connection using the GetGRPCClientConn method from brokerHandlers.
@@ -64,9 +74,8 @@ func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetUserById", err)
 	}
-	// TODO: ADD CACHING
 	var unmarshalTo []entities.UserResponse
-	return buildResponse(c, res, unmarshalTo)
+	return handleGRPCResponse(c, res, unmarshalTo)
 }
 
 func (bh *brokerHandlers) GetProfile(c echo.Context) error {
@@ -76,6 +85,12 @@ func (bh *brokerHandlers) GetProfile(c echo.Context) error {
 	claims, ok := c.Get("user").(*entities.JwtUserClaims)
 	if !ok {
 		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("refresh, failed to cast claims"))
+	}
+
+	user, err := bh.cacheManager.GetUserById(claims.Id.String())
+
+	if err == nil {
+		return handleCacheResponse(c, user)
 	}
 
 	// Obtain a gRPC client connection using the GetGRPCClientConn method from brokerHandlers.
@@ -96,7 +111,6 @@ func (bh *brokerHandlers) GetProfile(c echo.Context) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetUserById", err)
 	}
-	// TODO: ADD CACHING
 	var unmarshalTo []entities.UserResponse
-	return buildResponse(c, res, unmarshalTo)
+	return handleGRPCResponse(c, res, unmarshalTo)
 }
