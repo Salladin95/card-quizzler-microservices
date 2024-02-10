@@ -46,7 +46,6 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	// Create an AppCfg instance from the loaded environment variables.
 	mongoCfg := MongoCfg{
 		MongoUrl:          env["MONGO_URL"],
 		MongoUsername:     env["MONGO_USERNAME"],

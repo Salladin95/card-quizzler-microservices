@@ -21,7 +21,11 @@ type cachedRepository struct {
 }
 
 type LogMessage struct {
-	Message string `json:"message"`
+	FromService string `json:"fromService" validate:"required"`
+	Message     string `json:"message" validate:"required"`
+	Level       string `json:"level" validate:"required"`
+	Name        string `json:"name" validate:"omitempty"`
+	Method      string `json:"method" validate:"omitempty"`
 }
 
 // GetUsers retrieves user data either from the cache or the underlying repository.
@@ -31,7 +35,6 @@ type LogMessage struct {
 // It returns the fetched users or an error if fetching users from the repository fails.
 func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) {
 	var users []*user.User
-
 	// Try to read users from the cache
 	err := cr.readCacheByKey(&users, cr.userKey)
 	if err != nil {
@@ -43,13 +46,11 @@ func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) 
 
 		// Cache the fetched users
 		cr.SetCacheByKey(cr.userKey, users)
+		cr.pushToQueue(ctx, constants.LogCommand, generateLog("users retrieved from repo and set as a cache", "info", "GetUsers"))
 	}
 
 	// Publish an event to RabbitMQ indicating that users were fetched
 	cr.pushToQueue(ctx, constants.FetchedUsersKey, users)
-	cr.pushToQueue(ctx, constants.LogCommand, LogMessage{
-		Message: "[user-service] Users have been retrieved retrieved",
-	})
 	return users, nil
 }
 
@@ -189,4 +190,14 @@ func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 	// Publish an event to RabbitMQ indicating that the user was deleted
 	cr.pushToQueue(ctx, constants.DeletedUserKey, u)
 	return nil
+}
+
+func generateLog(message string, level string, method string) LogMessage {
+	return LogMessage{
+		Level:       level,
+		Method:      method,
+		FromService: "user-service",
+		Message:     message,
+		Name:        "working with cachedRepository",
+	}
 }

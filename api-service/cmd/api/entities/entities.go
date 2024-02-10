@@ -124,5 +124,9 @@ func UnmarshalUser(data []byte) (*UserResponse, error) {
 }
 
 type LogMessage struct {
-	Message string `json:"message"`
+	FromService string `json:"fromService" validate:"required"`
+	Message     string `json:"message" validate:"required"`
+	Level       string `json:"level" validate:"required"`
+	Name        string `json:"name" validate:"omitempty"`
+	Method      string `json:"method" validate:"omitempty"`
 }

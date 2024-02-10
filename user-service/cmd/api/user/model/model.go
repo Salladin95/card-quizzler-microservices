@@ -8,7 +8,7 @@ import (
 
 // User Represents user's mongo document model
 type User struct {
-	ID        uuid.UUID `bson:"id" json:"id"`
+	ID        uuid.UUID `bson:"_id" json:"id"`
 	Name      string    `bson:"name" json:"name"`
 	Password  string    `bson:"password" json:"password"`
 	Email     string    `bson:"email" json:"email"`

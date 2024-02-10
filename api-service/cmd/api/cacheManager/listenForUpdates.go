@@ -40,52 +40,36 @@ func (cm *cacheManager) ListenForUpdates() {
 // It processes each event based on the key and performs corresponding actions.
 func (cm *cacheManager) handleUserEvents(key string, payload []byte) {
 	ctx := context.Background()
-	cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-		Message: "!!!!!!  [handleUserEvents] START PROCESSING MESSAGE !!!!!!!!!!!!"},
-	)
+	cm.pushToQueue(ctx, constants.LogCommand, generateLog(fmt.Sprintf("start processing key - %s", key), "info"))
 	switch key {
 	case constants.CreatedUserKey:
-		cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-			Message: "******************* [CreatedUserKey] Clear the cache for the user list *****************"},
-		)
+		cm.pushToQueue(ctx, constants.LogCommand, generateLog("new user case, clearing cache for [cm.userKey, email, id]", "info"))
 		handleUserCache(cm, payload)
 		// Clear the cache for the user list
 		cm.ClearDataByKey(cm.userKey)
 	case constants.UpdatedUserKey:
-		cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-			Message: "******************* [UpdatedUserKey] Clear the cache for the user list *****************"},
-		)
+		cm.pushToQueue(ctx, constants.LogCommand, generateLog("user updated case, clearing cache for [cm.userKey, email, id]", "info"))
 		handleUserCache(cm, payload)
 		// Clear the cache for the user list
 		cm.ClearDataByKey(cm.userKey)
 	case constants.DeletedUserKey:
-		cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-			Message: "******************* [DeletedUserKey] DeletedUserKey clear user keys *****************"},
-		)
+		cm.pushToQueue(ctx, constants.LogCommand, generateLog("user deleted case, clearing cache for [cm.userKey, email, id]", "info"))
 		user, err := entities.UnmarshalUser(payload)
 		if err != nil {
-			//cm.redisClient.FlushAll()
-			lib.Logger.Info().Msg("**** failed to unmarshal user, flushing cache ********")
-			fmt.Errorf("**** error - %v ********\n", err)
+			cm.redisClient.FlushAll()
+			cm.pushToQueue(ctx, constants.LogCommand, generateLog("failed to unmarshal user, flushing cache", "error"))
+			return
 		}
-		// Clear the cache
-		cm.ClearDataByKey(cm.userKey)
 		cm.ClearDataByKey(cm.userHashKey(user.ID.String()))
 		cm.ClearDataByKey(user.Email)
 	case constants.FetchedUserKey:
-		cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-			Message: "******************* [FetchedUserKey] settingCache *****************"},
-		)
+		cm.pushToQueue(ctx, constants.LogCommand, generateLog("fetched users case, setting cache", "info"))
 		handleUserCache(cm, payload)
 	case constants.FetchedUsersKey:
-		cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-			Message: "******************* [FetchedUsersKey] settingCache *****************"},
-		)
+		cm.pushToQueue(ctx, constants.LogCommand, generateLog("fetched user case, setting cache", "info"))
 		cm.SetCacheByKey(cm.userKey, payload)
-
 	default:
-		cm.pushToQueue(ctx, constants.LogCommand, entities.LogMessage{
-			Message: "handleUserEvents: unknown payload name"})
+		cm.pushToQueue(ctx, constants.LogCommand, generateLog("unknown case", "error"))
 	}
 }
 
@@ -103,4 +87,15 @@ func handleUserCache(cm *cacheManager, payload []byte) {
 	// Cache the newly created user using both the hash key derived from the user ID and the email as cache keys
 	cm.SetCacheByKey(cm.userHashKey(user.ID.String()), payload)
 	cm.SetCacheByKey(user.Email, payload)
+}
+
+// TODO: ADD CONSISTENT WAY OF LOGGING
+func generateLog(message string, level string) entities.LogMessage {
+	return entities.LogMessage{
+		Level:       level,
+		Method:      "handleUserEvents",
+		FromService: "api-service",
+		Message:     message,
+		Name:        "handler events for rabbitMQ consumer",
+	}
 }
