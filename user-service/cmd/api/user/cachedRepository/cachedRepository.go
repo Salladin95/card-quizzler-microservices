@@ -16,8 +16,20 @@ type cachedRepository struct {
 	redisClient *redis.Client       // redisClient is the Redis client used for caching.
 	rabbitConn  *amqp091.Connection // rabbitConn is the AMQP connection used for firing events.
 	repo        userRepo.Repository // repo is the underlying repository from which to fetch data.
-	userKey     string              // userKey is the key used to store and retrieve user data from the cache.
 	exp         time.Duration       // exp is the expiration time for cached data.
+}
+
+func NewCachedUserRepo(
+	redisClient *redis.Client,
+	rabbitConn *amqp091.Connection,
+	userRep userRepo.Repository,
+) CachedRepository {
+	return &cachedRepository{
+		redisClient: redisClient,
+		repo:        userRep,
+		exp:         60 * time.Minute,
+		rabbitConn:  rabbitConn,
+	}
 }
 
 type LogMessage struct {
@@ -36,7 +48,7 @@ type LogMessage struct {
 func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) {
 	var users []*user.User
 	// Try to read users from the cache
-	err := cr.readCacheByKey(&users, cr.userKey)
+	err := cr.readCacheByKey(&users, usersKey)
 	if err != nil {
 		// If cache read fails, fetch users from the underlying repository
 		users, err = cr.repo.GetUsers(ctx)
@@ -45,8 +57,12 @@ func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) 
 		}
 
 		// Cache the fetched users
-		cr.SetCacheByKey(cr.userKey, users)
-		cr.pushToQueue(ctx, constants.LogCommand, generateLog("users retrieved from repo and set as a cache", "info", "GetUsers"))
+		cr.setCacheByKey(usersKey, users)
+		cr.pushToQueue(
+			ctx,
+			constants.LogCommand,
+			generateLog("users retrieved from repo and set as a cache", "info", "GetUsers"),
+		)
 	}
 
 	// Publish an event to RabbitMQ indicating that users were fetched
@@ -74,8 +90,8 @@ func (cr *cachedRepository) GetById(ctx context.Context, uid string) (*user.User
 		}
 
 		// Cache the fetched user using both the hash key and email as cache keys
-		cr.SetCacheByKey(cr.userHashKey(uid), user)
-		cr.SetCacheByKey(user.Email, user)
+		cr.setCacheByKey(cr.userHashKey(uid), user)
+		cr.setCacheByKey(user.Email, user)
 	}
 
 	// Publish an event to RabbitMQ indicating that the user was fetched
@@ -98,8 +114,8 @@ func (cr *cachedRepository) GetByEmail(ctx context.Context, email string) (*user
 			return nil, err
 		}
 		// Cache the fetched user using both the hash key derived from user ID and email as cache keys
-		cr.SetCacheByKey(cr.userHashKey(user.ID.String()), user)
-		cr.SetCacheByKey(email, user)
+		cr.setCacheByKey(cr.userHashKey(user.ID.String()), user)
+		cr.setCacheByKey(email, user)
 	}
 
 	cr.pushToQueue(ctx, constants.FetchedUserKey, user)
@@ -125,14 +141,14 @@ func (cr *cachedRepository) CreateUser(
 	}
 
 	// Cache the newly created user using both the hash key derived from the user ID and the email as cache keys
-	cr.SetCacheByKey(cr.userHashKey(createdUser.ID.String()), createdUser)
-	cr.SetCacheByKey(createdUser.Email, createdUser)
+	cr.setCacheByKey(cr.userHashKey(createdUser.ID.String()), createdUser)
+	cr.setCacheByKey(createdUser.Email, createdUser)
 
 	// Publish an event to RabbitMQ indicating that the user was created
 	cr.pushToQueue(ctx, constants.CreatedUserKey, createdUser)
 
 	// Clear the cache for the user list
-	cr.clearCacheByKey(cr.userKey)
+	cr.clearCacheByKey(usersKey)
 
 	return createdUser, nil
 }
@@ -154,14 +170,14 @@ func (cr *cachedRepository) UpdateUser(
 	}
 
 	// Cache the updated user using both the hash key derived from user ID and the email as cache keys
-	cr.SetCacheByKey(cr.userHashKey(updatedUser.ID.String()), updatedUser)
-	cr.SetCacheByKey(updatedUser.Email, updatedUser)
+	cr.setCacheByKey(cr.userHashKey(updatedUser.ID.String()), updatedUser)
+	cr.setCacheByKey(updatedUser.Email, updatedUser)
 
 	// Publish an event to RabbitMQ indicating that the user was updated
 	cr.pushToQueue(ctx, constants.UpdatedUserKey, updatedUser)
 
 	// Clear the cache for the user list
-	cr.clearCacheByKey(cr.userKey)
+	cr.clearCacheByKey(usersKey)
 
 	return updatedUser, nil
 }
@@ -185,7 +201,7 @@ func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 	// Clear the cache for the deleted user and the user list
 	cr.clearCacheByKey(cr.userHashKey(uid))
 	cr.clearCacheByKey(u.Email)
-	cr.clearCacheByKey(cr.userKey)
+	cr.clearCacheByKey(usersKey)
 
 	// Publish an event to RabbitMQ indicating that the user was deleted
 	cr.pushToQueue(ctx, constants.DeletedUserKey, u)

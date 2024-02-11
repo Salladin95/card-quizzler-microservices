@@ -9,17 +9,7 @@ import (
 
 // userHashKey generates a Redis hash key for user-related data based on the user's Id.
 func (cm *cacheManager) userHashKey(uid string) string {
-	return fmt.Sprintf("%s-%s", userKey, uid)
-}
-
-// userHashKey generates a Redis hash key for user-related data based on the user's Id.
-func (cm *cacheManager) accessHKey(uid string) string {
-	return fmt.Sprintf("access-%s", uid)
-}
-
-// userHashKey generates a Redis hash key for user-related data based on the user's Id.
-func (cm *cacheManager) refreshHKey(uid string) string {
-	return fmt.Sprintf("refresh-%s", uid)
+	return fmt.Sprintf("%s-%s", userRootKey, uid)
 }
 
 // readCacheByKeys retrieves the value from the Redis hash and unmarshals it into the provided readTo parameter.
@@ -29,11 +19,12 @@ func (cm *cacheManager) readCacheByKeys(readTo interface{}, key, hashKey string)
 	// Retrieve the value from the Redis hash
 	val, err := cm.redisClient.HGet(key, hashKey).Result()
 	if err != nil {
-		return goErrorHandler.OperationFailure("read cache", err)
+		return fmt.Errorf("read cache - %v", err)
 	}
 
 	// Unmarshal the Redis value into the provided readTo
 	err = lib.UnmarshalData([]byte(val), readTo)
+
 	if err != nil {
 		return err
 	}
@@ -72,28 +63,22 @@ func (cm *cacheManager) setCacheByKey(key string, data []byte) error {
 	return nil
 }
 
-// setCacheByHashKeyInPipeline sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
+// setCacheInPipeline sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
 // It takes the specified key, hash, data and exp as parameters, marshals the data into JSON format,
 // It returns an error if any issues occur during the marshaling or cache setting process.
-func (cm *cacheManager) setCacheByHashKeyInPipeline(key string, hash string, data interface{}, exp time.Duration) error {
+func (cm *cacheManager) setCacheInPipeline(key string, hash string, data []byte, exp time.Duration) error {
 	// Create a new Redis pipeline
 	pipe := cm.redisClient.Pipeline()
 	defer pipe.Close()
 
-	// Marshal the data into JSON format
-	marshalledData, err := lib.MarshalData(data)
-	if err != nil {
-		return err
-	}
-
 	// Set hash field in the Redis cache
-	pipe.HSet(key, hash, marshalledData)
+	pipe.HSet(key, hash, data)
 
 	// Set expiration time for the cache
 	pipe.Expire(key, exp)
 
 	// Execute the pipeline to perform multiple operations in a single round trip
-	_, err = pipe.Exec()
+	_, err := pipe.Exec()
 	if err != nil {
 		return goErrorHandler.OperationFailure("set cache", err)
 	}

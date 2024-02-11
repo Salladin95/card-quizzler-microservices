@@ -15,7 +15,6 @@ type cacheManager struct {
 	cfg           *config.Config              // Application configuration
 	messageBroker messageBroker.MessageBroker // messageBroker instance
 	exp           time.Duration               // exp is the expiration time for cached data.
-	userKey       string                      // userKey is the key used to store and retrieve user data from the cache.
 }
 
 // CacheManager is an interface defining methods for caching operations.
@@ -41,7 +40,6 @@ func NewCacheManager(
 		cfg:           cfg,
 		exp:           60 * time.Minute,
 		messageBroker: broker,
-		userKey:       "api-service_user",
 	}
 }
 

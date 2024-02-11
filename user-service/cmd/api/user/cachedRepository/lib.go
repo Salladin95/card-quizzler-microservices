@@ -68,11 +68,11 @@ func (cr *cachedRepository) readCacheByKey(readTo interface{}, key string) error
 	return nil
 }
 
-// SetCacheByKey sets data in the Redis cache for the specified key.
+// setCacheByKey sets data in the Redis cache for the specified key.
 // It marshals the data into JSON format and stores it in the Redis hash using the key.
 // The expiration time for the cache is determined by the configured expiration duration in the cached repository.
 // It returns an error if any issues occur during the marshaling or cache setting process.
-func (cr *cachedRepository) SetCacheByKey(key string, data interface{}) error {
+func (cr *cachedRepository) setCacheByKey(key string, data interface{}) error {
 	// Marshal the data into JSON format
 	marshalledData, err := lib.MarshalData(data)
 	if err != nil {
@@ -87,11 +87,11 @@ func (cr *cachedRepository) SetCacheByKey(key string, data interface{}) error {
 	return nil
 }
 
-// setCacheByHashKeyInPipeline sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
+// setCacheInPipeline sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
 // It takes the specified key, hash, and data as parameters, marshals the data into JSON format,
 // and uses a Redis pipeline to set the hash field and expiration time in the cache.
 // It returns an error if any issues occur during the marshaling or cache setting process.
-func (cr *cachedRepository) setCacheByHashKeyInPipeline(key string, hash string, data interface{}) error {
+func (cr *cachedRepository) setCacheInPipeline(key string, hash string, data interface{}) error {
 	// Create a new Redis pipeline
 	pipe := cr.redisClient.Pipeline()
 	defer pipe.Close()
@@ -119,7 +119,7 @@ func (cr *cachedRepository) setCacheByHashKeyInPipeline(key string, hash string,
 
 // userHashKey generates a Redis hash key for user-related data based on the user's Id.
 func (cr *cachedRepository) userHashKey(uid string) string {
-	return fmt.Sprintf("%s-%s", cr.userKey, uid)
+	return fmt.Sprintf("%s-%s", userRootKey, uid)
 }
 
 // clearCacheByKey drops the cache associated with the given key.

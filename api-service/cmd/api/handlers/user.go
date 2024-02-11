@@ -24,7 +24,7 @@ func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*entities.JwtUserClaims)
 	if !ok {
-		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("refresh, failed to cast claims"))
+		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("failed to cast claims"))
 	}
 
 	users, err := bh.cacheManager.GetUsers(ctx, claims.Id.String())

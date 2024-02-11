@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-playground/validator/v10"
@@ -112,15 +111,6 @@ func (signUpDto *SignUpDto) ToAuthPayload() *userService.SignUpPayload {
 		Name:     signUpDto.Name,
 		Birthday: signUpDto.Birthday,
 	}
-}
-
-func UnmarshalUser(data []byte) (*UserResponse, error) {
-	var uRes UserResponse
-	err := lib.UnmarshalData(data, &uRes)
-	if err != nil {
-		return nil, err
-	}
-	return &uRes, nil
 }
 
 type LogMessage struct {

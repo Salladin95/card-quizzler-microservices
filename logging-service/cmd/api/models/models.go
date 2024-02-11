@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/logging-service/cmd/api/entities"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,7 +27,7 @@ type Models struct {
 }
 
 type LogEntry struct {
-	ID          string    `bson:"_id" json:"id"`
+	ID          uuid.UUID `bson:"_id" json:"id"`
 	Message     string    `bson:"message" json:"message"`
 	Level       string    `bson:"level" json:"level"`
 	FromService string    `bson:"fromService" json:"fromService"`
@@ -49,6 +50,7 @@ func (l *LogEntry) Insert(ctx context.Context, entry entities.LogMessage) error 
 		Level:       entry.Level,
 		Method:      entry.Method,
 		CreatedAt:   time.Now(),
+		ID:          uuid.New(),
 	})
 	if err != nil {
 		log.Println("Error inserting into logs:", err)
