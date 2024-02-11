@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/handlers"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	broker "github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/messageBroker"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -43,24 +43,36 @@ func NewApp(cfg *config.Config, rabbit *amqp.Connection, redisClient *redis.Clie
 
 // Start initializes and starts the application.
 func (app *App) Start() {
-	lib.Logger.Println("********* START SERVER ***************")
+	mBroker := broker.NewMessageBroker(app.rabbit)
+	cacheManager := cacheManager.NewCacheManager(app.redis, app.config, mBroker)
+	handlers := handlers.NewHandlers(app.config, mBroker, cacheManager)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	mBroker.GenerateLogEvent(
+		ctx,
+		generateServerLog(
+			fmt.Sprintf("start the server on the port - %s", app.config.AppCfg.ApiServicePort),
+			"info",
+		),
+	)
 	// Setup middlewares for the Echo server.
-	app.setupMiddlewares()
+	app.setupMiddlewares(mBroker)
 
 	// Start the Echo server in a goroutine.
 	go func() {
 		serverAddr := fmt.Sprintf(":%s", app.config.AppCfg.ApiServicePort)
 		if err := app.server.Start(serverAddr); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Println("********* SHUTTING DOWN THE SERVER **********")
-			lib.Logger.Println("********* SHUTTING DOWN THE SERVER **********")
+			mBroker.GenerateLogEvent(
+				ctx,
+				generateServerLog("shutting down the server", "info"),
+			)
 		}
 	}()
 
-	cacheManager := cacheManager.NewCacheManager(app.redis, app.config, app.rabbit)
-	handlers := handlers.NewHandlers(app.config, app.rabbit, cacheManager)
-
 	// Setup routes for the Echo server.
-	app.setupRoutes(handlers, cacheManager)
+	app.setupRoutes(mBroker, handlers, cacheManager)
 
 	go cacheManager.ListenForUpdates()
 
@@ -70,12 +82,17 @@ func (app *App) Start() {
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 
-	// Create a context with a timeout for the server shutdown.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	// Gracefully shut down the Echo server.
 	if err := app.server.Shutdown(ctx); err != nil {
+		mBroker.GenerateLogEvent(
+			ctx,
+			generateServerLog(err.Error(), "error"),
+		)
 		app.server.Logger.Fatal(err)
 	}
+}
+
+func generateServerLog(message string, level string) entities.LogMessage {
+	var logMessage entities.LogMessage
+	return logMessage.GenerateLog(message, level, "START", "setting up server")
 }

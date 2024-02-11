@@ -1,12 +1,9 @@
 package cacheManager
 
 import (
-	"context"
 	"fmt"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
-	"github.com/Salladin95/rmqtools"
 )
 
 // userHashKey generates a Redis hash key for user-related data based on the user's Id.
@@ -61,11 +58,11 @@ func (cm *cacheManager) readCacheByKey(readTo interface{}, key string) error {
 	return nil
 }
 
-// SetCacheByKey sets data in the Redis cache for the specified key.
+// setCacheByKey sets data in the Redis cache for the specified key.
 // It marshals the data into JSON format and stores it in the Redis hash using the key.
 // The expiration time for the cache is determined by the configured expiration duration in the cached repository.
 // It returns an error if any issues occur during the marshaling or cache setting process.
-func (cm *cacheManager) SetCacheByKey(key string, data []byte) error {
+func (cm *cacheManager) setCacheByKey(key string, data []byte) error {
 	// Set the marshalled data in the Redis cache with the specified expiration time
 	err := cm.redisClient.Set(key, data, cm.exp).Err()
 	if err != nil {
@@ -100,34 +97,6 @@ func (cm *cacheManager) setCacheByHashKeyInPipeline(key string, hash string, dat
 	if err != nil {
 		return goErrorHandler.OperationFailure("set cache", err)
 	}
-
-	return nil
-}
-
-// pushToQueue pushes data to a named queue in RabbitMQ using an EventEmitter.
-// It takes a context, the name of the queue, and the data to be pushed.
-// It returns an error if any operation fails.
-func (cm *cacheManager) pushToQueue(ctx context.Context, name string, data any) error {
-	// Create a new EventEmitter for the specified AMQP exchange.
-	emitter, err := rmqtools.NewEventEmitter(cm.rabbitConn, constants.AmqpExchange)
-	if err != nil {
-		return goErrorHandler.OperationFailure("create event emitter", err)
-	}
-
-	// Marshal the data into JSON format.
-	mData, err := lib.MarshalData(data)
-	if err != nil {
-		return err
-	}
-
-	// Push the data to the named queue using the EventEmitter.
-	err = emitter.Push(ctx, name, mData)
-	if err != nil {
-		return goErrorHandler.OperationFailure("push event", err)
-	}
-
-	// Print a message indicating that the event has been pushed successfully.
-	fmt.Printf("event - %s has been pushed\n", name)
 
 	return nil
 }

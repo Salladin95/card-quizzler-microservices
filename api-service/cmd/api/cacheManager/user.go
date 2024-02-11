@@ -2,13 +2,10 @@ package cacheManager
 
 import (
 	"context"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"log"
 )
 
-func (cm *cacheManager) GetUsers() ([]*entities.UserResponse, error) {
-	cm.pushToQueue(context.Background(), constants.LogCommand, gl("test", "info", "GetUsers"))
+func (cm *cacheManager) GetUsers(ctx context.Context) ([]*entities.UserResponse, error) {
 	var cachedUsers []*entities.UserResponse
 	// Try to read users from the cache
 	err := cm.readCacheByKey(&cachedUsers, cm.userKey)
@@ -16,11 +13,14 @@ func (cm *cacheManager) GetUsers() ([]*entities.UserResponse, error) {
 		return nil, err
 	}
 	// If cache read succeeds, return users from the cache
-	log.Println("[api-service] Users retrieved from the cache")
+	cm.messageBroker.GenerateLogEvent(
+		ctx,
+		generateUserReaderCacheLog("users has been retrieved from cache", "GetUsers"),
+	)
 	return cachedUsers, nil
 }
 
-func (cm *cacheManager) GetUserById(uid string) (*entities.UserResponse, error) {
+func (cm *cacheManager) GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error) {
 	var cachedUser *entities.UserResponse
 	// Try to read users from the cache
 	err := cm.readCacheByKey(&cachedUser, cm.userHashKey(uid))
@@ -28,12 +28,15 @@ func (cm *cacheManager) GetUserById(uid string) (*entities.UserResponse, error) 
 		return nil, err
 	}
 	// If cache read succeeds, return users from the cache
-	log.Println("[api-service] User retrieved from the cache")
+	cm.messageBroker.GenerateLogEvent(
+		ctx,
+		generateUserReaderCacheLog("user has been retrieved from cache", "GetUserById"),
+	)
 	return cachedUser, nil
 }
 
 // GetUserByEmail retrieves a user by their email, either from cache or the underlying repository.
-func (cm *cacheManager) GetUserByEmail(email string) (*entities.UserResponse, error) {
+func (cm *cacheManager) GetUserByEmail(ctx context.Context, email string) (*entities.UserResponse, error) {
 	var cachedUser *entities.UserResponse
 	// Try to read users from the cache
 	err := cm.readCacheByKey(&cachedUser, email)
@@ -41,17 +44,19 @@ func (cm *cacheManager) GetUserByEmail(email string) (*entities.UserResponse, er
 		return nil, err
 	}
 	// If cache read succeeds, return users from the cache
-	log.Println("[api-service] User retrieved from the cache")
+	cm.messageBroker.GenerateLogEvent(
+		ctx,
+		generateUserReaderCacheLog("user has been retrieved from cache", "GetUserByEmail"),
+	)
 	return cachedUser, nil
 }
 
-// TODO: ADD CONSISTENT WAY OF LOGGING
-func gl(message string, level string, method string) entities.LogMessage {
-	return entities.LogMessage{
-		Level:       level,
-		Method:      method,
-		FromService: "api-service",
-		Message:     message,
-		Name:        "working with cache manager",
-	}
+func generateUserReaderCacheLog(message string, method string) entities.LogMessage {
+	var logMessage *entities.LogMessage
+	return logMessage.GenerateLog(
+		message,
+		"info",
+		method,
+		"handler events for rabbitMQ consumer",
+	)
 }

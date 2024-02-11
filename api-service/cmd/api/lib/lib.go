@@ -2,8 +2,15 @@ package lib
 
 import (
 	"encoding/json"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
 	"github.com/Salladin95/goErrorHandler"
+	"github.com/Salladin95/rmqtools"
+	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
+	"github.com/rabbitmq/amqp091-go"
+	"log"
+	"os"
+	"time"
 )
 
 // DataWithVerify is an interface that requires a Verify method.
@@ -52,4 +59,37 @@ func MarshalData(data interface{}) ([]byte, error) {
 		return nil, goErrorHandler.OperationFailure("marshal data", err)
 	}
 	return marshalledData, nil
+}
+
+type services struct {
+	Redis  *redis.Client
+	Rabbit *amqp091.Connection
+}
+
+func InitializeServices(cfg config.AppCfg) services {
+	// Connect to RabbitMQ server using the provided URL.
+	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.RabbitUrl)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	// Establish a Redis connection
+	redisConn := connectToRedis(cfg.RedisUrl)
+	return services{
+		Redis:  redisConn,
+		Rabbit: rabbitConn,
+	}
+}
+
+// connectToRedis establishes a connection to a Redis server and returns a Redis client.
+// It takes the address of the Redis server as a parameter.
+func connectToRedis(addr string) *redis.Client {
+	// Create a new Redis client with specified options
+	return redis.NewClient(&redis.Options{
+		Addr:         addr,
+		WriteTimeout: 5 * time.Second, // Maximum time to wait for write operations
+		ReadTimeout:  5 * time.Second, // Maximum time to wait for read operations
+		DialTimeout:  3 * time.Second, // Maximum time to wait for a connection to be established
+		MaxRetries:   3,               // Maximum number of retries before giving up on a command
+	})
 }

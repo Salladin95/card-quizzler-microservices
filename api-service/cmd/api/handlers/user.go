@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
@@ -13,9 +12,16 @@ import (
 )
 
 func (bh *brokerHandlers) GetUsers(c echo.Context) error {
-	fmt.Println("******* api-service - start processing GetUsers request ***************")
+	// Create a context with a timeout for the gRPC call
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel() // Ensure the context is canceled when done.
 
-	users, err := bh.cacheManager.GetUsers()
+	bh.broker.GenerateLogEvent(
+		ctx,
+		generateHandlerLog("start processing request", "info", "getUsers"),
+	)
+
+	users, err := bh.cacheManager.GetUsers(ctx)
 
 	if err == nil {
 		return handleCacheResponse(c, users)
@@ -28,10 +34,6 @@ func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
-
 	// Make a gRPC call to the SignIn method of the Auth service
 	res, err := userService.NewUserServiceClient(clientConn).GetUsers(ctx, &userService.EmptyRequest{})
 	if err != nil {
@@ -42,7 +44,14 @@ func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 }
 
 func (bh *brokerHandlers) GetUserById(c echo.Context) error {
-	fmt.Println("******* api-service - start processing GetUserById request ***************")
+	// Create a context with a timeout for the gRPC call
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel() // Ensure the context is canceled when done.
+
+	bh.broker.GenerateLogEvent(
+		ctx,
+		generateHandlerLog("start processing request", "info", "getUserById"),
+	)
 
 	id := c.Param("id")
 	uid, err := uuid.Parse(id)
@@ -50,7 +59,7 @@ func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 		return goErrorHandler.OperationFailure("parse id", err)
 	}
 
-	user, err := bh.cacheManager.GetUserById(uid.String())
+	user, err := bh.cacheManager.GetUserById(ctx, uid.String())
 
 	if err == nil {
 		return handleCacheResponse(c, user)
@@ -62,10 +71,6 @@ func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
-
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
 
 	// Make a gRPC call to the SignIn method of the Auth service
 	res, err := userService.NewUserServiceClient(clientConn).GetUserById(ctx, &userService.ID{
@@ -79,15 +84,25 @@ func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 }
 
 func (bh *brokerHandlers) GetProfile(c echo.Context) error {
-	fmt.Println("******* api-service - start processing GetProfile request ***************")
+	// Create a context with a timeout for the gRPC call
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel() // Ensure the context is canceled when done.
+
+	bh.broker.GenerateLogEvent(
+		ctx,
+		generateHandlerLog("start processing request", "info", "getUserByEmail"),
+	)
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*entities.JwtUserClaims)
 	if !ok {
-		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("refresh, failed to cast claims"))
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("refresh, failed to cast claims"),
+		)
 	}
 
-	user, err := bh.cacheManager.GetUserById(claims.Id.String())
+	user, err := bh.cacheManager.GetUserById(ctx, claims.Id.String())
 
 	if err == nil {
 		return handleCacheResponse(c, user)
@@ -99,10 +114,6 @@ func (bh *brokerHandlers) GetProfile(c echo.Context) error {
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
-
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
 
 	// Make a gRPC call to the SignIn method of the Auth service
 	res, err := userService.NewUserServiceClient(clientConn).GetUserById(ctx, &userService.ID{

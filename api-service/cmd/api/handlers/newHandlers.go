@@ -3,16 +3,11 @@ package handlers
 import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/messageBroker"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-)
-
-// AmqpExchange is the name of the AMQP exchange used by the api-service.
-const (
-	AmqpExchange = "api-service"
 )
 
 // BrokerHandlersInterface defines the interface for api-service-related HTTP handlers.
@@ -27,7 +22,7 @@ type BrokerHandlersInterface interface {
 
 // brokerHandlers implements the BrokerHandlersInterface.
 type brokerHandlers struct {
-	rabbit       *amqp.Connection
+	broker       messageBroker.MessageBroker
 	config       *config.Config
 	cacheManager cacheManager.CacheManager
 }
@@ -35,11 +30,11 @@ type brokerHandlers struct {
 // NewHandlers creates a new instance of BrokerHandlersInterface.
 func NewHandlers(
 	cfg *config.Config,
-	rabbit *amqp.Connection,
+	broker messageBroker.MessageBroker,
 	cacheManager cacheManager.CacheManager,
 ) BrokerHandlersInterface {
 	return &brokerHandlers{
-		rabbit:       rabbit,
+		broker:       broker,
 		config:       cfg,
 		cacheManager: cacheManager,
 	}

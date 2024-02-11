@@ -118,3 +118,8 @@ func ExtractRefreshToken(c echo.Context) (string, error) {
 	tokenString := tokenCookie.Value
 	return tokenString, nil
 }
+
+func generateValidatorLog(message string, level string, method string) entities.LogMessage {
+	var logMessage entities.LogMessage
+	return logMessage.GenerateLog(message, level, method, "token validator")
+}

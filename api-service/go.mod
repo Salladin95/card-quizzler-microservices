@@ -14,7 +14,6 @@ require (
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/labstack/gommon v0.4.2
 	github.com/rabbitmq/amqp091-go v1.9.0
-	github.com/rs/zerolog v1.32.0
 	google.golang.org/grpc v1.61.0
 	google.golang.org/protobuf v1.32.0
 )
