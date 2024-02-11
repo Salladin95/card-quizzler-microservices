@@ -19,7 +19,8 @@ func RefreshTokenValidator(broker messageBroker.MessageBroker, cacheManager cach
 			ctx,
 			generateValidatorLog("start token validation",
 				"info",
-				"RefreshTokenValidator"),
+				"RefreshTokenValidator",
+			),
 		)
 		return func(c echo.Context) error {
 			// Extract the refresh token from the request
@@ -32,13 +33,14 @@ func RefreshTokenValidator(broker messageBroker.MessageBroker, cacheManager cach
 			claims, err := validateTokenString(refreshToken, secret)
 			if err != nil {
 				clearCookies(c)
-				cacheManager.ClearDataByUID(claims.Id.String())
+				cacheManager.ClearUserRelatedCache(claims.Id.String())
 				broker.GenerateLogEvent(
 					ctx,
 					generateValidatorLog(
 						fmt.Sprintf("clearing cookies and session. Err - %s", err.Error()),
 						"error",
-						"RefreshTokenValidator"),
+						"RefreshTokenValidator",
+					),
 				)
 				return err
 			}
@@ -51,9 +53,10 @@ func RefreshTokenValidator(broker messageBroker.MessageBroker, cacheManager cach
 				generateValidatorLog(
 					"Received token and token from cache don't match. Clearing cache & session",
 					"error",
-					"RefreshTokenValidator")
+					"RefreshTokenValidator",
+				)
 				clearCookies(c)
-				cacheManager.ClearDataByUID(claims.Id.String())
+				cacheManager.ClearUserRelatedCache(claims.Id.String())
 				return goErrorHandler.NewError(
 					goErrorHandler.ErrUnauthorized,
 					fmt.Errorf("received token and token from cache don't match"),
@@ -63,7 +66,8 @@ func RefreshTokenValidator(broker messageBroker.MessageBroker, cacheManager cach
 			generateValidatorLog(
 				"Refresh token has passed validation ",
 				"info",
-				"RefreshTokenValidator")
+				"RefreshTokenValidator",
+			)
 
 			// Set user claims in the context for the next handler
 			c.Set("user", claims)

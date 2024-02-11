@@ -33,6 +33,12 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 			"info",
 		),
 	)
+	user, err := entities.UnmarshalUser(payload)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	switch key {
 	case constants.CreatedUserKey:
 		cm.messageBroker.GenerateLogEvent(
@@ -42,9 +48,9 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 				"info",
 			),
 		)
-		handleUserCache(cm, payload)
+		cm.setCacheByHashKeyInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
 		// Clear the cache for the user list
-		cm.ClearDataByKey(cm.userKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
 	case constants.UpdatedUserKey:
 		cm.messageBroker.GenerateLogEvent(
 			ctx,
@@ -53,9 +59,9 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 				"info",
 			),
 		)
-		handleUserCache(cm, payload)
+		cm.setCacheByHashKeyInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
 		// Clear the cache for the user list
-		cm.ClearDataByKey(cm.userKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
 	case constants.DeletedUserKey:
 		cm.messageBroker.GenerateLogEvent(
 			ctx,
@@ -73,41 +79,26 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 			)
 			return
 		}
-		cm.ClearDataByKey(cm.userHashKey(user.ID.String()))
-		cm.ClearDataByKey(user.Email)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), userKey)
 	case constants.FetchedUserKey:
 		cm.messageBroker.GenerateLogEvent(
 			ctx,
 			generateUserEventHandlerLog("fetched users case, setting cache", "info"),
 		)
-		handleUserCache(cm, payload)
+		cm.setCacheByHashKeyInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
 	case constants.FetchedUsersKey:
 		cm.messageBroker.GenerateLogEvent(
 			ctx,
 			generateUserEventHandlerLog("fetched user case, setting cache", "info"),
 		)
-		cm.setCacheByKey(cm.userKey, payload)
+		cm.setCacheByHashKeyInPipeline(cm.userHashKey(user.ID.String()), usersKey, payload, cm.exp)
 	default:
 		cm.messageBroker.GenerateLogEvent(
 			ctx,
 			generateUserEventHandlerLog("unknown case", "error"),
 		)
 	}
-}
-
-// handleUserCache parses user data from the payload, caches it, and handles any errors.
-// It unmarshals the user data, caches it using both the hash key derived from the user ID
-// and the email as cache keys, and flushes the cache if unmarshaling fails.
-func handleUserCache(cm *cacheManager, payload []byte) {
-	user, err := entities.UnmarshalUser(payload)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// Cache the newly created user using both the hash key derived from the user ID and the email as cache keys
-	cm.setCacheByKey(cm.userHashKey(user.ID.String()), payload)
-	cm.setCacheByKey(user.Email, payload)
 }
 
 // generateUserEventHandlerLog - creates logs for userEventHandler function

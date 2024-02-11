@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
+	"time"
 )
 
 // userHashKey generates a Redis hash key for user-related data based on the user's Id.
@@ -21,10 +22,10 @@ func (cm *cacheManager) refreshHKey(uid string) string {
 	return fmt.Sprintf("refresh-%s", uid)
 }
 
-// readCacheByHashedKey retrieves the value from the Redis hash and unmarshals it into the provided readTo parameter.
+// readCacheByKeys retrieves the value from the Redis hash and unmarshals it into the provided readTo parameter.
 // It uses the specified key and hash key to read the value from the Redis hash.
 // Note: The readTo parameter must be a pointer.
-func (cm *cacheManager) readCacheByHashedKey(readTo interface{}, key, hashKey string) error {
+func (cm *cacheManager) readCacheByKeys(readTo interface{}, key, hashKey string) error {
 	// Retrieve the value from the Redis hash
 	val, err := cm.redisClient.HGet(key, hashKey).Result()
 	if err != nil {
@@ -72,10 +73,9 @@ func (cm *cacheManager) setCacheByKey(key string, data []byte) error {
 }
 
 // setCacheByHashKeyInPipeline sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
-// It takes the specified key, hash, and data as parameters, marshals the data into JSON format,
-// and uses a Redis pipeline to set the hash field and expiration time in the cache.
+// It takes the specified key, hash, data and exp as parameters, marshals the data into JSON format,
 // It returns an error if any issues occur during the marshaling or cache setting process.
-func (cm *cacheManager) setCacheByHashKeyInPipeline(key string, hash string, data interface{}) error {
+func (cm *cacheManager) setCacheByHashKeyInPipeline(key string, hash string, data interface{}, exp time.Duration) error {
 	// Create a new Redis pipeline
 	pipe := cm.redisClient.Pipeline()
 	defer pipe.Close()
@@ -90,7 +90,7 @@ func (cm *cacheManager) setCacheByHashKeyInPipeline(key string, hash string, dat
 	pipe.HSet(key, hash, marshalledData)
 
 	// Set expiration time for the cache
-	pipe.Expire(key, cm.exp)
+	pipe.Expire(key, exp)
 
 	// Execute the pipeline to perform multiple operations in a single round trip
 	_, err = pipe.Exec()

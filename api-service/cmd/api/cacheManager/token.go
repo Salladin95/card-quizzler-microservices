@@ -7,7 +7,7 @@ import (
 
 // AccessToken retrieves access token from cache
 func (cm *cacheManager) AccessToken(uid string) (string, error) {
-	token, err := cm.redisClient.Get(cm.accessHKey(uid)).Result()
+	token, err := cm.redisClient.HGet(cm.userHashKey(uid), cm.accessHKey(uid)).Result()
 	if err != nil {
 		return "", goErrorHandler.OperationFailure("get access token from cache", err)
 	}
@@ -16,7 +16,7 @@ func (cm *cacheManager) AccessToken(uid string) (string, error) {
 
 // RefreshToken retrieves refresh token from cache
 func (cm *cacheManager) RefreshToken(uid string) (string, error) {
-	token, err := cm.redisClient.Get(cm.refreshHKey(uid)).Result()
+	token, err := cm.redisClient.HGet(cm.userHashKey(uid), cm.refreshHKey(uid)).Result()
 	if err != nil {
 		return "", goErrorHandler.OperationFailure("get refresh token from cache", err)
 	}
@@ -36,7 +36,7 @@ func (cm *cacheManager) SetTokenPair(uid string, tokenPair *entities.TokenPair) 
 
 // SetAccessToken sets the access token for a user in the cache.
 func (cm *cacheManager) setAccessToken(uid, token string) error {
-	err := cm.redisClient.Set(cm.accessHKey(uid), token, cm.cfg.JwtCfg.AccessTokenExpTime).Err()
+	err := cm.setCacheByHashKeyInPipeline(cm.userHashKey(uid), cm.accessHKey(uid), token, cm.cfg.JwtCfg.AccessTokenExpTime)
 	if err != nil {
 		return goErrorHandler.OperationFailure("set access token cache", err)
 	}
@@ -45,7 +45,7 @@ func (cm *cacheManager) setAccessToken(uid, token string) error {
 
 // SetRefreshToken sets the refresh token for a user in the cache.
 func (cm *cacheManager) setRefreshToken(uid, token string) error {
-	err := cm.redisClient.Set(cm.refreshHKey(uid), token, cm.cfg.JwtCfg.AccessTokenExpTime).Err()
+	err := cm.setCacheByHashKeyInPipeline(cm.userHashKey(uid), cm.refreshHKey(uid), token, cm.cfg.JwtCfg.RefreshTokenExpTime)
 	if err != nil {
 		return goErrorHandler.OperationFailure("set access token cache", err)
 	}

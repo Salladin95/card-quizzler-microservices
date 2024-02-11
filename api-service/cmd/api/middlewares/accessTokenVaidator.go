@@ -56,7 +56,7 @@ func AccessTokenValidator(
 					"error",
 					"AccessTokenValidator")
 				clearCookies(c)
-				cacheManager.ClearDataByUID(claims.Id.String())
+				cacheManager.ClearUserRelatedCache(claims.Id.String())
 				return goErrorHandler.NewError(
 					goErrorHandler.ErrUnauthorized,
 					fmt.Errorf("received access token and cached token don't match"),

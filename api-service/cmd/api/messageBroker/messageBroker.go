@@ -2,7 +2,6 @@ package messageBroker
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
@@ -46,9 +45,6 @@ func (mb *messageBroker) PushToQueue(ctx context.Context, routingKey string, dat
 	if err != nil {
 		return goErrorHandler.OperationFailure("push event", err)
 	}
-
-	// Print a message indicating that the event has been pushed successfully.
-	fmt.Printf("event - %s has been pushed\n", routingKey)
 
 	return nil
 }

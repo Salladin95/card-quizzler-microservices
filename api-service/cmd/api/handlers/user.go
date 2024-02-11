@@ -21,7 +21,13 @@ func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 		generateHandlerLog("start processing request", "info", "getUsers"),
 	)
 
-	users, err := bh.cacheManager.GetUsers(ctx)
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*entities.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("refresh, failed to cast claims"))
+	}
+
+	users, err := bh.cacheManager.GetUsers(ctx, claims.Id.String())
 
 	if err == nil {
 		return handleCacheResponse(c, users)

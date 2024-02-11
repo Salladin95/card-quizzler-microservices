@@ -20,9 +20,9 @@ import (
 
 // App represents the main application structure.
 type App struct {
+	config *config.Config   // Application configuration
 	server *echo.Echo       // Echo HTTP server instance
 	rabbit *amqp.Connection // RabbitMQ connection instance
-	config *config.Config   // Application configuration
 	redis  *redis.Client    // Redis client
 }
 
@@ -59,6 +59,8 @@ func (app *App) Start() {
 	)
 	// Setup middlewares for the Echo server.
 	app.setupMiddlewares(mBroker)
+	// Setup routes for the Echo server.
+	app.setupRoutes(mBroker, handlers, cacheManager)
 
 	// Start the Echo server in a goroutine.
 	go func() {
@@ -70,9 +72,6 @@ func (app *App) Start() {
 			)
 		}
 	}()
-
-	// Setup routes for the Echo server.
-	app.setupRoutes(mBroker, handlers, cacheManager)
 
 	go cacheManager.ListenForUpdates()
 

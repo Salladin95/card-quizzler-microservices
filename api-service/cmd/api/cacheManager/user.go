@@ -5,10 +5,10 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 )
 
-func (cm *cacheManager) GetUsers(ctx context.Context) ([]*entities.UserResponse, error) {
+func (cm *cacheManager) GetUsers(ctx context.Context, uid string) ([]*entities.UserResponse, error) {
 	var cachedUsers []*entities.UserResponse
 	// Try to read users from the cache
-	err := cm.readCacheByKey(&cachedUsers, cm.userKey)
+	err := cm.readCacheByKeys(&cachedUsers, cm.userHashKey(uid), usersKey)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (cm *cacheManager) GetUsers(ctx context.Context) ([]*entities.UserResponse,
 func (cm *cacheManager) GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error) {
 	var cachedUser *entities.UserResponse
 	// Try to read users from the cache
-	err := cm.readCacheByKey(&cachedUser, cm.userHashKey(uid))
+	err := cm.readCacheByKeys(&cachedUser, cm.userHashKey(uid), userKey)
 	if err != nil {
 		return nil, err
 	}
@@ -31,22 +31,6 @@ func (cm *cacheManager) GetUserById(ctx context.Context, uid string) (*entities.
 	cm.messageBroker.GenerateLogEvent(
 		ctx,
 		generateUserReaderCacheLog("user has been retrieved from cache", "GetUserById"),
-	)
-	return cachedUser, nil
-}
-
-// GetUserByEmail retrieves a user by their email, either from cache or the underlying repository.
-func (cm *cacheManager) GetUserByEmail(ctx context.Context, email string) (*entities.UserResponse, error) {
-	var cachedUser *entities.UserResponse
-	// Try to read users from the cache
-	err := cm.readCacheByKey(&cachedUser, email)
-	if err != nil {
-		return nil, err
-	}
-	// If cache read succeeds, return users from the cache
-	cm.messageBroker.GenerateLogEvent(
-		ctx,
-		generateUserReaderCacheLog("user has been retrieved from cache", "GetUserByEmail"),
 	)
 	return cachedUser, nil
 }

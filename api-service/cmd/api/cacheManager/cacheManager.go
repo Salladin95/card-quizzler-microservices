@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-const (
-	userKey = "user"
-)
-
 // cacheManager represents a manager for handling caching operations using Redis.
 type cacheManager struct {
 	redisClient   *redis.Client               // Redis client for cache operations
@@ -26,11 +22,11 @@ type cacheManager struct {
 type CacheManager interface {
 	AccessToken(uid string) (string, error)
 	RefreshToken(uid string) (string, error)
-	ClearDataByUID(uid string) error
+	ClearUserRelatedCache(uid string) error
+	ClearCacheByKeys(key1, key2 string) error
 	SetTokenPair(uid string, tokenPair *entities.TokenPair) error
-	GetUsers(ctx context.Context) ([]*entities.UserResponse, error)
+	GetUsers(ctx context.Context, uid string) ([]*entities.UserResponse, error)
 	GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error)
-	GetUserByEmail(ctx context.Context, email string) (*entities.UserResponse, error)
 	ListenForUpdates()
 }
 
@@ -49,12 +45,12 @@ func NewCacheManager(
 	}
 }
 
-// ClearDataByUID ClearUserData drops user related cache
-func (cm *cacheManager) ClearDataByUID(uid string) error {
+// ClearUserRelatedCache drops user related cache
+func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
 	return cm.redisClient.Del(cm.userHashKey(uid)).Err()
 }
 
-// ClearDataByKey drops data by provided key
-func (cm *cacheManager) ClearDataByKey(key string) error {
-	return cm.redisClient.Del(key).Err()
+// ClearCacheByKeys drops specified cache
+func (cm *cacheManager) ClearCacheByKeys(key string, key2 string) error {
+	return cm.redisClient.HDel(key, key2).Err()
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"net/http"
 	"strings"
 	"time"
@@ -44,7 +43,6 @@ func validateTokenString(tokenString string, secret string) (*entities.JwtUserCl
 
 	if err != nil || !token.Valid {
 		// Log and return an unauthorized error if the token is invalid
-		log.Errorf("Token validation failed: %v - Token: %s", err, tokenString)
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, err)
 	}
 
@@ -52,7 +50,6 @@ func validateTokenString(tokenString string, secret string) (*entities.JwtUserCl
 	claims, ok := token.Claims.(*entities.JwtUserClaims)
 	if !ok {
 		// Log and return an unauthorized error if claims are invalid
-		log.Printf("Invalid claims in the token: %s\n", tokenString)
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, err)
 	}
 
@@ -64,7 +61,6 @@ func validateTokenString(tokenString string, secret string) (*entities.JwtUserCl
 func clearCookies(c echo.Context) {
 	// Reset the specified cookies
 	ResetCookies(c, "refresh-token")
-	log.Info("Cleaning cookies")
 }
 
 // ResetCookies clears cookies by setting new cookies with an expiration time in the past.
@@ -92,7 +88,6 @@ func ExtractAccessToken(c echo.Context) (string, error) {
 	if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 		// If the token is missing or has an incorrect format, clear cookies and return an error
 		clearCookies(c)
-		log.Printf("Token is missing or has an incorrect format\n")
 		return "", goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("token is missing or has an incorrect format"))
 	}
 
@@ -109,7 +104,6 @@ func ExtractRefreshToken(c echo.Context) (string, error) {
 	tokenCookie, err := c.Cookie("refresh-token")
 	if err != nil || tokenCookie.Value == "" {
 		// If the refresh token cookie is missing or empty, clear cookies and return an error
-		log.Infof("Refresh token cookie is missing or empty\n")
 		clearCookies(c)
 		return "", goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, err)
 	}
