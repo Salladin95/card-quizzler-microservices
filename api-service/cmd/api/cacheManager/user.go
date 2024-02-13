@@ -13,10 +13,7 @@ func (cm *cacheManager) GetUsers(ctx context.Context, uid string) ([]*entities.U
 		return nil, err
 	}
 	// If cache read succeeds, return users from the cache
-	cm.messageBroker.GenerateLogEvent(
-		ctx,
-		generateUserReaderCacheLog("users has been retrieved from cache", "GetUsers"),
-	)
+	cm.log(ctx, "users has been retrieved from cache", "info", "GetUsers")
 	return cachedUsers, nil
 }
 
@@ -28,19 +25,6 @@ func (cm *cacheManager) GetUserById(ctx context.Context, uid string) (*entities.
 		return nil, err
 	}
 	// If cache read succeeds, return users from the cache
-	cm.messageBroker.GenerateLogEvent(
-		ctx,
-		generateUserReaderCacheLog("user has been retrieved from cache", "GetUserById"),
-	)
+	cm.log(ctx, "user has been retrieved from cache", "info", "GetUserById")
 	return cachedUser, nil
-}
-
-func generateUserReaderCacheLog(message string, method string) entities.LogMessage {
-	var logMessage *entities.LogMessage
-	return logMessage.GenerateLog(
-		message,
-		"info",
-		method,
-		"handler events for rabbitMQ consumer",
-	)
 }

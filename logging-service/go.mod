@@ -3,7 +3,7 @@ module github.com/Salladin95/card-quizzler-microservices/logging-service
 go 1.21.5
 
 require (
-	github.com/Salladin95/rmqtools v1.0.7
+	github.com/Salladin95/rmqtools v1.0.10
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.13.1

@@ -1,5 +1,9 @@
 github.com/Salladin95/rmqtools v1.0.7 h1:eqJ4bYE7zxJ0mCFFhlSb19Bcp+dQNINFboqWQphFVfA=
 github.com/Salladin95/rmqtools v1.0.7/go.mod h1:iAeYLhDHwaHGvuMiy7QRIl6NhQ08KhTh6JCazG2UIjY=
+github.com/Salladin95/rmqtools v1.0.8 h1:DeSl5ySUYIsKb3jUJB61ZklVIINNaqcGbtK6/sdSYLk=
+github.com/Salladin95/rmqtools v1.0.8/go.mod h1:iAeYLhDHwaHGvuMiy7QRIl6NhQ08KhTh6JCazG2UIjY=
+github.com/Salladin95/rmqtools v1.0.10 h1:WolZ55IwYgT/Xf+nP+sMyL1Cf2UhBiNpIFJsiFTTH8Q=
+github.com/Salladin95/rmqtools v1.0.10/go.mod h1:iAeYLhDHwaHGvuMiy7QRIl6NhQ08KhTh6JCazG2UIjY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

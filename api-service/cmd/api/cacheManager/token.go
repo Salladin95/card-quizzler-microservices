@@ -11,7 +11,7 @@ func (cm *cacheManager) AccessToken(uid string) (string, error) {
 	var tokenPair entities.TokenPair
 	err := cm.readCacheByKeys(&tokenPair, cm.userHashKey(uid), tokensHKey)
 	if err != nil {
-		return "", goErrorHandler.OperationFailure("get refresh token from cache", err)
+		return "", goErrorHandler.OperationFailure("get access token from cache", err)
 	}
 	return tokenPair.AccessToken, nil
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	userService "github.com/Salladin95/card-quizzler-microservices/user-service/proto"
@@ -15,7 +14,7 @@ import (
 // The response includes a status code and a message.
 func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the sign-in request
-	fmt.Println("******* user-service service - start processing signin request ********")
+	us.log(ctx, "start processing signIn request", "info", "signIn")
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
 	// Create a SignInDto from the request payload
@@ -26,13 +25,15 @@ func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest
 		// Return a response with the mapped error status code and message if verification fails
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-	// Fetch user by email from the repository
+
+	// Check if the fetched user's email matches the sign-in email and verify the password
 	fetchedUser, err := us.Repo.GetByEmail(ctx, signInDto.Email)
+
+	// Fetch user by email from the repository
 	if err != nil {
 		// Return a response with the mapped error status code and message if fetching user fails
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-	// Check if the fetched user's email matches the sign-in email and verify the password
 	isPasswordInvalid := lib.CompareHashAndPassword(fetchedUser.Password, signInDto.Password)
 	if fetchedUser.Email != signInDto.Email || isPasswordInvalid != nil {
 		// Return a response with the mapped error status code and message if authentication fails
@@ -48,7 +49,7 @@ func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest
 // The response includes a status code and a message.
 func (us *UserServer) SignUp(ctx context.Context, req *userService.SignUpRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the sign-up request
-	fmt.Println("******* user-service service - start processing signUp request ********")
+	us.log(ctx, "start processing signUp request", "info", "signIn")
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
 	// Create a SignUpDto from the request payload

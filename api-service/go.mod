@@ -4,7 +4,7 @@ go 1.21.5
 
 require (
 	github.com/Salladin95/goErrorHandler v1.0.4
-	github.com/Salladin95/rmqtools v1.0.7
+	github.com/Salladin95/rmqtools v1.0.10
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.0

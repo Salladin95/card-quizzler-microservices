@@ -1,25 +1,18 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"time"
 )
 
 func (bh *brokerHandlers) GetUsers(c echo.Context) error {
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
+	ctx := c.Request().Context()
 
-	bh.broker.GenerateLogEvent(
-		ctx,
-		generateHandlerLog("start processing request", "info", "getUsers"),
-	)
+	bh.log(ctx, "start processing request", "info", "getUsers")
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*entities.JwtUserClaims)
@@ -50,14 +43,8 @@ func (bh *brokerHandlers) GetUsers(c echo.Context) error {
 }
 
 func (bh *brokerHandlers) GetUserById(c echo.Context) error {
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
-
-	bh.broker.GenerateLogEvent(
-		ctx,
-		generateHandlerLog("start processing request", "info", "getUserById"),
-	)
+	ctx := c.Request().Context()
+	bh.log(ctx, "start processing request", "info", "getUserById")
 
 	id := c.Param("id")
 	uid, err := uuid.Parse(id)
@@ -90,14 +77,8 @@ func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 }
 
 func (bh *brokerHandlers) GetProfile(c echo.Context) error {
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
-
-	bh.broker.GenerateLogEvent(
-		ctx,
-		generateHandlerLog("start processing request", "info", "getUserByEmail"),
-	)
+	ctx := c.Request().Context()
+	bh.log(ctx, "start processing request", "info", "GetProfile")
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*entities.JwtUserClaims)
@@ -126,7 +107,7 @@ func (bh *brokerHandlers) GetProfile(c echo.Context) error {
 		Id: claims.Id.String(),
 	})
 	if err != nil {
-		return goErrorHandler.OperationFailure("GetUserById", err)
+		return goErrorHandler.OperationFailure("GetProfile", err)
 	}
 	var unmarshalTo []entities.UserResponse
 	return handleGRPCResponse(c, res, unmarshalTo)

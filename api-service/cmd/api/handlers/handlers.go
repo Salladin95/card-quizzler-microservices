@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/messageBroker"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/goErrorHandler"
+	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +25,7 @@ type BrokerHandlersInterface interface {
 
 // brokerHandlers implements the BrokerHandlersInterface.
 type brokerHandlers struct {
-	broker       messageBroker.MessageBroker
+	broker       rmqtools.MessageBroker
 	config       *config.Config
 	cacheManager cacheManager.CacheManager
 }
@@ -30,7 +33,7 @@ type brokerHandlers struct {
 // NewHandlers creates a new instance of BrokerHandlersInterface.
 func NewHandlers(
 	cfg *config.Config,
-	broker messageBroker.MessageBroker,
+	broker rmqtools.MessageBroker,
 	cacheManager cacheManager.CacheManager,
 ) BrokerHandlersInterface {
 	return &brokerHandlers{
@@ -54,4 +57,17 @@ func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	}
 
 	return conn, nil
+}
+
+// log sends a log message to the message broker.
+func (bh *brokerHandlers) log(ctx context.Context, message, level, method string) {
+	var log entities.LogMessage
+
+	// Push log message to the message broker
+	bh.broker.PushToQueue(
+		ctx,
+		constants.LogCommand, // Specify the log command constant
+		// Generate log message with provided details
+		log.GenerateLog(message, level, method, "http handlers"),
+	)
 }

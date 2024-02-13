@@ -1,24 +1,19 @@
 package handlers
 
 import (
-	"context"
-	"errors"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"time"
 )
 
 // SignIn handles the HTTP request for user sign-in.
 func (bh *brokerHandlers) SignIn(c echo.Context) error {
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
-
-	bh.broker.GenerateLogEvent(ctx, generateHandlerLog("start processing request", "info", "signIn"))
+	ctx := c.Request().Context()
+	bh.log(ctx, "start processing request", "info", "signIn")
 
 	// Parse the request body into SignInDto
 	var signInDTO entities.SignInDto
@@ -83,11 +78,8 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 
 // SignUp handles the HTTP request for user sign-up.
 func (bh *brokerHandlers) SignUp(c echo.Context) error {
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
-
-	bh.broker.GenerateLogEvent(ctx, generateHandlerLog("start processing request", "info", "signUp"))
+	ctx := c.Request().Context()
+	bh.log(ctx, "start processing request", "info", "signUp")
 
 	// Parse the request body into SignUpDto
 	var signUpDTO entities.SignUpDto
@@ -129,16 +121,47 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 
 // Refresh handles the HTTP request for token refresh.
 func (bh *brokerHandlers) Refresh(c echo.Context) error {
-	// Create a context with a timeout for the gRPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel() // Ensure the context is canceled when done.
+	ctx := c.Request().Context()
+	bh.log(ctx, "start processing request", "info", "refresh")
 
-	bh.broker.GenerateLogEvent(ctx, generateHandlerLog("start processing request", "info", "refresh"))
+	// Extract the refresh token from the request
+	refreshToken, err := lib.ExtractRefreshToken(c)
+	if err != nil {
+		return err
+	}
 
-	// Retrieve user claims from the context
-	claims, ok := c.Get("user").(*entities.JwtUserClaims)
-	if !ok {
-		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("refresh, failed to cast claims"))
+	// Validate the refresh token
+	claims, err := lib.ValidateTokenString(refreshToken, bh.config.JwtCfg.JWTRefreshSecret)
+	if err != nil {
+		lib.ClearCookies(c)
+		bh.cacheManager.ClearUserRelatedCache(claims.Id.String())
+		bh.log(
+			ctx,
+			fmt.Sprintf("clearing cookies and session. Err - %s", err.Error()),
+			"error",
+			"refresh",
+		)
+		return err
+	}
+
+	// Retrieve cached refresh token
+	cachedRefreshToken, err := bh.cacheManager.RefreshToken(claims.Id.String())
+
+	// Compare tokens
+	if err != nil || cachedRefreshToken != refreshToken {
+		bh.log(
+			ctx,
+
+			"Received token and token from cache don't match. Clearing cache & session",
+			"error",
+			"refresh",
+		)
+		lib.ClearCookies(c)
+		bh.cacheManager.ClearUserRelatedCache(claims.Id.String())
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			fmt.Errorf("received token and token from cache don't match"),
+		)
 	}
 
 	// Generate a new pair of access and refresh tokens

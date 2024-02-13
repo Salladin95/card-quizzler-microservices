@@ -1,48 +1,43 @@
 package middlewares
 
 import (
-	"context"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/messageBroker"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
+	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
-	"time"
 )
 
 // AccessTokenValidator returns an Echo middleware that validates the access token.
 func AccessTokenValidator(
-	broker messageBroker.MessageBroker,
+	broker rmqtools.MessageBroker,
 	cacheManager cacheManager.CacheManager,
 	secret string,
 ) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-			defer cancel()
-
-			broker.GenerateLogEvent(
-				ctx,
-				generateValidatorLog("start token validation",
-					"info",
-					"AccessTokenValidator"),
+			logTokenValidation(
+				broker,
+				"start token validation",
+				"info",
+				"AccessTokenValidator",
 			)
 
 			// Get the Authorization header
-			accessToken, err := ExtractAccessToken(c)
+			accessToken, err := lib.ExtractAccessToken(c)
 			if err != nil {
 				return err
 			}
 
 			// Validate the access token
-			claims, err := validateTokenString(accessToken, secret)
+			claims, err := lib.ValidateTokenString(accessToken, secret)
 			if err != nil {
-				broker.GenerateLogEvent(
-					ctx,
-					generateValidatorLog(
-						err.Error(),
-						"error",
-						"AccessTokenValidator"),
+				logTokenValidation(
+					broker,
+					err.Error(),
+					"error",
+					"AccessTokenValidator",
 				)
 				return err
 			}
@@ -51,11 +46,15 @@ func AccessTokenValidator(
 			cachedAccessToken, err := cacheManager.AccessToken(claims.Id.String())
 			// Compare tokens
 			if err != nil || cachedAccessToken != accessToken {
-				generateValidatorLog(
+
+				logTokenValidation(
+					broker,
 					"Received token and token from cache don't match. Clearing cache & session",
 					"error",
-					"AccessTokenValidator")
-				clearCookies(c)
+					"AccessTokenValidator",
+				)
+
+				lib.ClearCookies(c)
 				cacheManager.ClearUserRelatedCache(claims.Id.String())
 				return goErrorHandler.NewError(
 					goErrorHandler.ErrUnauthorized,
@@ -63,10 +62,13 @@ func AccessTokenValidator(
 				)
 			}
 
-			generateValidatorLog(
+			logTokenValidation(
+				broker,
 				"Access token has passed validation",
 				"info",
-				"AccessTokenValidator")
+				"AccessTokenValidator",
+			)
+
 			c.Set("user", claims)
 			return next(c)
 		}

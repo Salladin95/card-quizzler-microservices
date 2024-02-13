@@ -102,14 +102,3 @@ func handleCacheResponse(c echo.Context, data any) error {
 		Data:    data,
 	})
 }
-
-// generateHandlerLog - creates logs for handlers
-func generateHandlerLog(message string, level string, method string) entities.LogMessage {
-	var logMessage *entities.LogMessage
-	return logMessage.GenerateLog(
-		message,
-		level,
-		method,
-		"http handlers",
-	)
-}

@@ -3,18 +3,19 @@ package cacheManager
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/messageBroker"
+	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
 	"time"
 )
 
 // cacheManager represents a manager for handling caching operations using Redis.
 type cacheManager struct {
-	redisClient   *redis.Client               // Redis client for cache operations
-	cfg           *config.Config              // Application configuration
-	messageBroker messageBroker.MessageBroker // messageBroker instance
-	exp           time.Duration               // exp is the expiration time for cached data.
+	redisClient *redis.Client          // Redis client for cache operations
+	cfg         *config.Config         // Application configuration
+	broker      rmqtools.MessageBroker // MessageBroker instance
+	exp         time.Duration          // exp is the expiration time for cached data.
 }
 
 // CacheManager is an interface defining methods for caching operations.
@@ -33,13 +34,13 @@ type CacheManager interface {
 func NewCacheManager(
 	redisClient *redis.Client,
 	cfg *config.Config,
-	broker messageBroker.MessageBroker,
+	broker rmqtools.MessageBroker,
 ) CacheManager {
 	return &cacheManager{
-		redisClient:   redisClient,
-		cfg:           cfg,
-		exp:           60 * time.Minute,
-		messageBroker: broker,
+		redisClient: redisClient,
+		cfg:         cfg,
+		exp:         60 * time.Minute,
+		broker:      broker,
 	}
 }
 
@@ -51,4 +52,17 @@ func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
 // ClearCacheByKeys drops specified cache
 func (cm *cacheManager) ClearCacheByKeys(key string, key2 string) error {
 	return cm.redisClient.HDel(key, key2).Err()
+}
+
+// log sends a log message to the message broker.
+func (cm *cacheManager) log(ctx context.Context, message, level, method string) {
+	var log entities.LogMessage
+
+	// Push log message to the message broker
+	cm.broker.PushToQueue(
+		ctx,
+		constants.LogCommand, // Specify the log command constant
+		// Generate log message with provided details
+		log.GenerateLog(message, level, method, "cache manager"),
+	)
 }

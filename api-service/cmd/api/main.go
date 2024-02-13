@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/server"
+	"github.com/Salladin95/rmqtools"
 	"log"
 	"os"
 )
@@ -23,6 +25,8 @@ func main() {
 	// Defer the closure of the Redis connection
 	defer services.Redis.Close()
 
+	broker := rmqtools.NewMessageBroker(services.Rabbit, constants.AmqpExchange, constants.AmqpQueue)
+
 	// Create a new instance of the application using the loaded configuration and RabbitMQ connection & start it
-	server.NewApp(cfg, services.Rabbit, services.Redis).Start()
+	server.NewApp(cfg, services.Redis, broker).Start()
 }

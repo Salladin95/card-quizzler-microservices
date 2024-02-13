@@ -76,9 +76,11 @@ func (repo *repository) GetByEmail(ctx context.Context, email string) (*user.Use
 	// Initialize a user.User variable to store the retrieved user
 	var user user.User
 	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+
 	if err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
+
 	return &user, nil
 }
 

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	model "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	userService "github.com/Salladin95/card-quizzler-microservices/user-service/proto"
@@ -11,8 +10,8 @@ import (
 
 // GetUsers retrieves all users.
 func (us *UserServer) GetUsers(ctx context.Context, _ *userService.EmptyRequest) (*userService.Response, error) {
-	// Print a message indicating the start of processing the GetUsers request
-	fmt.Println("******* user-service - start processing GetUsers request ********")
+	// Log a message indicating the start of processing the GetUsers request
+	us.log(ctx, "start processing GetUsers request", "info", "GetUsers")
 
 	// Fetch all users from the repository
 	fetchedUsers, err := us.Repo.GetUsers(ctx)
@@ -29,8 +28,8 @@ func (us *UserServer) GetUsers(ctx context.Context, _ *userService.EmptyRequest)
 
 // GetUserById retrieves a user based on the provided user ID.
 func (us *UserServer) GetUserById(ctx context.Context, req *userService.ID) (*userService.Response, error) {
-	// Print a message indicating the start of processing the GetUserById request
-	fmt.Println("******* user-service - start processing GetUserById request ********")
+	// Log a message indicating the start of processing the GetUserById request
+	us.log(ctx, "start processing GetUserById request", "info", "GetUserById")
 
 	// Extract the user ID from the request
 	id := req.GetId()
@@ -49,7 +48,7 @@ func (us *UserServer) GetUserById(ctx context.Context, req *userService.ID) (*us
 // GetUserByEmail retrieves a user based on the provided email.
 func (us *UserServer) GetUserByEmail(ctx context.Context, req *userService.Email) (*userService.Response, error) {
 	// Print a message indicating the start of processing the GetUserByEmail request
-	fmt.Println("******* user-service - start processing GetUserByEmail request ********")
+	us.log(ctx, "start processing GetUserByEmail request", "info", "GetUserByEmail")
 
 	// Extract the email from the request
 	email := req.GetEmail()
@@ -68,7 +67,7 @@ func (us *UserServer) GetUserByEmail(ctx context.Context, req *userService.Email
 // UpdateUser updates a user based on the provided UpdateUserRequest.
 func (us *UserServer) UpdateUser(ctx context.Context, req *userService.UpdateUserRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the update user request
-	fmt.Println("******* user-service - start processing update user request ********")
+	us.log(ctx, "start processing UpdateUser request", "info", "UpdateUser")
 
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
@@ -101,7 +100,7 @@ func (us *UserServer) UpdateUser(ctx context.Context, req *userService.UpdateUse
 // DeleteUser deletes a user based on the provided user ID.
 func (us *UserServer) DeleteUser(ctx context.Context, req *userService.ID) (*userService.Response, error) {
 	// Print a message indicating the start of processing the DeleteUser request.
-	fmt.Println("******* user-service - start processing DeleteUser request ********")
+	us.log(ctx, "start processing DeleteUser request", "info", "DeleteUser")
 
 	// Extract the user ID from the request.
 	id := req.GetId()

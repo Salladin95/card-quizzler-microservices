@@ -1,14 +1,14 @@
 package server
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/messageBroker"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/middlewares"
+	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 // setupMiddlewares configures and adds middlewares to the Echo server.
-func (app *App) setupMiddlewares(broker messageBroker.MessageBroker) {
+func (app *App) setupMiddlewares(broker rmqtools.MessageBroker) {
 	// Use the custom HTTP error handler middleware.
 	app.server.Use(middlewares.HttpErrorHandler(broker))
 

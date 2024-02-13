@@ -21,20 +21,15 @@ var userEvents = []string{
 // It creates a new consumer for the specified AMQP exchange and queue,
 // then listens for events with the provided keys and handles them using the userEventHandler method.
 func (cm *cacheManager) ListenForUpdates() {
-	cm.messageBroker.ListenForUpdates(userEvents, cm.userEventHandler)
+	cm.broker.ListenForUpdates(userEvents, cm.userEventHandler)
 }
 
 // userEventHandler is a callback function to handle user-related events received from RabbitMQ.
 // It processes each event based on the key and performs corresponding actions.
 func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 	ctx := context.Background()
-	cm.messageBroker.GenerateLogEvent(
-		ctx,
-		generateUserEventHandlerLog(
-			fmt.Sprintf("start processing key - %s", key),
-			"info",
-		),
-	)
+
+	cm.log(ctx, fmt.Sprintf("start processing key - %s", key), "info", "ListenForUpdates")
 
 	// payload should type of entities.UserResponse in other cases
 	// so we unmarshal it and use it id to interact with cache
@@ -43,70 +38,69 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 		err := lib.UnmarshalData(payload, &user)
 
 		if err != nil {
-			log.Panic(fmt.Errorf("user event handler failed to unmarshall user - %v", err))
+			msg := fmt.Sprintf("user event handler failed to unmarshall user - %v", err)
+			cm.log(ctx, msg, "error", "ListenForUpdates")
+			log.Panic(msg)
 		}
 	}
 
 	switch key {
 	case constants.CreatedUserKey:
-		cm.messageBroker.GenerateLogEvent(
-			ctx,
-			generateUserEventHandlerLog(
-				"new user case, clearing cache for [cm.key, email, id]",
-				"info",
-			),
-		)
 		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
 		// Clear the cache for the user list
 		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
+
+		cm.log(
+			ctx,
+			"new user case, clearing cache for [cm.key, email, id]",
+			"error",
+			"ListenForUpdates",
+		)
 	case constants.UpdatedUserKey:
-		cm.messageBroker.GenerateLogEvent(
-			ctx,
-			generateUserEventHandlerLog(
-				"user updated case, clearing cache for [cm.key, email, id]",
-				"info",
-			),
-		)
 		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
 		// Clear the cache for the user list
 		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
-	case constants.DeletedUserKey:
-		cm.messageBroker.GenerateLogEvent(
+
+		cm.log(
 			ctx,
-			generateUserEventHandlerLog(
-				"user deleted case, clearing cache for [cm.key, email, id]",
-				"info",
-			),
+			"user updated case, clearing cache for [cm.key, email, id]",
+			"error",
+			"ListenForUpdates",
 		)
+	case constants.DeletedUserKey:
 		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
 		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), userKey)
+
+		cm.log(
+			ctx,
+			"user updated case, clearing cache for [cm.key, email, id]",
+			"error",
+			"ListenForUpdates",
+		)
 	case constants.FetchedUserKey:
-		cm.messageBroker.GenerateLogEvent(
-			ctx,
-			generateUserEventHandlerLog("fetched user case, setting cache", "info"),
-		)
 		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
-	case constants.FetchedUsersKey:
-		cm.messageBroker.GenerateLogEvent(
+
+		cm.log(
 			ctx,
-			generateUserEventHandlerLog("fetched users case, setting cache", "info"),
+			"fetched user case, setting cache",
+			"info",
+			"ListenForUpdates",
 		)
+	case constants.FetchedUsersKey:
 		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), usersKey, payload, cm.exp)
-	default:
-		cm.messageBroker.GenerateLogEvent(
+
+		cm.log(
 			ctx,
-			generateUserEventHandlerLog("unknown case", "error"),
+			"fetched users case, setting cache",
+			"info",
+			"ListenForUpdates",
+		)
+	default:
+		cm.log(
+			ctx,
+			"unknown case",
+			"error",
+			"ListenForUpdates",
 		)
 	}
-}
-
-// generateUserEventHandlerLog - creates logs for userEventHandler function
-func generateUserEventHandlerLog(message string, level string) entities.LogMessage {
-	var logMessage *entities.LogMessage
-	return logMessage.GenerateLog(
-		message,
-		level,
-		"userEventHandler",
-		"handler events for rabbitMQ consumer",
-	)
 }

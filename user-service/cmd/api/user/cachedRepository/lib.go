@@ -1,37 +1,10 @@
 package cachedRepository
 
 import (
-	"context"
 	"fmt"
-	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
-	"github.com/Salladin95/rmqtools"
 )
-
-// pushToQueue pushes data to a named queue in RabbitMQ using an EventEmitter.
-// It takes a context, the name of the queue, and the data to be pushed.
-// It returns an error if any operation fails.
-func (cr *cachedRepository) pushToQueue(ctx context.Context, name string, data interface{}) error {
-	// Create a new EventEmitter for the specified AMQP exchange.
-	emitter, err := rmqtools.NewEventEmitter(cr.rabbitConn, constants.AmqpExchange)
-	if err != nil {
-		return goErrorHandler.OperationFailure("create event emitter", err)
-	}
-
-	// Marshal the data into JSON format.
-	mData, err := lib.MarshalData(data)
-	if err != nil {
-		return err
-	}
-
-	// Push the data to the named queue using the EventEmitter.
-	err = emitter.Push(ctx, name, mData)
-	if err != nil {
-		return goErrorHandler.OperationFailure("push event", err)
-	}
-	return nil
-}
 
 // readCacheByHashedKey retrieves the value from the Redis hash and unmarshals it into the provided readTo parameter.
 // It uses the specified key and hash key to read the value from the Redis hash.
@@ -117,13 +90,18 @@ func (cr *cachedRepository) setCacheInPipeline(key string, hash string, data int
 	return nil
 }
 
-// userHashKey generates a Redis hash key for user-related data based on the user's Id.
-func (cr *cachedRepository) userHashKey(uid string) string {
-	return fmt.Sprintf("%s-%s", userRootKey, uid)
+func (cr *cachedRepository) userHashKey(key string) string {
+	return fmt.Sprintf("hash:%s", key)
 }
 
 // clearCacheByKey drops the cache associated with the given key.
 func (cr *cachedRepository) clearCacheByKey(key string) error {
 	// Delete the cache entry using the Redis client
 	return cr.redisClient.Del(key).Err()
+}
+
+// clearCacheByKey drops the cache associated with the given key.
+func (cr *cachedRepository) clearCacheByKeys(key1, key2 string) error {
+	// Delete the cache entry using the Redis client
+	return cr.redisClient.HDel(key1, key2).Err()
 }
