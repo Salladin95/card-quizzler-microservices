@@ -7,8 +7,8 @@ import (
 	userEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	"github.com/Salladin95/goErrorHandler"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -100,7 +100,7 @@ func (repo *repository) CreateUser(ctx context.Context, createUserDto userEntiti
 		return nil, err
 	}
 	user := user.User{
-		ID:        uuid.New(),
+		ID:        primitive.NewObjectID(),
 		Name:      createUserDto.Name,
 		Email:     createUserDto.Email,
 		Password:  hashedPassword,
@@ -116,23 +116,23 @@ func (repo *repository) CreateUser(ctx context.Context, createUserDto userEntiti
 }
 
 // UpdateUser updates a user in the MongoDB collection based on the provided user Id (uid).
-// It takes a context, a string representation of the user Id, and an UpdateDto as input.
+// It takes a context, a string representation of the user Id, and an UpdateEmailDto as input.
 // The function returns a pointer to the updated user.User and an error.
 // If the user is not found by the provided user Id, it returns an error.
-// If specific fields (Email, Name, Password) are provided in the UpdateDto,
+// If specific fields (Email, Name, Password) are provided in the UpdateEmailDto,
 // the corresponding fields in the user document will be updated.
-func (repo *repository) UpdateUser(ctx context.Context, uid string, updateUserDto userEntities.UpdateDto) (*user.User, error) {
+func (repo *repository) UpdateUser(
+	ctx context.Context,
+	uid string,
+	updateUserDto userEntities.UpdateUserDto,
+) (*user.User, error) {
 	collection := repo.getCollection()
-	// Convert the string representation of the user Id to MongoDB ObjectID
-	docID, err := toObjectId(uid)
-	if err != nil {
-		return nil, err
-	}
 	user, err := repo.GetById(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	// Update user fields if corresponding values are provided in the UpdateDto
+
+	// Update user fields if corresponding values are provided in the UpdateEmailDto
 	if updateUserDto.Email != "" {
 		user.Email = updateUserDto.Email
 	}
@@ -144,7 +144,7 @@ func (repo *repository) UpdateUser(ctx context.Context, uid string, updateUserDt
 	}
 
 	// Define the filter to identify the user document to update
-	filter := bson.M{"_id": docID}
+	filter := bson.M{"_id": user.ID}
 	// Define the update with $set operator for the modified fields
 	update := bson.M{
 		"$set": bson.M{
@@ -163,8 +163,13 @@ func (repo *repository) UpdateUser(ctx context.Context, uid string, updateUserDt
 
 // DeleteUser removes a user from the MongoDB collection
 func (repo *repository) DeleteUser(ctx context.Context, uid string) error {
+	// Convert the string representation of the user Id to MongoDB ObjectID
+	docID, err := toObjectId(uid)
+	if err != nil {
+		return err
+	}
 	collection := repo.getCollection()
-	result, err := collection.DeleteOne(ctx, bson.M{"id": uid})
+	result, err := collection.DeleteOne(ctx, bson.M{"id": docID})
 	if err != nil {
 		return goErrorHandler.OperationFailure("deleting user", err)
 	}

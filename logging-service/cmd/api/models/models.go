@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/logging-service/cmd/api/entities"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,13 +26,13 @@ type Models struct {
 }
 
 type LogEntry struct {
-	ID          uuid.UUID `bson:"_id" json:"id"`
-	Message     string    `bson:"message" json:"message"`
-	Level       string    `bson:"level" json:"level"`
-	FromService string    `bson:"fromService" json:"fromService"`
-	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
-	Method      string    `bson:"method,omitempty" json:"method,omitempty"`
-	Name        string    `bson:"name,omitempty" json:"name,omitempty"`
+	ID          primitive.ObjectID `bson:"_id" json:"id"`
+	Message     string             `bson:"message" json:"message"`
+	Level       string             `bson:"level" json:"level"`
+	FromService string             `bson:"fromService" json:"fromService"`
+	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
+	Method      string             `bson:"method,omitempty" json:"method,omitempty"`
+	Name        string             `bson:"name,omitempty" json:"name,omitempty"`
 }
 
 func (l *LogEntry) getCollection() *mongo.Collection {
@@ -44,13 +43,13 @@ func (l *LogEntry) Insert(ctx context.Context, entry entities.LogMessage) error 
 	collection := l.getCollection()
 
 	_, err := collection.InsertOne(ctx, LogEntry{
+		ID:          primitive.NewObjectID(),
 		Name:        entry.Name,
 		Message:     entry.Message,
 		FromService: entry.FromService,
 		Level:       entry.Level,
 		Method:      entry.Method,
 		CreatedAt:   time.Now(),
-		ID:          uuid.New(),
 	})
 	if err != nil {
 		log.Println("Error inserting into logs:", err)

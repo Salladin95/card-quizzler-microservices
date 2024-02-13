@@ -27,8 +27,11 @@ func (app *App) setupRoutes(
 		middlewares.AccessTokenValidator(broker, cacheManager, app.config.JwtCfg.JWTAccessSecret),
 	)
 
-	// ****************** PROFILE *********************
+	// ****************** PROTECTED >> PROFILE *********************
 	protectedRoutes.GET("/user/profile", handlers.GetProfile)
 	protectedRoutes.GET("/user/:id", handlers.GetUserById)
-	protectedRoutes.GET("/user/", handlers.GetUsers)
+	protectedRoutes.GET("/user", handlers.GetUsers)
+	protectedRoutes.PATCH("/user/update-email/:id", handlers.UpdateEmail)
+	// ****************** PROTECTED >> EMAIL *********************
+	protectedRoutes.GET("/request-email-verification", handlers.RequestEmailVerification)
 }

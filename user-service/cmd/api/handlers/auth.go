@@ -27,7 +27,7 @@ func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest
 	}
 
 	// Check if the fetched user's email matches the sign-in email and verify the password
-	fetchedUser, err := us.Repo.GetByEmail(ctx, signInDto.Email)
+	fetchedUser, err := us.CachedRepo.GetByEmail(ctx, signInDto.Email)
 
 	// Fetch user by email from the repository
 	if err != nil {
@@ -66,7 +66,7 @@ func (us *UserServer) SignUp(ctx context.Context, req *userService.SignUpRequest
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
 	// Create a new user by calling the CreateUser method in the repository
-	newUser, err := us.Repo.CreateUser(ctx, signUpDto)
+	newUser, err := us.CachedRepo.CreateUser(ctx, signUpDto)
 	if err != nil {
 		// Return a response with the mapped error status code and message if user creation fails
 		return buildFailedResponse(err)

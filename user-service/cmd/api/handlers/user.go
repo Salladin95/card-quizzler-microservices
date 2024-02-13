@@ -14,7 +14,7 @@ func (us *UserServer) GetUsers(ctx context.Context, _ *userService.EmptyRequest)
 	us.log(ctx, "start processing GetUsers request", "info", "GetUsers")
 
 	// Fetch all users from the repository
-	fetchedUsers, err := us.Repo.GetUsers(ctx)
+	fetchedUsers, err := us.CachedRepo.GetUsers(ctx)
 
 	if err != nil {
 		// If an error occurs during user retrieval, build and return a failed response
@@ -35,7 +35,7 @@ func (us *UserServer) GetUserById(ctx context.Context, req *userService.ID) (*us
 	id := req.GetId()
 
 	// Fetch the user from the repository by ID
-	fetchedUser, err := us.Repo.GetById(ctx, id)
+	fetchedUser, err := us.CachedRepo.GetById(ctx, id)
 	if err != nil {
 		// If an error occurs during user retrieval, build and return a failed response
 		return buildFailedResponse(err)
@@ -54,7 +54,7 @@ func (us *UserServer) GetUserByEmail(ctx context.Context, req *userService.Email
 	email := req.GetEmail()
 
 	// Fetch the user from the repository by email
-	fetchedUser, err := us.Repo.GetByEmail(ctx, email)
+	fetchedUser, err := us.CachedRepo.GetByEmail(ctx, email)
 	if err != nil {
 		// If an error occurs during user retrieval, build and return a failed response
 		return buildFailedResponse(err)
@@ -64,30 +64,55 @@ func (us *UserServer) GetUserByEmail(ctx context.Context, req *userService.Email
 	return buildSuccessfulResponse(fetchedUser.ToResponse(), http.StatusOK, "user has been successfully fetched")
 }
 
-// UpdateUser updates a user based on the provided UpdateUserRequest.
-func (us *UserServer) UpdateUser(ctx context.Context, req *userService.UpdateUserRequest) (*userService.Response, error) {
+// UpdateEmail updates a user based on the provided UpdateEmailRequest.
+func (us *UserServer) UpdateEmail(
+	ctx context.Context,
+	req *userService.UpdateEmailRequest,
+) (*userService.Response, error) {
 	// Print a message indicating the start of processing the update user request
-	us.log(ctx, "start processing UpdateUser request", "info", "UpdateUser")
+	us.log(ctx, "start processing UpdateEmail request", "info", "UpdateEmail")
 
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
 
-	// Create a UpdateDto from the request payload
-	updateDto := user.UpdateDto{
-		Email:    reqPayload.Email,
-		Password: reqPayload.Password,
-		Name:     reqPayload.Name,
+	// Create a UpdateEmailDto from the request payload
+	updateDto := user.UpdateEmailDto{
+		Email: reqPayload.Email,
+		Code:  reqPayload.Code,
 	}
 
-	// Verify the UpdateDto structure
+	// Verify the UpdateEmailDto structure
 	err := updateDto.Verify()
 	if err != nil {
-		// Return a response with the mapped error status code and message if verification fails
-		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
+		// Return a response with the mapped error status code and message if user update fails
+		return buildFailedResponse(err)
 	}
 
-	// Update the user by calling the UpdateUser method in the repository
-	updatedUser, err := us.Repo.UpdateUser(ctx, reqPayload.Id, updateDto)
+	existingUser, err := us.CachedRepo.GetById(ctx, reqPayload.Id)
+
+	if err != nil {
+		// Return a response with the mapped error status code and message if user update fails
+		return buildFailedResponse(err)
+	}
+
+	// extract generated code
+	cachedEmailCode, err := us.CachedRepo.GetEmailVerificationCode(ctx, existingUser.Email)
+
+	if err != nil {
+		// Return a response with the mapped error status code and message if user update fails
+		return &userService.Response{Code: http.StatusBadRequest, Message: "You have to request verification firstly"}, nil
+	}
+
+	if cachedEmailCode.Code != int(updateDto.Code) {
+		return &userService.Response{Code: 400, Message: "cached code and provided code don't match"}, nil
+	}
+
+	// Update the user by calling the UpdateEmail method in the repository
+	updatedUser, err := us.CachedRepo.UpdateUser(
+		ctx,
+		reqPayload.Id,
+		user.UpdateUserDto{Email: updateDto.Email},
+	)
 	if err != nil {
 		// Return a response with the mapped error status code and message if user update fails
 		return buildFailedResponse(err)
@@ -106,7 +131,7 @@ func (us *UserServer) DeleteUser(ctx context.Context, req *userService.ID) (*use
 	id := req.GetId()
 
 	// Call the repository's DeleteUser method to delete the user with the specified ID.
-	err := us.Repo.DeleteUser(ctx, id)
+	err := us.CachedRepo.DeleteUser(ctx, id)
 	if err != nil {
 		// If an error occurs during the deletion process, build and return a failed response.
 		return buildFailedResponse(err)

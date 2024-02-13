@@ -7,6 +7,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/handlers"
+	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/subscribers"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/cachedRepository"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/repository"
 	userService "github.com/Salladin95/card-quizzler-microservices/user-service/proto"
@@ -54,12 +55,30 @@ func NewApp(
 
 // Start initializes and starts the application.
 func (app *App) Start() {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// Create user repository
+	userRepo := user.NewUserRepository(app.db, app.config.MongoCfg)
+
+	// Create cached repository
+	cachedRepo := cachedRepository.NewCachedUserRepo(
+		app.broker,
+		app.redis,
+		userRepo,
+	)
+
+	listeners := subscribers.NewMessageBrokerSubscribers(app.broker, cachedRepo)
+
+	// Listen for email verification requests
+	go listeners.SubscribeToEmailVerificationReqs(ctx)
+
 	// Start the application by invoking the gRPC listener.
-	app.gRPCListen()
+	app.gRPCListen(cachedRepo)
 }
 
 // gRPCListen sets up a gRPC server and listens for incoming requests on the specified port.
-func (app *App) gRPCListen() {
+func (app *App) gRPCListen(cachedRepo cachedRepository.CachedRepository) {
 	// Create a TCP listener for the specified gRPC port.
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", app.config.AppCfg.GrpcPort))
 	if err != nil {
@@ -75,19 +94,12 @@ func (app *App) gRPCListen() {
 	// Create a new gRPC server instance.
 	gRPCServer := grpc.NewServer()
 
-	// Create user repository
-	userRepo := user.NewUserRepository(app.db, app.config.MongoCfg)
-
 	// Register the AuthServer implementation with the gRPC server.
 	userService.RegisterUserServiceServer(
 		gRPCServer,
 		&handlers.UserServer{
-			Repo: cachedRepository.NewCachedUserRepo(
-				app.broker,
-				app.redis,
-				userRepo,
-			),
-			Broker: app.broker,
+			CachedRepo: cachedRepo,
+			Broker:     app.broker,
 		},
 	)
 

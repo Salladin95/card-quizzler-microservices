@@ -14,11 +14,10 @@ message SignUpPayload {
   string birthday = 4;
 }
 
-message UpdateUserPayload {
-  string email = 1;
-  string password = 2;
-  string name = 3;
-  string id = 4;
+message UpdateEmailPayload {
+  string id = 1;
+  string email = 2;
+  int64 code = 3;
 }
 
 message SignInRequest {
@@ -29,8 +28,8 @@ message SignUpRequest {
   SignUpPayload payload = 1;
 }
 
-message UpdateUserRequest {
-  UpdateUserPayload payload = 1;
+message UpdateEmailRequest {
+  UpdateEmailPayload payload = 1;
 }
 
 message ID {
@@ -53,7 +52,7 @@ message Response {
 service UserService {
   rpc SignIn(SignInRequest) returns (Response);
   rpc SignUp(SignUpRequest) returns (Response);
-  rpc UpdateUser(UpdateUserRequest) returns (Response);
+  rpc UpdateEmail(UpdateEmailRequest) returns (Response);
   rpc GetUsers(EmptyRequest) returns (Response);
   rpc GetUserById(ID) returns (Response);
   rpc GetUserByEmail(Email) returns (Response);

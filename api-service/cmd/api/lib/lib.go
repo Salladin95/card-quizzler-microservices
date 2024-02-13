@@ -100,7 +100,7 @@ func GetJwtConfig(key string) echojwt.Config {
 			return new(entities.JwtUserClaims) // Create new JWT claims using the JwtUserClaims struct
 		},
 		ErrorHandler: func(c echo.Context, err error) error {
-			// Handle errors during JWT authentication and return an unauthorized error
+			// HandleEvent errors during JWT authentication and return an unauthorized error
 			return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, err)
 		},
 	}

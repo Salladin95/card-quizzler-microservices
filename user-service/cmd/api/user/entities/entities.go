@@ -3,7 +3,7 @@ package user
 import (
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
@@ -49,15 +49,36 @@ func (signUpDto *SignUpDto) Verify() error {
 	return nil
 }
 
-// UpdateDto represents the data transfer object for user update requests
-type UpdateDto struct {
-	Name     string `json:"name" validate:"min=1,omitempty"`
-	Email    string `json:"email" validate:"email,omitempty"`
-	Password string `json:"password" validate:"omitempty,min=6"`
+// UpdateEmailDto represents the data transfer object for user update requests
+type UpdateEmailDto struct {
+	Email string `json:"email" validate:"required"`
+	Code  int64  `json:"code" validate:"required"`
 }
 
-// Verify validates the structure and content of the UpdateDto.
-func (updateDto *UpdateDto) Verify() error {
+// Verify validates the structure and content of the UpdateEmailDto.
+func (updateDto *UpdateEmailDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(updateDto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
+}
+
+// UpdateUserDto represents the data transfer object for user update requests
+type UpdateUserDto struct {
+	Email    string `json:"email" validate:"omitempty,email"`
+	Name     string `json:"name" validate:"omitempty,min=1"`
+	Password string `json:"password" validate:"omitempty,min=6"`
+	Birthday string `json:"birthday" validate:"omitempty"`
+}
+
+// Verify validates the structure and content of the UpdateUserDto.
+func (updateDto *UpdateUserDto) Verify() error {
 	// Create a new validator instance.
 	validate := validator.New()
 
@@ -72,10 +93,10 @@ func (updateDto *UpdateDto) Verify() error {
 
 // Response represents user response structure
 type Response struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Birthday  string    `json:"birthday"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        primitive.ObjectID `json:"id"`
+	Name      string             `json:"name"`
+	Email     string             `json:"email"`
+	Birthday  string             `json:"birthday"`
+	CreatedAt time.Time          `json:"createdAt"`
+	UpdatedAt time.Time          `json:"updatedAt"`
 }

@@ -94,6 +94,10 @@ func (cr *cachedRepository) userHashKey(key string) string {
 	return fmt.Sprintf("hash:%s", key)
 }
 
+func (cr *cachedRepository) codeKey(email string) string {
+	return fmt.Sprintf("hash:code-%s", email)
+}
+
 // clearCacheByKey drops the cache associated with the given key.
 func (cr *cachedRepository) clearCacheByKey(key string) error {
 	// Delete the cache entry using the Redis client

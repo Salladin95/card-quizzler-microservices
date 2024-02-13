@@ -60,6 +60,7 @@ func NewConfig() (*Config, error) {
 	if err := validate.Struct(appCfg); err != nil {
 		return nil, err
 	}
+
 	if err := validate.Struct(jwtCfg); err != nil {
 		return nil, err
 	}

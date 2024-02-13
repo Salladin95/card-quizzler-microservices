@@ -11,8 +11,8 @@ import (
 
 type UserServer struct {
 	userService.UnimplementedUserServiceServer
-	Repo   cachedRepository.CachedRepository
-	Broker rmqtools.MessageBroker
+	CachedRepo cachedRepository.CachedRepository
+	Broker     rmqtools.MessageBroker
 }
 
 // log sends a log message to the message broker.

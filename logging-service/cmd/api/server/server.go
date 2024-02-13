@@ -43,7 +43,6 @@ func (a *app) Start() {
 		os.Exit(1)                                          // Exit program if connection fails
 		return
 	}
-
 	// Start listening for messages on the specified topics and invoke the message handler.
 	consumer.Listen(topics, handlers.Log)
 }

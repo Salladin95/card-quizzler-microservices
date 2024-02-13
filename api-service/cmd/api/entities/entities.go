@@ -5,7 +5,6 @@ import (
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"time"
 )
 
@@ -33,7 +32,7 @@ type SignInResponse struct {
 }
 
 type UserResponse struct {
-	ID        uuid.UUID `json:"id"`
+	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Birthday  string    `json:"birthday"`
@@ -41,9 +40,7 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 type JwtUser struct {
-	Name  string    `json:"name"`
-	Email string    `json:"email"`
-	Id    uuid.UUID `json:"id"`
+	Id string `json:"id"`
 }
 
 // TokenPair represents a pair of JWTs: access token and refresh token.
@@ -57,12 +54,9 @@ type JwtUserClaims struct {
 	jwt.RegisteredClaims
 }
 
-func GetJwtUserClaims(name string, email string, id uuid.UUID, exp time.Duration) JwtUserClaims {
+func GetJwtUserClaims(id string, exp time.Duration) JwtUserClaims {
 	return JwtUserClaims{
-		JwtUser{name,
-			email,
-			id,
-		},
+		JwtUser{id},
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(exp)),
 		},
@@ -129,4 +123,49 @@ func (log *LogMessage) GenerateLog(message string, level string, method string, 
 		Message:     message,
 		Name:        name,
 	}
+}
+
+type RequestEmailVerificationDto struct {
+	Email string `json:"email" validate:"required"`
+}
+
+// Verify validates the structure and content of the SignUpDto.
+func (dto *RequestEmailVerificationDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(dto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
+}
+
+type UpdateEmailDto struct {
+	Email string `json:"email" validate:"required"`
+	Code  int    `json:"code" validate:"required"`
+}
+
+func (dto *UpdateEmailDto) ToPayload(uid string) *userService.UpdateEmailPayload {
+	return &userService.UpdateEmailPayload{
+		Email: dto.Email,
+		Code:  int64(dto.Code),
+		Id:    uid,
+	}
+}
+
+// Verify validates the structure and content of the SignUpDto.
+func (dto *UpdateEmailDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(dto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
 }

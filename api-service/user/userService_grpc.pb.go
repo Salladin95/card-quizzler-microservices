@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UserServiceClient interface {
 	SignIn(ctx context.Context, in *SignInRequest, opts ...grpc.CallOption) (*Response, error)
 	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*Response, error)
-	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*Response, error)
+	UpdateEmail(ctx context.Context, in *UpdateEmailRequest, opts ...grpc.CallOption) (*Response, error)
 	GetUsers(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*Response, error)
 	GetUserById(ctx context.Context, in *ID, opts ...grpc.CallOption) (*Response, error)
 	GetUserByEmail(ctx context.Context, in *Email, opts ...grpc.CallOption) (*Response, error)
@@ -57,9 +57,9 @@ func (c *userServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts 
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *userServiceClient) UpdateEmail(ctx context.Context, in *UpdateEmailRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/user.UserService/UpdateUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/user.UserService/UpdateEmail", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (c *userServiceClient) DeleteUser(ctx context.Context, in *ID, opts ...grpc
 type UserServiceServer interface {
 	SignIn(context.Context, *SignInRequest) (*Response, error)
 	SignUp(context.Context, *SignUpRequest) (*Response, error)
-	UpdateUser(context.Context, *UpdateUserRequest) (*Response, error)
+	UpdateEmail(context.Context, *UpdateEmailRequest) (*Response, error)
 	GetUsers(context.Context, *EmptyRequest) (*Response, error)
 	GetUserById(context.Context, *ID) (*Response, error)
 	GetUserByEmail(context.Context, *Email) (*Response, error)
@@ -126,8 +126,8 @@ func (UnimplementedUserServiceServer) SignIn(context.Context, *SignInRequest) (*
 func (UnimplementedUserServiceServer) SignUp(context.Context, *SignUpRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignUp not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateUser(context.Context, *UpdateUserRequest) (*Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
+func (UnimplementedUserServiceServer) UpdateEmail(context.Context, *UpdateEmailRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateEmail not implemented")
 }
 func (UnimplementedUserServiceServer) GetUsers(context.Context, *EmptyRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
@@ -190,20 +190,20 @@ func _UserService_SignUp_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateUserRequest)
+func _UserService_UpdateEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateEmailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).UpdateUser(ctx, in)
+		return srv.(UserServiceServer).UpdateEmail(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/user.UserService/UpdateUser",
+		FullMethod: "/user.UserService/UpdateEmail",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).UpdateUser(ctx, req.(*UpdateUserRequest))
+		return srv.(UserServiceServer).UpdateEmail(ctx, req.(*UpdateEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -296,8 +296,8 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_SignUp_Handler,
 		},
 		{
-			MethodName: "UpdateUser",
-			Handler:    _UserService_UpdateUser_Handler,
+			MethodName: "UpdateEmail",
+			Handler:    _UserService_UpdateEmail_Handler,
 		},
 		{
 			MethodName: "GetUsers",

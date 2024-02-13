@@ -8,7 +8,6 @@ import (
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
@@ -21,15 +20,15 @@ import (
 // - id: User's UUID.
 // - cfg: JWT configuration.
 // Returns a pointer to the generated token pair or an error.
-func GenerateTokenPair(name string, email string, id uuid.UUID, cfg config.JwtCfg) (*entities.TokenPair, error) {
+func GenerateTokenPair(id string, cfg config.JwtCfg) (*entities.TokenPair, error) {
 	// Generate an access token with a short expiration time
-	at, err := GenerateToken(name, email, id, cfg.AccessTokenExpTime, cfg.JWTAccessSecret)
+	at, err := GenerateToken(id, cfg.AccessTokenExpTime, cfg.JWTAccessSecret)
 	if err != nil {
 		return nil, err
 	}
 
 	// Generate a refresh token with a longer expiration time
-	rt, err := GenerateToken(name, email, id, cfg.RefreshTokenExpTime, cfg.JWTRefreshSecret)
+	rt, err := GenerateToken(id, cfg.RefreshTokenExpTime, cfg.JWTRefreshSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +48,9 @@ func GenerateTokenPair(name string, email string, id uuid.UUID, cfg config.JwtCf
 // - exp: Token expiration duration.
 // - secret: Secret key used for signing the token.
 // Returns the generated JWT or an error.
-func GenerateToken(name string, email string, id uuid.UUID, exp time.Duration, secret string) (string, error) {
+func GenerateToken(id string, exp time.Duration, secret string) (string, error) {
 	// Create JWT claims with user information
-	claims := entities.GetJwtUserClaims(name, email, id, exp)
+	claims := entities.GetJwtUserClaims(id, exp)
 
 	// Create a new JWT token with the specified signing method and claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

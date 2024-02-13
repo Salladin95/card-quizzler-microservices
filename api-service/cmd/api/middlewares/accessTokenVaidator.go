@@ -43,7 +43,7 @@ func AccessTokenValidator(
 			}
 
 			// Retrieve cached access token
-			cachedAccessToken, err := cacheManager.AccessToken(claims.Id.String())
+			cachedAccessToken, err := cacheManager.AccessToken(claims.Id)
 			// Compare tokens
 			if err != nil || cachedAccessToken != accessToken {
 
@@ -55,7 +55,7 @@ func AccessTokenValidator(
 				)
 
 				lib.ClearCookies(c)
-				cacheManager.ClearUserRelatedCache(claims.Id.String())
+				cacheManager.ClearUserRelatedCache(claims.Id)
 				return goErrorHandler.NewError(
 					goErrorHandler.ErrUnauthorized,
 					fmt.Errorf("received access token and cached token don't match"),

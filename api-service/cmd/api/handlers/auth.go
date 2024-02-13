@@ -50,7 +50,7 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 	}
 
 	// Generate a token pair for the signed-in user
-	tokens, err := GenerateTokenPair(signedInUser.Name, signedInUser.Email, signedInUser.ID, bh.config.JwtCfg)
+	tokens, err := GenerateTokenPair(signedInUser.ID, bh.config.JwtCfg)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 	)
 
 	// Set the access and refresh tokens in the cache
-	err = bh.cacheManager.SetTokenPair(signedInUser.ID.String(), tokens)
+	err = bh.cacheManager.SetTokenPair(signedInUser.ID, tokens)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	claims, err := lib.ValidateTokenString(refreshToken, bh.config.JwtCfg.JWTRefreshSecret)
 	if err != nil {
 		lib.ClearCookies(c)
-		bh.cacheManager.ClearUserRelatedCache(claims.Id.String())
+		bh.cacheManager.ClearUserRelatedCache(claims.Id)
 		bh.log(
 			ctx,
 			fmt.Sprintf("clearing cookies and session. Err - %s", err.Error()),
@@ -145,7 +145,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	}
 
 	// Retrieve cached refresh token
-	cachedRefreshToken, err := bh.cacheManager.RefreshToken(claims.Id.String())
+	cachedRefreshToken, err := bh.cacheManager.RefreshToken(claims.Id)
 
 	// Compare tokens
 	if err != nil || cachedRefreshToken != refreshToken {
@@ -157,7 +157,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 			"refresh",
 		)
 		lib.ClearCookies(c)
-		bh.cacheManager.ClearUserRelatedCache(claims.Id.String())
+		bh.cacheManager.ClearUserRelatedCache(claims.Id)
 		return goErrorHandler.NewError(
 			goErrorHandler.ErrUnauthorized,
 			fmt.Errorf("received token and token from cache don't match"),
@@ -165,7 +165,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	}
 
 	// Generate a new pair of access and refresh tokens
-	tokens, err := GenerateTokenPair(claims.Name, claims.Email, claims.Id, bh.config.JwtCfg)
+	tokens, err := GenerateTokenPair(claims.Id, bh.config.JwtCfg)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	)
 
 	// Set the new token pair
-	err = bh.cacheManager.SetTokenPair(claims.Id.String(), tokens)
+	err = bh.cacheManager.SetTokenPair(claims.Id, tokens)
 	if err != nil {
 		return err
 	}

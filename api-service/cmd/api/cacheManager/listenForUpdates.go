@@ -46,9 +46,9 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 
 	switch key {
 	case constants.CreatedUserKey:
-		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
+		cm.setCacheInPipeline(cm.userHashKey(user.ID), userKey, payload, cm.exp)
 		// Clear the cache for the user list
-		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID), usersKey)
 
 		cm.log(
 			ctx,
@@ -57,9 +57,9 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 			"ListenForUpdates",
 		)
 	case constants.UpdatedUserKey:
-		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
+		cm.setCacheInPipeline(cm.userHashKey(user.ID), userKey, payload, cm.exp)
 		// Clear the cache for the user list
-		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID), usersKey)
 
 		cm.log(
 			ctx,
@@ -68,8 +68,8 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 			"ListenForUpdates",
 		)
 	case constants.DeletedUserKey:
-		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), usersKey)
-		cm.ClearCacheByKeys(cm.userHashKey(user.ID.String()), userKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID), usersKey)
+		cm.ClearCacheByKeys(cm.userHashKey(user.ID), userKey)
 
 		cm.log(
 			ctx,
@@ -78,7 +78,7 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 			"ListenForUpdates",
 		)
 	case constants.FetchedUserKey:
-		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), userKey, payload, cm.exp)
+		cm.setCacheInPipeline(cm.userHashKey(user.ID), userKey, payload, cm.exp)
 
 		cm.log(
 			ctx,
@@ -87,7 +87,7 @@ func (cm *cacheManager) userEventHandler(key string, payload []byte) {
 			"ListenForUpdates",
 		)
 	case constants.FetchedUsersKey:
-		cm.setCacheInPipeline(cm.userHashKey(user.ID.String()), usersKey, payload, cm.exp)
+		cm.setCacheInPipeline(cm.userHashKey(user.ID), usersKey, payload, cm.exp)
 
 		cm.log(
 			ctx,

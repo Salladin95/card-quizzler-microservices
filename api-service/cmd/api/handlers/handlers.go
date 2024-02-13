@@ -19,8 +19,10 @@ type BrokerHandlersInterface interface {
 	SignUp(c echo.Context) error
 	Refresh(c echo.Context) error
 	GetUsers(c echo.Context) error
+	UpdateEmail(c echo.Context) error
 	GetUserById(c echo.Context) error
 	GetProfile(c echo.Context) error
+	RequestEmailVerification(c echo.Context) error
 }
 
 // brokerHandlers implements the BrokerHandlersInterface.
@@ -52,7 +54,7 @@ func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		// Handle the error and return an OperationFailure error using the goErrorHandler package
+		// HandleEvent the error and return an OperationFailure error using the goErrorHandler package
 		return nil, goErrorHandler.OperationFailure("connect to gRPC", err)
 	}
 

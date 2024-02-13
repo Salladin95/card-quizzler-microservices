@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	appEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	userEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	userRepo "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/repository"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
 	"time"
@@ -26,6 +28,8 @@ type cachedRepository struct {
 // On data mutation, it updates the mutated data in the cache.
 type CachedRepository interface {
 	userRepo.Repository
+	GetEmailVerificationCode(ctx context.Context, email string) (*appEntities.EmailCode, error)
+	SetEmailVerificationCode(ctx context.Context, payload []byte) error
 }
 
 // NewCachedUserRepo creates a new instance of CachedRepository.
@@ -185,7 +189,7 @@ func (cr *cachedRepository) CreateUser(
 // It returns the updated user or an error if updating the user fails.
 func (cr *cachedRepository) UpdateUser(
 	ctx context.Context, uid string,
-	updateUserDto userEntities.UpdateDto,
+	updateUserDto userEntities.UpdateUserDto,
 ) (*user.User, error) {
 	// Update the user using the underlying repository
 	updatedUser, err := cr.repo.UpdateUser(ctx, uid, updateUserDto)
@@ -208,7 +212,7 @@ func (cr *cachedRepository) UpdateUser(
 		ctx,
 		"User updated. User cache updated for keys ID & EMAIL. Cache reset for USERS key. Event generated.",
 		"info",
-		"UpdateUser",
+		"UpdateEmail",
 	)
 
 	return updatedUser, nil
@@ -245,6 +249,77 @@ func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 		"DeleteUser",
 	)
 	return nil
+}
+
+// SetEmailVerificationCode sets the email verification code for the specified email in the cache.
+// It first unmarshals the payload into an EmailCode struct and verifies its validity.
+// If successful, it sets the email verification code in the cache with a 2-minute expiration.
+// It logs the action and returns nil if successful, otherwise it returns an error.
+func (cr *cachedRepository) SetEmailVerificationCode(ctx context.Context, payload []byte) error {
+	// Unmarshal payload into EmailCode struct
+	var emailCode appEntities.EmailCode
+	err := lib.UnmarshalData(payload, &emailCode)
+	if err != nil {
+		return err
+	}
+
+	// Verify email code
+	err = emailCode.Verify()
+	if err != nil {
+		cr.log(ctx, err.Error(), "error", "SetEmailVerificationCode")
+		return err
+	}
+
+	// Set email verification code in cache with 2-minute expiration
+	err = cr.redisClient.Set(cr.codeKey(emailCode.Email), payload, 2*time.Minute).Err()
+
+	if err != nil {
+		cr.log(ctx, err.Error(), "error", "SetEmailVerificationCode")
+		return goErrorHandler.OperationFailure("set cache", err)
+	}
+
+	// Log action
+	cr.log(
+		ctx,
+		"Email verification code is saved to cache",
+		"info",
+		"SetEmailVerificationCode",
+	)
+
+	return nil
+}
+
+// GetEmailVerificationCode retrieves the email verification code for the specified email from the cache.
+// It reads the email code from the cache using the email as the key.
+// If successful, it verifies the email code and returns it along with nil error.
+// It logs the action and returns an error if the code is invalid or if retrieval from the cache fails.
+func (cr *cachedRepository) GetEmailVerificationCode(ctx context.Context, email string) (*appEntities.EmailCode, error) {
+	// Initialize EmailCode struct
+	var emailCode appEntities.EmailCode
+
+	// Read email code from cache
+	err := cr.readCacheByKey(&emailCode, cr.codeKey(email))
+	if err != nil {
+		cr.log(ctx, err.Error(), "error", "GetEmailVerificationCode")
+		return nil, err
+	}
+
+	// Verify email code
+	err = emailCode.Verify()
+	if err != nil {
+		cr.log(ctx, err.Error(), "error", "GetEmailVerificationCode")
+		return nil, err
+	}
+
+	// Log action
+	cr.log(
+		ctx,
+		"Email verification code has been extracted from cache",
+		"info",
+		"SetEmailVerificationCode",
+	)
+
+	return &emailCode, nil
 }
 
 // log sends a log message to the message broker.

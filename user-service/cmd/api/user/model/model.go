@@ -2,19 +2,19 @@ package user
 
 import (
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
-	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
 // User Represents user's mongo document model
 type User struct {
-	ID        uuid.UUID `bson:"_id" json:"id"`
-	Name      string    `bson:"name" json:"name"`
-	Password  string    `bson:"password" json:"password"`
-	Email     string    `bson:"email" json:"email"`
-	Birthday  string    `bson:"birthday" json:"birthday"`
-	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
+	ID        primitive.ObjectID `bson:"_id" json:"id"`
+	Name      string             `bson:"name" json:"name"`
+	Password  string             `bson:"password" json:"password"`
+	Email     string             `bson:"email" json:"email"`
+	Birthday  string             `bson:"birthday" json:"birthday"`
+	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 // ToResponse converts a User object to a response object, omitting the password field
