@@ -9,6 +9,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/handlers"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/subscribers"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
@@ -45,6 +46,7 @@ func NewApp(cfg *config.Config, redisClient *redis.Client, broker rmqtools.Messa
 func (app *App) Start() {
 	cacheManager := cacheManager.NewCacheManager(app.redis, app.config, app.broker)
 	handlers := handlers.NewHandlers(app.config, app.broker, cacheManager)
+	listeners := subscribers.NewMessageBrokerSubscribers(app.broker, cacheManager)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -67,7 +69,7 @@ func (app *App) Start() {
 		}
 	}()
 
-	go cacheManager.ListenForUpdates()
+	go listeners.SubscribeToUserEvents(ctx)
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
 	// Use a buffered channel to avoid missing signals as recommended for signal.Notify

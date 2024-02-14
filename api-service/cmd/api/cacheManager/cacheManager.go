@@ -25,9 +25,13 @@ type CacheManager interface {
 	ClearUserRelatedCache(uid string) error
 	ClearCacheByKeys(key1, key2 string) error
 	SetTokenPair(uid string, tokenPair *entities.TokenPair) error
-	GetUsers(ctx context.Context, uid string) ([]*entities.UserResponse, error)
 	GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error)
-	ListenForUpdates()
+	SetCacheInPipeline(key string, hash string, data []byte, exp time.Duration) error
+	SetCacheByKey(key string, data []byte) error
+	ReadCacheByKey(readTo interface{}, key string) error
+	ReadCacheByKeys(readTo interface{}, key, hashKey string) error
+	UserHashKey(uid string) string
+	Exp() time.Duration
 }
 
 // NewCacheManager creates a new CacheManager instance with the provided Redis client and configuration.
@@ -44,9 +48,13 @@ func NewCacheManager(
 	}
 }
 
+func (cm *cacheManager) Exp() time.Duration {
+	return cm.exp
+}
+
 // ClearUserRelatedCache drops user related cache
 func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
-	return cm.redisClient.Del(cm.userHashKey(uid)).Err()
+	return cm.redisClient.Del(cm.UserHashKey(uid)).Err()
 }
 
 // ClearCacheByKeys drops specified cache

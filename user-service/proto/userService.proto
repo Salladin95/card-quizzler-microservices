@@ -40,9 +40,6 @@ message Email {
   string email = 1;
 }
 
-message EmptyRequest {
-}
-
 message Response {
   bytes data = 1;
   int64 code = 2;
@@ -53,7 +50,6 @@ service UserService {
   rpc SignIn(SignInRequest) returns (Response);
   rpc SignUp(SignUpRequest) returns (Response);
   rpc UpdateEmail(UpdateEmailRequest) returns (Response);
-  rpc GetUsers(EmptyRequest) returns (Response);
   rpc GetUserById(ID) returns (Response);
   rpc GetUserByEmail(Email) returns (Response);
   rpc DeleteUser(ID) returns (Response);

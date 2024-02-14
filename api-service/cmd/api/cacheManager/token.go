@@ -9,7 +9,7 @@ import (
 // AccessToken retrieves access token from cache
 func (cm *cacheManager) AccessToken(uid string) (string, error) {
 	var tokenPair entities.TokenPair
-	err := cm.readCacheByKeys(&tokenPair, cm.userHashKey(uid), tokensHKey)
+	err := cm.ReadCacheByKeys(&tokenPair, cm.UserHashKey(uid), TokensKey)
 	if err != nil {
 		return "", goErrorHandler.OperationFailure("get access token from cache", err)
 	}
@@ -19,7 +19,7 @@ func (cm *cacheManager) AccessToken(uid string) (string, error) {
 // RefreshToken retrieves refresh token from cache
 func (cm *cacheManager) RefreshToken(uid string) (string, error) {
 	var tokenPair entities.TokenPair
-	err := cm.readCacheByKeys(&tokenPair, cm.userHashKey(uid), tokensHKey)
+	err := cm.ReadCacheByKeys(&tokenPair, cm.UserHashKey(uid), TokensKey)
 	if err != nil {
 		return "", goErrorHandler.OperationFailure("get refresh token from cache", err)
 	}
@@ -34,6 +34,6 @@ func (cm *cacheManager) SetTokenPair(uid string, tokenPair *entities.TokenPair) 
 	if err != nil {
 		return err
 	}
-	err = cm.setCacheInPipeline(cm.userHashKey(uid), tokensHKey, parsedData, cm.cfg.JwtCfg.RefreshTokenExpTime)
+	err = cm.SetCacheInPipeline(cm.UserHashKey(uid), TokensKey, parsedData, cm.cfg.JwtCfg.RefreshTokenExpTime)
 	return err
 }

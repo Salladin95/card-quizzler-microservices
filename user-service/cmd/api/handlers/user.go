@@ -3,28 +3,9 @@ package handlers
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
-	model "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	userService "github.com/Salladin95/card-quizzler-microservices/user-service/proto"
 	"net/http"
 )
-
-// GetUsers retrieves all users.
-func (us *UserServer) GetUsers(ctx context.Context, _ *userService.EmptyRequest) (*userService.Response, error) {
-	// Log a message indicating the start of processing the GetUsers request
-	us.log(ctx, "start processing GetUsers request", "info", "GetUsers")
-
-	// Fetch all users from the repository
-	fetchedUsers, err := us.CachedRepo.GetUsers(ctx)
-
-	if err != nil {
-		// If an error occurs during user retrieval, build and return a failed response
-		return buildFailedResponse(err)
-	}
-
-	// If user retrieval is successful, build and return a successful response
-	userResponses := model.ToUserResponses(fetchedUsers)
-	return buildSuccessfulResponse(userResponses, http.StatusOK, "users have been successfully fetched")
-}
 
 // GetUserById retrieves a user based on the provided user ID.
 func (us *UserServer) GetUserById(ctx context.Context, req *userService.ID) (*userService.Response, error) {

@@ -11,39 +11,6 @@ import (
 	"net/http"
 )
 
-func (bh *brokerHandlers) GetUsers(c echo.Context) error {
-	ctx := c.Request().Context()
-
-	bh.log(ctx, "start processing request", "info", "getUsers")
-
-	// Retrieve user claims from the context
-	claims, ok := c.Get("user").(*entities.JwtUserClaims)
-	if !ok {
-		return goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, errors.New("failed to cast claims"))
-	}
-
-	users, err := bh.cacheManager.GetUsers(ctx, claims.Id)
-
-	if err == nil {
-		return handleCacheResponse(c, users)
-	}
-
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from brokerHandlers.
-	clientConn, err := bh.GetGRPCClientConn()
-	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
-	if err != nil {
-		return err // Return an error if obtaining the client connection fails.
-	}
-
-	// Make a gRPC call to the SignIn method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).GetUsers(ctx, &userService.EmptyRequest{})
-	if err != nil {
-		return goErrorHandler.OperationFailure("GetUsers", err)
-	}
-	var unmarshalTo []*entities.UserResponse
-	return handleGRPCResponse(c, res, unmarshalTo)
-}
-
 func (bh *brokerHandlers) GetUserById(c echo.Context) error {
 	ctx := c.Request().Context()
 	bh.log(ctx, "start processing request", "info", "getUserById")
