@@ -69,6 +69,11 @@ func (us *UserServer) UpdateEmail(
 		return buildFailedResponse(err)
 	}
 
+	isEmailOccupied, _ := us.CachedRepo.GetByEmail(ctx, updateDto.Email)
+	if isEmailOccupied != nil {
+		return &userService.Response{Code: http.StatusBadRequest, Message: "Email is occupied."}, nil
+	}
+
 	existingUser, err := us.CachedRepo.GetById(ctx, reqPayload.Id)
 
 	if err != nil {
@@ -100,7 +105,7 @@ func (us *UserServer) UpdateEmail(
 	}
 
 	// Build and return a user response with a success code and message
-	return buildSuccessfulResponse(updatedUser.ToResponse(), http.StatusCreated, "user has been updated")
+	return buildSuccessfulResponse(updatedUser.ToResponse(), http.StatusOK, "user has been updated")
 }
 
 // DeleteUser deletes a user based on the provided user ID.

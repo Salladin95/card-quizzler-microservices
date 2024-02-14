@@ -45,7 +45,8 @@ func (s *subscribers) SubscribeToUserEvents(ctx context.Context) {
 		"SubscribeToUserEvents",
 	)
 
-	s.broker.ListenForUpdates(userEvents, s.userEventHandler)
+	e := s.broker.ListenForUpdates(userEvents, s.userEventHandler)
+	s.log(ctx, e.Error(), "error", "SubscribeToUserEvents")
 }
 
 // userEventHandler is a callback function to handle user-related events received from RabbitMQ.
