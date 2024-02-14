@@ -1,17 +1,16 @@
 version: '3'
 services:
-  broker-service:
+  api-service:
     container_name: api-service-container
     image: api-service-image
     build:
       context: ./api-service
       dockerfile: Dockerfile
     ports:
-      - ${API_SERVICE_PORT}:80
+      - ${API_SERVICE_PORT}:${API_SERVICE_PORT}
     depends_on:
-      - redis
       - rabbitmq
-      #      - db
+      - redis
     networks:
       - myapp-network
 
@@ -22,9 +21,32 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     depends_on:
-      - redis
       - rabbitmq
-      #      - db
+      - redis
+      - mongo
+    networks:
+      - myapp-network
+
+  logging-service:
+    container_name: logging-service-container
+    image: logging-service-image
+    build:
+      context: ./logging-service
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - mongo
+    networks:
+      - myapp-network
+
+  mail-service:
+    container_name: mail-service-container
+    image: mail-service-image
+    build:
+      context: ./mail-service
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
     networks:
       - myapp-network
 
@@ -42,7 +64,89 @@ services:
     networks:
       - myapp-network
     volumes:
-      - ./db-data/rabbitmq/:/var/lib/rabbitmq/
+      - ./volumes/rabbitmq/:/var/lib/rabbitmq/
+
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./volumes/broker-redis:/data
+    networks:
+      - myapp-network
+
+
+  mongo:
+    image: 'mongo:4.2.16-bionic'
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: user
+      MONGO_INITDB_ROOT_USERNAME: khalid
+      MONGO_INITDB_ROOT_PASSWORD: 12345
+    volumes:
+      - ./volumes/mongo/:/data/db
+    networks:
+      - myapp-network
+
+
+#  api-redis:
+#    image: "redis:alpine"
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - ./volumes/broker-redis:/data
+#    networks:
+#      - myapp-network
+#
+#  user-redis:
+#    image: "redis:alpine"
+#    ports:
+#      - "6380:6380"
+#    volumes:
+#      - ./volumes/auth-redis:/data
+#    networks:
+#      - myapp-network
+
+#  user-db:
+#    image: 'mongo:4.2.16-bionic'
+#    ports:
+#      - ${USER_DB_PORT}:${USER_DB_PORT}
+#    environment:
+#      MONGO_INITDB_DATABASE: ${USER_DB_DATABASE}
+#      MONGO_INITDB_ROOT_USERNAME: ${USER_DB_USER}
+#      MONGO_INITDB_ROOT_PASSWORD: ${USER_DB_PASSWORD}
+#    volumes:
+#      - ./volumes/mongo/:/data/db
+#    networks:
+#      - myapp-network
+#
+#  logging-db:
+#    image: 'mongo:4.2.16-bionic'
+#    ports:
+#      - ${LOGGING_DB_PORT}:${LOGGING_DB_PORT}
+#    environment:
+#      MONGO_INITDB_DATABASE: ${LOGGING_DB_DATABASE}
+#      MONGO_INITDB_ROOT_USERNAME: ${LOGGING_DB_USER}
+#      MONGO_INITDB_ROOT_PASSWORD: ${LOGGING_DB_PASSWORD}
+#    volumes:
+#      - ./volumes/mongo/:/data/db
+#    networks:
+#      - myapp-network
+
+#  postgres:
+#    image: "postgres:15.1-alpine"
+#    ports:
+#      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+#    environment:
+#      POSTGRES_USER: ${POSTGRES_USER}
+#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#      POSTGRES_DB: ${POSTGRES_DATABASE}
+#    volumes:
+#      - ./volumes/postgres:/var/lib/postgresql/data
+#    networks:
+#      - myapp-network
 
 networks:
   myapp-network:

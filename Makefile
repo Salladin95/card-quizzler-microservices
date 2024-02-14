@@ -1,6 +1,8 @@
 SHELL=cmd.exe
 API_SERVICE_BINARY=apiApp
 USER_SERVICE_BINARY=userApp
+LOGGING_SERVICE_BINARY=loggingApp
+MAIL_SERVICE_BINARY=mailApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -9,7 +11,7 @@ up:
 	@echo Docker images started!
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_api build_user
+up_build: build_api build_user build_mail build_logging
 	@echo Stopping docker images (if running...)
 	docker-compose down
 	@echo Building (when required) and starting docker images...
@@ -24,12 +26,24 @@ down:
 
 ## build_api: builds the api-service binary as a linux executable
 build_api:
-	@echo Building broker binary...
-	chdir broker && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${API_SERVICE_BINARY} ./cmd/api
+	@echo Building api-service binary...
+	chdir api-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${API_SERVICE_BINARY} ./cmd/api
 	@echo Done!
 
 ## build_user: builds the user-service binary as a linux executable
 build_user:
-	@echo Building auth binary...
-	chdir auth && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${USER_SERVICE_BINARY} ./cmd/api
+	@echo Building user-serivce binary...
+	chdir user-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${USER_SERVICE_BINARY} ./cmd/api
+	@echo Done!
+
+## build_logging: builds the logging-service binary as a linux executable
+build_logging:
+	@echo Building logging-serivce binary...
+	chdir logging-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${LOGGING_SERVICE_BINARY} ./cmd/api
+	@echo Done!
+
+## build_mail: builds the mail-service binary as a linux executable
+build_mail:
+	@echo Building mail-service binary...
+	chdir mail-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${MAIL_SERVICE_BINARY} ./cmd/api
 	@echo Done!
