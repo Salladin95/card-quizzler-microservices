@@ -83,14 +83,9 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 			"ListenForUpdates",
 		)
 	case constants.UpdatedUserKey:
-		s.cacheManager.SetCacheInPipeline(
-			s.cacheManager.UserHashKey(user.ID),
-			cacheManager.UserKey,
-			payload,
-			s.cacheManager.Exp(),
-		)
-		// Clear the cache for the user list
+		// Clear the cache
 		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UsersKey)
+		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UserKey)
 
 		s.log(
 			ctx,

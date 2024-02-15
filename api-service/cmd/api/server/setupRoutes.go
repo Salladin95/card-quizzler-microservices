@@ -10,7 +10,7 @@ import (
 // setupRoutes configures and defines API routes for the Echo server.
 func (app *App) setupRoutes(
 	broker rmqtools.MessageBroker,
-	handlers handlers.BrokerHandlersInterface,
+	handlers handlers.ApiHandlersInterface,
 	cacheManager cacheManager.CacheManager,
 ) {
 	routes := app.server.Group("/v1/api")
@@ -21,6 +21,10 @@ func (app *App) setupRoutes(
 	authRoutes.POST("/sign-up", handlers.SignUp)
 	authRoutes.GET("/refresh", handlers.Refresh)
 
+	// ****************** EMAIL *********************
+	routes.POST("/request-email-verification", handlers.RequestEmailVerification)
+	// ****************** RESET PASSWORD *********************
+	routes.PATCH("/user/reset-password", handlers.ResetPassword)
 	// ***************** PROTECTED ROUTES ************
 	protectedRoutes := routes.Group("")
 	protectedRoutes.Use(
@@ -31,6 +35,5 @@ func (app *App) setupRoutes(
 	protectedRoutes.GET("/user/profile", handlers.GetProfile)
 	protectedRoutes.GET("/user/:id", handlers.GetUserById)
 	protectedRoutes.PATCH("/user/update-email/:id", handlers.UpdateEmail)
-	// ****************** PROTECTED >> EMAIL *********************
-	protectedRoutes.GET("/request-email-verification", handlers.RequestEmailVerification)
+	protectedRoutes.PATCH("/user/update-password/:id", handlers.UpdatePassword)
 }

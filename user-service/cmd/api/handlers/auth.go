@@ -34,10 +34,12 @@ func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest
 		// Return a response with the mapped error status code and message if fetching user fails
 		return &userService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
 	}
-	isPasswordInvalid := lib.CompareHashAndPassword(fetchedUser.Password, signInDto.Password)
-	if fetchedUser.Email != signInDto.Email || isPasswordInvalid != nil {
+
+	err = lib.CompareHashAndPassword(fetchedUser.Password, signInDto.Password)
+
+	if fetchedUser.Email != signInDto.Email || err != nil {
 		// Return a response with the mapped error status code and message if authentication fails
-		return buildFailedResponse(err)
+		return &userService.Response{Code: 400, Message: "provided password or email is not valid"}, nil
 	}
 	// Build and return a user response with a success code and message
 	return buildSuccessfulResponse(fetchedUser.ToResponse(), http.StatusOK, "user has signed in")

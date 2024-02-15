@@ -188,7 +188,8 @@ func (cr *cachedRepository) CreateUser(
 // It then clears the cache for the user list.
 // It returns the updated user or an error if updating the user fails.
 func (cr *cachedRepository) UpdateUser(
-	ctx context.Context, uid string,
+	ctx context.Context,
+	uid string,
 	updateUserDto userEntities.UpdateUserDto,
 ) (*user.User, error) {
 	// Update the user using the underlying repository
@@ -197,12 +198,8 @@ func (cr *cachedRepository) UpdateUser(
 		return nil, err
 	}
 
-	// Cache the newly created user using both the hash key derived from the user ID and the email as cache keys
-	cr.setCacheInPipeline(userRootKey, cr.userHashKey(updatedUser.ID.String()), updatedUser)
-	cr.setCacheInPipeline(userRootKey, cr.userHashKey(updatedUser.Email), updatedUser)
-
-	// Clear the cache for the user list
-	cr.clearCacheByKeys(userRootKey, usersKey)
+	// Clear the cache
+	cr.clearCacheByKey(userRootKey)
 
 	// Publish an event to RabbitMQ indicating that the user was updated
 	cr.broker.PushToQueue(ctx, constants.UpdatedUserKey, updatedUser)
@@ -234,9 +231,8 @@ func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 		return err
 	}
 
-	cr.clearCacheByKeys(userRootKey, usersKey)
-	cr.clearCacheByKeys(userRootKey, cr.userHashKey(uid))
-	cr.clearCacheByKeys(userRootKey, cr.userHashKey(u.Email))
+	// Clear the cache
+	cr.clearCacheByKey(userRootKey)
 
 	// Publish an event to RabbitMQ indicating that the user was deleted
 	cr.broker.PushToQueue(ctx, constants.DeletedUserKey, u)

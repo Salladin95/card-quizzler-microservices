@@ -11,9 +11,9 @@ import (
 )
 
 // SignIn handles the HTTP request for user sign-in.
-func (bh *brokerHandlers) SignIn(c echo.Context) error {
+func (ah *apiHandlers) SignIn(c echo.Context) error {
 	ctx := c.Request().Context()
-	bh.log(ctx, "start processing request", "info", "signIn")
+	ah.log(ctx, "start processing request", "info", "signIn")
 
 	// Parse the request body into SignInDto
 	var signInDTO entities.SignInDto
@@ -21,8 +21,8 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 		return err
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from brokerHandlers.
-	clientConn, err := bh.GetGRPCClientConn()
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn()
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
@@ -50,7 +50,7 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 	}
 
 	// Generate a token pair for the signed-in user
-	tokens, err := GenerateTokenPair(signedInUser.ID, bh.config.JwtCfg)
+	tokens, err := GenerateTokenPair(signedInUser.ID, ah.config.JwtCfg)
 	if err != nil {
 		return err
 	}
@@ -60,12 +60,12 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 		c,
 		"refresh-token",
 		tokens.RefreshToken,
-		bh.config.JwtCfg.RefreshTokenExpTime,
+		ah.config.JwtCfg.RefreshTokenExpTime,
 		"/",
 	)
 
 	// Set the access and refresh tokens in the cache
-	err = bh.cacheManager.SetTokenPair(signedInUser.ID, tokens)
+	err = ah.cacheManager.SetTokenPair(signedInUser.ID, tokens)
 	if err != nil {
 		return err
 	}
@@ -77,9 +77,9 @@ func (bh *brokerHandlers) SignIn(c echo.Context) error {
 }
 
 // SignUp handles the HTTP request for user sign-up.
-func (bh *brokerHandlers) SignUp(c echo.Context) error {
+func (ah *apiHandlers) SignUp(c echo.Context) error {
 	ctx := c.Request().Context()
-	bh.log(ctx, "start processing request", "info", "signUp")
+	ah.log(ctx, "start processing request", "info", "signUp")
 
 	// Parse the request body into SignUpDto
 	var signUpDTO entities.SignUpDto
@@ -87,8 +87,8 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 		return err
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from brokerHandlers.
-	clientConn, err := bh.GetGRPCClientConn()
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn()
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
@@ -120,9 +120,9 @@ func (bh *brokerHandlers) SignUp(c echo.Context) error {
 }
 
 // Refresh handles the HTTP request for token refresh.
-func (bh *brokerHandlers) Refresh(c echo.Context) error {
+func (ah *apiHandlers) Refresh(c echo.Context) error {
 	ctx := c.Request().Context()
-	bh.log(ctx, "start processing request", "info", "refresh")
+	ah.log(ctx, "start processing request", "info", "refresh")
 
 	// Extract the refresh token from the request
 	refreshToken, err := lib.ExtractRefreshToken(c)
@@ -131,11 +131,11 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	}
 
 	// Validate the refresh token
-	claims, err := lib.ValidateTokenString(refreshToken, bh.config.JwtCfg.JWTRefreshSecret)
+	claims, err := lib.ValidateTokenString(refreshToken, ah.config.JwtCfg.JWTRefreshSecret)
 	if err != nil {
 		lib.ClearCookies(c)
-		bh.cacheManager.ClearUserRelatedCache(claims.Id)
-		bh.log(
+		ah.cacheManager.ClearUserRelatedCache(claims.Id)
+		ah.log(
 			ctx,
 			fmt.Sprintf("clearing cookies and session. Err - %s", err.Error()),
 			"error",
@@ -145,11 +145,11 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	}
 
 	// Retrieve cached refresh token
-	cachedRefreshToken, err := bh.cacheManager.RefreshToken(claims.Id)
+	cachedRefreshToken, err := ah.cacheManager.RefreshToken(claims.Id)
 
 	// Compare tokens
 	if err != nil || cachedRefreshToken != refreshToken {
-		bh.log(
+		ah.log(
 			ctx,
 
 			"Received token and token from cache don't match. Clearing cache & session",
@@ -157,7 +157,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 			"refresh",
 		)
 		lib.ClearCookies(c)
-		bh.cacheManager.ClearUserRelatedCache(claims.Id)
+		ah.cacheManager.ClearUserRelatedCache(claims.Id)
 		return goErrorHandler.NewError(
 			goErrorHandler.ErrUnauthorized,
 			fmt.Errorf("received token and token from cache don't match"),
@@ -165,7 +165,7 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 	}
 
 	// Generate a new pair of access and refresh tokens
-	tokens, err := GenerateTokenPair(claims.Id, bh.config.JwtCfg)
+	tokens, err := GenerateTokenPair(claims.Id, ah.config.JwtCfg)
 	if err != nil {
 		return err
 	}
@@ -175,12 +175,12 @@ func (bh *brokerHandlers) Refresh(c echo.Context) error {
 		c,
 		"refresh-token",
 		tokens.RefreshToken,
-		bh.config.JwtCfg.RefreshTokenExpTime,
+		ah.config.JwtCfg.RefreshTokenExpTime,
 		"/",
 	)
 
 	// Set the new token pair
-	err = bh.cacheManager.SetTokenPair(claims.Id, tokens)
+	err = ah.cacheManager.SetTokenPair(claims.Id, tokens)
 	if err != nil {
 		return err
 	}

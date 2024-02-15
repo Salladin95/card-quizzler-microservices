@@ -13,31 +13,33 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// BrokerHandlersInterface defines the interface for api-service-related HTTP handlers.
-type BrokerHandlersInterface interface {
+// ApiHandlersInterface defines the interface for api-service-related HTTP handlers.
+type ApiHandlersInterface interface {
 	SignIn(c echo.Context) error
 	SignUp(c echo.Context) error
 	Refresh(c echo.Context) error
 	UpdateEmail(c echo.Context) error
+	UpdatePassword(c echo.Context) error
+	ResetPassword(c echo.Context) error
 	GetUserById(c echo.Context) error
 	GetProfile(c echo.Context) error
 	RequestEmailVerification(c echo.Context) error
 }
 
-// brokerHandlers implements the BrokerHandlersInterface.
-type brokerHandlers struct {
+// apiHandlers implements the ApiHandlersInterface.
+type apiHandlers struct {
 	broker       rmqtools.MessageBroker
 	config       *config.Config
 	cacheManager cacheManager.CacheManager
 }
 
-// NewHandlers creates a new instance of BrokerHandlersInterface.
+// NewHandlers creates a new instance of ApiHandlersInterface.
 func NewHandlers(
 	cfg *config.Config,
 	broker rmqtools.MessageBroker,
 	cacheManager cacheManager.CacheManager,
-) BrokerHandlersInterface {
-	return &brokerHandlers{
+) ApiHandlersInterface {
+	return &apiHandlers{
 		broker:       broker,
 		config:       cfg,
 		cacheManager: cacheManager,
@@ -45,10 +47,10 @@ func NewHandlers(
 }
 
 // GetGRPCClientConn establishes a gRPC client connection using the specified URL and returns the connection.
-func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
+func (ah *apiHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	// Dial a gRPC server using the provided URL and insecure transport credentials
 	conn, err := grpc.Dial(
-		bh.config.AppCfg.UserServiceUrl,
+		ah.config.AppCfg.UserServiceUrl,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	)
@@ -61,11 +63,11 @@ func (bh *brokerHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 }
 
 // log sends a log message to the message broker.
-func (bh *brokerHandlers) log(ctx context.Context, message, level, method string) {
+func (ah *apiHandlers) log(ctx context.Context, message, level, method string) {
 	var log entities.LogMessage
 
 	// Push log message to the message broker
-	bh.broker.PushToQueue(
+	ah.broker.PushToQueue(
 		ctx,
 		constants.LogCommand, // Specify the log command constant
 		// Generate log message with provided details

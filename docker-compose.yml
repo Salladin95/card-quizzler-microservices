@@ -80,11 +80,11 @@ services:
   mongo:
     image: 'mongo:4.2.16-bionic'
     ports:
-      - "27017:27017"
+      - ${MONGO_PORT}:${MONGO_PORT}
     environment:
-      MONGO_INITDB_DATABASE: user
-      MONGO_INITDB_ROOT_USERNAME: khalid
-      MONGO_INITDB_ROOT_PASSWORD: 12345
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - ./volumes/mongo/:/data/db
     networks:

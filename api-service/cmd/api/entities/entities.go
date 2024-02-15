@@ -169,3 +169,60 @@ func (dto *UpdateEmailDto) Verify() error {
 
 	return nil
 }
+
+// UpdatePasswordDto represents the data transfer object for user's password
+type UpdatePasswordDto struct {
+	CurrentPassword string `json:"currentPassword" validate:"required,min=6"`
+	NewPassword     string `json:"newPassword" validate:"required,min=6"`
+}
+
+func (updateDto *UpdatePasswordDto) ToPayload(uid string) *userService.UpdatePasswordPayload {
+	return &userService.UpdatePasswordPayload{
+		CurrentPassword: updateDto.CurrentPassword,
+		NewPassword:     updateDto.NewPassword,
+		Id:              uid,
+	}
+}
+
+// Verify validates the structure and content of the UpdateUserDto.
+func (updateDto *UpdatePasswordDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(updateDto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
+}
+
+// ResetPasswordDto represents the data transfer object for user's password
+type ResetPasswordDto struct {
+	NewPassword string `json:"newPassword" validate:"required,min=6"`
+	Email       string `json:"email" validate:"required"`
+	Code        int64  `json:"code" validate:"required"`
+}
+
+func (updateDto *ResetPasswordDto) ToPayload() *userService.ResetPasswordPayload {
+	return &userService.ResetPasswordPayload{
+		NewPassword: updateDto.NewPassword,
+		Code:        updateDto.Code,
+		Email:       updateDto.Email,
+	}
+}
+
+// Verify validates the structure and content of the UpdateUserDto.
+func (updateDto *ResetPasswordDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(updateDto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
+}

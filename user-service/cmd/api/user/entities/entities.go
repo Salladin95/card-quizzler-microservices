@@ -91,6 +91,48 @@ func (updateDto *UpdateUserDto) Verify() error {
 	return nil
 }
 
+// UpdatePasswordDto represents the data transfer object for user's password
+type UpdatePasswordDto struct {
+	CurrentPassword string `json:"currentPassword" validate:"required,min=6"`
+	NewPassword     string `json:"newPassword" validate:"required,min=6"`
+	Id              string `json:"id" validate:"required"`
+}
+
+// Verify validates the structure and content of the UpdateUserDto.
+func (updateDto *UpdatePasswordDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(updateDto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
+}
+
+// ResetPasswordDto represents the data transfer object for user's password
+type ResetPasswordDto struct {
+	NewPassword string `json:"newPassword" validate:"required,min=6"`
+	Email       string `json:"email" validate:"required"`
+	Code        int64  `json:"code" validate:"required"`
+}
+
+// Verify validates the structure and content of the UpdateUserDto.
+func (updateDto *ResetPasswordDto) Verify() error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(updateDto); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
+}
+
 // Response represents user response structure
 type Response struct {
 	ID        primitive.ObjectID `json:"id"`

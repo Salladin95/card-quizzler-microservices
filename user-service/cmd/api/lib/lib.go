@@ -43,7 +43,7 @@ func MarshalData(data interface{}) ([]byte, error) {
 func CompareHashAndPassword(hashedPassword string, plaintextPassword string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plaintextPassword))
 	if err != nil {
-		return goErrorHandler.OperationFailure("compare has and password", err)
+		return goErrorHandler.OperationFailure("compare hash and password", err)
 	}
 	return nil
 }
