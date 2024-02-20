@@ -71,7 +71,7 @@ func (ah *apiHandlers) SignIn(c echo.Context) error {
 	}
 
 	// Respond with the access token in the JSON body
-	return c.JSON(http.StatusOK, entities.SignInResponse{
+	return c.JSON(http.StatusOK, entities.ResponseWithToken{
 		AccessToken: tokens.AccessToken,
 	})
 }
@@ -186,7 +186,7 @@ func (ah *apiHandlers) Refresh(c echo.Context) error {
 	}
 
 	// Respond with the JSON data containing the new access token
-	return c.JSON(http.StatusOK, entities.SignInResponse{
+	return c.JSON(http.StatusOK, entities.ResponseWithToken{
 		AccessToken: tokens.AccessToken,
 	})
 }

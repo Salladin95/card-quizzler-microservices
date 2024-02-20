@@ -7,6 +7,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
+	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -22,6 +23,20 @@ import (
 // DataWithVerify is an interface that requires a Verify method.
 type DataWithVerify interface {
 	Verify() error
+}
+
+// Verify validates the given structure
+func Verify(data interface{}) error {
+	// Create a new validator instance.
+	validate := validator.New()
+
+	// Validate the SignUpDto structure.
+	if err := validate.Struct(data); err != nil {
+		// Convert validation errors and return a ValidationFailure error.
+		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
+	}
+
+	return nil
 }
 
 // BindBodyAndVerify binds the request body to a DataWithVerify interface

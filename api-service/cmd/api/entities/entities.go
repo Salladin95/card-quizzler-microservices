@@ -1,9 +1,8 @@
 package entities
 
 import (
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
-	"github.com/Salladin95/goErrorHandler"
-	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
@@ -27,7 +26,7 @@ type JsonResponse struct {
 	Data    any    `json:"data"`
 }
 
-type SignInResponse struct {
+type ResponseWithToken struct {
 	AccessToken string `json:"accessToken"`
 }
 
@@ -65,16 +64,7 @@ func GetJwtUserClaims(id string, exp time.Duration) JwtUserClaims {
 
 // Verify validates the structure and content of the SignInDto.
 func (signInDto *SignInDto) Verify() error {
-	// Create a new validator instance.
-	validate := validator.New()
-
-	// Validate the SignInDto structure.
-	if err := validate.Struct(signInDto); err != nil {
-		// Convert validation errors and return a ValidationFailure error.
-		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
-	}
-
-	return nil
+	return lib.Verify(signInDto)
 }
 
 func (signInDto *SignInDto) ToAuthPayload() *userService.SignInPayload {
@@ -86,16 +76,7 @@ func (signInDto *SignInDto) ToAuthPayload() *userService.SignInPayload {
 
 // Verify validates the structure and content of the SignUpDto.
 func (signUpDto *SignUpDto) Verify() error {
-	// Create a new validator instance.
-	validate := validator.New()
-
-	// Validate the SignUpDto structure.
-	if err := validate.Struct(signUpDto); err != nil {
-		// Convert validation errors and return a ValidationFailure error.
-		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
-	}
-
-	return nil
+	return lib.Verify(signUpDto)
 }
 
 func (signUpDto *SignUpDto) ToAuthPayload() *userService.SignUpPayload {
@@ -131,16 +112,7 @@ type RequestEmailVerificationDto struct {
 
 // Verify validates the structure and content of the SignUpDto.
 func (dto *RequestEmailVerificationDto) Verify() error {
-	// Create a new validator instance.
-	validate := validator.New()
-
-	// Validate the SignUpDto structure.
-	if err := validate.Struct(dto); err != nil {
-		// Convert validation errors and return a ValidationFailure error.
-		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
-	}
-
-	return nil
+	return lib.Verify(dto)
 }
 
 type UpdateEmailDto struct {
@@ -158,16 +130,7 @@ func (dto *UpdateEmailDto) ToPayload(uid string) *userService.UpdateEmailPayload
 
 // Verify validates the structure and content of the SignUpDto.
 func (dto *UpdateEmailDto) Verify() error {
-	// Create a new validator instance.
-	validate := validator.New()
-
-	// Validate the SignUpDto structure.
-	if err := validate.Struct(dto); err != nil {
-		// Convert validation errors and return a ValidationFailure error.
-		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
-	}
-
-	return nil
+	return lib.Verify(dto)
 }
 
 // UpdatePasswordDto represents the data transfer object for user's password
@@ -176,26 +139,17 @@ type UpdatePasswordDto struct {
 	NewPassword     string `json:"newPassword" validate:"required,min=6"`
 }
 
-func (updateDto *UpdatePasswordDto) ToPayload(uid string) *userService.UpdatePasswordPayload {
+func (dto *UpdatePasswordDto) ToPayload(uid string) *userService.UpdatePasswordPayload {
 	return &userService.UpdatePasswordPayload{
-		CurrentPassword: updateDto.CurrentPassword,
-		NewPassword:     updateDto.NewPassword,
+		CurrentPassword: dto.CurrentPassword,
+		NewPassword:     dto.NewPassword,
 		Id:              uid,
 	}
 }
 
 // Verify validates the structure and content of the UpdateUserDto.
-func (updateDto *UpdatePasswordDto) Verify() error {
-	// Create a new validator instance.
-	validate := validator.New()
-
-	// Validate the SignUpDto structure.
-	if err := validate.Struct(updateDto); err != nil {
-		// Convert validation errors and return a ValidationFailure error.
-		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
-	}
-
-	return nil
+func (dto *UpdatePasswordDto) Verify() error {
+	return lib.Verify(dto)
 }
 
 // ResetPasswordDto represents the data transfer object for user's password
@@ -205,24 +159,15 @@ type ResetPasswordDto struct {
 	Code        int64  `json:"code" validate:"required"`
 }
 
-func (updateDto *ResetPasswordDto) ToPayload() *userService.ResetPasswordPayload {
+func (dto *ResetPasswordDto) ToPayload() *userService.ResetPasswordPayload {
 	return &userService.ResetPasswordPayload{
-		NewPassword: updateDto.NewPassword,
-		Code:        updateDto.Code,
-		Email:       updateDto.Email,
+		NewPassword: dto.NewPassword,
+		Code:        dto.Code,
+		Email:       dto.Email,
 	}
 }
 
 // Verify validates the structure and content of the UpdateUserDto.
-func (updateDto *ResetPasswordDto) Verify() error {
-	// Create a new validator instance.
-	validate := validator.New()
-
-	// Validate the SignUpDto structure.
-	if err := validate.Struct(updateDto); err != nil {
-		// Convert validation errors and return a ValidationFailure error.
-		return goErrorHandler.ValidationFailure(goErrorHandler.ConvertValidationErrors(err))
-	}
-
-	return nil
+func (dto *ResetPasswordDto) Verify() error {
+	return lib.Verify(dto)
 }
