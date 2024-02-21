@@ -31,9 +31,9 @@ func (dto *CreateFolderDto) ToModel() (models.Folder, error) {
 	id := uuid.New()
 
 	return models.Folder{
-		ID:    id,
-		Users: []models.User{{ID: dto.UserID}},
-		Title: dto.Title,
+		ID:     id,
+		UserID: dto.UserID,
+		Title:  dto.Title,
 	}, nil
 }
 
@@ -66,10 +66,9 @@ func (dto *CreateModuleDto) ToModel() (models.Module, error) {
 	id := uuid.New()
 
 	module = models.Module{
-		ID:    id,
-		Title: dto.Title,
-		// Create association with user
-		Users: []models.User{{ID: dto.UserID}},
+		ID:     id,
+		Title:  dto.Title,
+		UserID: dto.UserID,
 	}
 
 	return module, nil

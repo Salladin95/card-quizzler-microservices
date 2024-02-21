@@ -14,8 +14,8 @@ type BaseModel struct {
 
 type User struct {
 	ID      string   `gorm:"primary_key;unique;" json:"id"`
-	Folders []Folder `gorm:"many2many:user_folders;" json:"folders,omitempty"`
-	Modules []Module `gorm:"many2many:user_modules;" json:"modules,omitempty"`
+	Folders []Folder `gorm:"foreignKey:UserID" json:"folders,omitempty"`
+	Modules []Module `gorm:"foreignKey:UserID" json:"modules,omitempty"`
 }
 
 type Term struct {
@@ -28,7 +28,7 @@ type Term struct {
 type Module struct {
 	ID        uuid.UUID `gorm:"primary_key;unique;" json:"id"`
 	Title     string    `json:"title"`
-	Users     []User    `gorm:"many2many:user_modules;" json:"users"`
+	UserID    string    `json:"userID"`
 	Folders   []Folder  `gorm:"many2many:folder_modules;" json:"folders,omitempty"`
 	Terms     []Term    `gorm:"many2many:module_terms;" json:"terms"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -38,7 +38,7 @@ type Module struct {
 type Folder struct {
 	ID        uuid.UUID `gorm:"primary_key;unique;" json:"id"`
 	Title     string    `gorm:"unique;" json:"title"`
-	Users     []User    `gorm:"many2many:user_folders;" json:"users"`
+	UserID    string    `json:"userID"`
 	Modules   []Module  `gorm:"many2many:folder_modules;" json:"modules"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

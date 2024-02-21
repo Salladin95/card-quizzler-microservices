@@ -46,7 +46,7 @@ func (ah *apiHandlers) GetProfile(c echo.Context) error {
 	ah.log(ctx, "start processing request", "info", "GetProfile")
 
 	// Retrieve user claims from the context
-	claims, ok := c.Get("user").(*entities.JwtUserClaims)
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
 	if !ok {
 		return goErrorHandler.NewError(
 			goErrorHandler.ErrUnauthorized,

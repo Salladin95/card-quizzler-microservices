@@ -66,8 +66,7 @@ func (r *repo) GetModulesByUID(uid string) ([]models.Module, error) {
 		Preload("Terms").
 		Preload("Users").
 		Preload("Folders").
-		Joins("JOIN user_modules ON modules.id = user_modules.module_id").
-		Where("user_modules.user_id = ?", uid).
+		Where("user_id = ?", uid).
 		Find(&userModules).
 		Error
 	return userModules, err

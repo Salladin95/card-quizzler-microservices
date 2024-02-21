@@ -3,7 +3,6 @@ package entities
 import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
-	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
 
@@ -38,28 +37,11 @@ type UserResponse struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
-type JwtUser struct {
-	Id string `json:"id"`
-}
 
 // TokenPair represents a pair of JWTs: access token and refresh token.
 type TokenPair struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
-}
-
-type JwtUserClaims struct {
-	JwtUser
-	jwt.RegisteredClaims
-}
-
-func GetJwtUserClaims(id string, exp time.Duration) JwtUserClaims {
-	return JwtUserClaims{
-		JwtUser{id},
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(exp)),
-		},
-	}
 }
 
 // Verify validates the structure and content of the SignInDto.

@@ -27,8 +27,7 @@ func (r *repo) GetFoldersByUID(uid string) ([]models.Folder, error) {
 	return folders, r.db.
 		Preload("Modules.Terms").
 		Preload("Users").
-		Joins("JOIN user_folders ON folders.id = user_folders.folder_id").
-		Where("user_folders.user_id = ?", uid).
+		Where("user_id = ?", uid).
 		Find(&folders).
 		Error
 }

@@ -50,7 +50,7 @@ func GenerateTokenPair(id string, cfg config.JwtCfg) (*entities.TokenPair, error
 // Returns the generated JWT or an error.
 func GenerateToken(id string, exp time.Duration, secret string) (string, error) {
 	// Create JWT claims with user information
-	claims := entities.GetJwtUserClaims(id, exp)
+	claims := lib.GetJwtUserClaims(id, exp)
 
 	// Create a new JWT token with the specified signing method and claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

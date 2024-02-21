@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-playground/validator/v10"
@@ -106,13 +105,31 @@ func connectToRedis(addr string) *redis.Client {
 	})
 }
 
+type JwtUser struct {
+	Id string `json:"id"`
+}
+
+type JwtUserClaims struct {
+	JwtUser
+	jwt.RegisteredClaims
+}
+
+func GetJwtUserClaims(id string, exp time.Duration) JwtUserClaims {
+	return JwtUserClaims{
+		JwtUser{id},
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(exp)),
+		},
+	}
+}
+
 // GetJwtConfig returns a configuration for JWT authentication.
 // It takes a key as a parameter for the signing key.
 func GetJwtConfig(key string) echojwt.Config {
 	return echojwt.Config{
 		SigningKey: []byte(key), // Set the signing key for JWT
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(entities.JwtUserClaims) // Create new JWT claims using the JwtUserClaims struct
+			return new(JwtUserClaims) // Create new JWT claims using the JwtUserClaims struct
 		},
 		ErrorHandler: func(c echo.Context, err error) error {
 			// HandleEvent errors during JWT authentication and return an unauthorized error
@@ -123,14 +140,14 @@ func GetJwtConfig(key string) echojwt.Config {
 
 // ValidateTokenString validates a JWT token string using the provided secret key.
 // It returns the decoded claims if the token is valid, otherwise, returns an error.
-func ValidateTokenString(tokenString string, secret string) (*entities.JwtUserClaims, error) {
+func ValidateTokenString(tokenString string, secret string) (*JwtUserClaims, error) {
 	// Get JWT configuration with the provided secret key
 	config := GetJwtConfig(secret)
 
 	// Parse and validate the token with custom claims and signing key
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&entities.JwtUserClaims{},
+		&JwtUserClaims{},
 		func(token *jwt.Token) (interface{}, error) {
 			return config.SigningKey, nil
 		})
@@ -141,7 +158,7 @@ func ValidateTokenString(tokenString string, secret string) (*entities.JwtUserCl
 	}
 
 	// Extract claims from the token
-	claims, ok := token.Claims.(*entities.JwtUserClaims)
+	claims, ok := token.Claims.(*JwtUserClaims)
 	if !ok {
 		// Log and return an unauthorized error if claims are invalid
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrUnauthorized, err)
