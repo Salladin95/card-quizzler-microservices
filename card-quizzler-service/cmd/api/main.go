@@ -8,12 +8,11 @@ import (
 	migrations "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/db"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"log"
 	"net/http"
 	"os"
@@ -41,10 +40,32 @@ func main() {
 
 	migrations.Migrate(db)
 
-	repository := repo{db}
+	repository := repositories.NewRepo(db)
+
+	// creates a module
+	routes.POST("/user/:uid", func(c echo.Context) error {
+		uid := c.Param("uid")
+		if uid == "" {
+			fmt.Printf("*** err - %v ***\n", err)
+			return c.String(http.StatusBadRequest, "User id is required")
+		}
+
+		err := repository.CreateUser(uid)
+
+		if err != nil {
+			fmt.Printf("*** err - %v ***\n", err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		return c.JSON(
+			http.StatusOK,
+			entities.JsonResponse{Message: "User is created"},
+		)
+	})
 
 	// creates a module
 	routes.POST("/module", func(c echo.Context) error {
+		fmt.Println("processing create module request")
 		var createModuleDto entities.CreateModuleDto
 		err := lib.BindBodyAndVerify(c, &createModuleDto)
 
@@ -286,98 +307,4 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		server.Logger.Fatal(err)
 	}
-}
-
-type repo struct {
-	db *gorm.DB
-}
-
-func (r *repo) CreateFolder(dto entities.CreateFolderDto) (models.Folder, error) {
-	folder, err := dto.ToModel()
-
-	if err != nil {
-		return folder, err
-	}
-
-	createdModule := r.db.Create(&folder)
-	if createdModule.Error != nil {
-		return folder, createdModule.Error
-	}
-
-	return folder, nil
-}
-
-func (r *repo) GetFoldersByUID(uid string) ([]models.Folder, error) {
-	var folders []models.Folder
-	res := r.db.Preload("Modules.Terms").Find(&folders).Where("userID = ?", uid)
-	return folders, res.Error
-}
-
-func (r *repo) GetFolderByID(id uuid.UUID) (models.Folder, error) {
-	var folder models.Folder
-	res := r.db.Preload("Modules.Terms").First(&folder).Where("id", id)
-	return folder, res.Error
-}
-
-func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error) {
-	module, terms, err := dto.ToModels()
-
-	if err != nil {
-		return module, err
-	}
-
-	createdModule := r.db.Create(&module)
-	if createdModule.Error != nil {
-		return module, createdModule.Error
-	}
-
-	createdTerms := r.db.Create(&terms)
-	if createdTerms.Error != nil {
-		return module, createdTerms.Error
-	}
-	return module, nil
-}
-
-func (r *repo) GetModulesByUID(uid string) ([]models.Module, error) {
-	var userModules []models.Module
-	res := r.db.Preload("Terms").Preload("Folders").Find(&userModules).Where("userID = ?", uid)
-	return userModules, res.Error
-}
-
-func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {
-	var module models.Module
-	res := r.db.Preload("Terms").Preload("Folders").First(&module).Where("id", id)
-	return module, res.Error
-}
-
-func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
-	var folder models.Folder
-	if err := r.db.First(&folder, folderID).Error; err != nil {
-		return err
-	}
-
-	// Create the association between the module and the folder
-	res := r.db.Model(&folder).Association("Modules").Append(&models.Module{ID: moduleID})
-
-	return res
-}
-
-func (r *repo) DeleteModule(id uuid.UUID) error {
-	module, err := r.GetModuleByID(id)
-	if err != nil {
-		return err
-	}
-	// Delete all of a user's has one, has many, and many2many associations & all terms
-	err = r.db.Select("Terms", clause.Associations).Delete(&module).Error
-	return err
-}
-
-func (r *repo) DeleteFolder(id uuid.UUID) error {
-	folder, err := r.GetFolderByID(id)
-	if err != nil {
-		return err
-	}
-	// Delete all of a user's has one, has many, and many2many associations
-	err = r.db.Select(clause.Associations).Delete(&folder).Error
-	return err
 }
