@@ -42,7 +42,7 @@ func main() {
 
 	repository := repositories.NewRepo(db)
 
-	// creates a module
+	// creates a user
 	routes.POST("/user/:uid", func(c echo.Context) error {
 		uid := c.Param("uid")
 		if uid == "" {
@@ -79,6 +79,31 @@ func main() {
 		return c.JSON(
 			http.StatusOK,
 			entities.JsonResponse{Message: "Requested module", Data: module},
+		)
+	})
+
+	// updates module
+	routes.PATCH("/module/:id", func(c echo.Context) error {
+		id := c.Param("id")
+
+		moduleID, err := uuid.Parse(id)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		var updateModuleDto entities.UpdateModuleDto
+		err = lib.BindBodyAndVerify(c, &updateModuleDto)
+
+		module, err := repository.UpdateModule(moduleID, updateModuleDto)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		return c.JSON(
+			http.StatusOK,
+			module,
 		)
 	})
 

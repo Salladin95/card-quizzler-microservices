@@ -36,6 +36,35 @@ func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error)
 	return module, nil
 }
 
+func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error) {
+	module, err := r.GetModuleByID(id)
+
+	if err != nil {
+		return module, err
+	}
+
+	modules, err := dto.ToModels()
+
+	if err != nil {
+		return module, err
+	}
+
+	err = r.db.Model(&module).
+		Where("id = ?", id).
+		Association("Terms").
+		Append(&modules.NewTerms)
+
+	if err != nil {
+		return module, err
+	}
+
+	err = r.db.Save(&modules.UpdatedTerms).Error
+	if err != nil {
+		return module, err
+	}
+	return r.GetModuleByID(id)
+}
+
 func (r *repo) GetModulesByUID(uid string) ([]models.Module, error) {
 	var userModules []models.Module
 	res := r.db.

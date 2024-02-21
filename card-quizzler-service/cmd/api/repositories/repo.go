@@ -17,6 +17,7 @@ type Repository interface {
 	GetFolderByID(id uuid.UUID) (models.Folder, error)
 	DeleteFolder(id uuid.UUID) error
 	CreateModule(dto entities.CreateModuleDto) (models.Module, error)
+	UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error)
 	GetModulesByUID(uid string) ([]models.Module, error)
 	GetModuleByID(id uuid.UUID) (models.Module, error)
 	AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error

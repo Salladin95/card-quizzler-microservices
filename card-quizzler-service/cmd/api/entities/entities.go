@@ -139,9 +139,9 @@ type UpdateModuleDto struct {
 }
 
 type parsedUpdateModuleDto struct {
-	Title         string `json:"title" validate:"omitempty"`
-	NewModels     []models.Term
-	UpdatedModels []models.Term
+	Title        string `json:"title" validate:"omitempty"`
+	NewTerms     []models.Term
+	UpdatedTerms []models.Term
 }
 
 func (dto *UpdateModuleDto) Verify() error {
@@ -162,7 +162,7 @@ func (dto *UpdateModuleDto) ToModels() (parsedUpdateModuleDto, error) {
 		if err != nil {
 			return models, err
 		}
-		models.NewModels = append(models.NewModels, model)
+		models.NewTerms = append(models.NewTerms, model)
 	}
 
 	for _, v := range dto.UpdatedTerms {
@@ -170,7 +170,7 @@ func (dto *UpdateModuleDto) ToModels() (parsedUpdateModuleDto, error) {
 		if err != nil {
 			return models, err
 		}
-		models.UpdatedModels = append(models.UpdatedModels, model)
+		models.UpdatedTerms = append(models.UpdatedTerms, model)
 	}
 
 	return models, nil
