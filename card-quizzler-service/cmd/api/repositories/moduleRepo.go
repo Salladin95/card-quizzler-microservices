@@ -9,30 +9,25 @@ import (
 )
 
 func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error) {
+	// Convert DTO to model
 	module, err := dto.ToModel()
-
 	if err != nil {
-		return module, err
+		return module, fmt.Errorf("failed to convert DTO to module: %w", err)
 	}
 
 	terms, err := parseCreateTermsPayload(dto.Terms, module)
-
 	if err != nil {
-		return module, err
+		return module, fmt.Errorf("failed to parse terms from DTO: %w", err)
 	}
 
-	err = r.db.Create(&module).Error
-	if err != nil {
-		return module, err
+	if err := r.db.
+		Create(&module).
+		Model(&module).
+		Association("Terms").
+		Append(&terms); err != nil {
+		return module, fmt.Errorf("failed to create module: %v", err)
 	}
-	err = r.db.Model(&module).Association("Users").Append(&models.User{ID: dto.UserID})
-	if err != nil {
-		return module, err
-	}
-	err = r.db.Model(&module).Association("Terms").Append(&terms)
-	if err != nil {
-		return module, err
-	}
+
 	return module, nil
 }
 
@@ -67,20 +62,25 @@ func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.
 
 func (r *repo) GetModulesByUID(uid string) ([]models.Module, error) {
 	var userModules []models.Module
-	res := r.db.
+	err := r.db.
 		Preload("Terms").
+		Preload("Users").
+		Preload("Folders").
+		Joins("JOIN user_modules ON modules.id = user_modules.module_id").
+		Where("user_modules.user_id = ?", uid).
 		Find(&userModules).
-		Where("users @> ARRAY[?]::text[]", uid)
-	return userModules, res.Error
+		Error
+	return userModules, err
 }
 
 func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {
 	var module models.Module
-	res := r.db.
+	err := r.db.
 		Preload("Terms.Modules").
 		Where("id = ?", id).
-		First(&module)
-	return module, res.Error
+		First(&module).
+		Error
+	return module, err
 }
 
 func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
@@ -90,12 +90,10 @@ func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
 	}
 
 	// Create the association between the module and the module
-	res := r.db.
+	return r.db.
 		Model(&module).
 		Association("Folders").
 		Append(&models.Folder{ID: folderID})
-
-	return res
 }
 
 func (r *repo) AddTermToModule(termID uuid.UUID, moduleID uuid.UUID) error {
@@ -105,12 +103,10 @@ func (r *repo) AddTermToModule(termID uuid.UUID, moduleID uuid.UUID) error {
 	}
 
 	// Create the association between the term and the module
-	res := r.db.
+	return r.db.
 		Model(&term).
 		Association("Modules").
 		Append(&models.Module{ID: moduleID})
-
-	return res
 }
 
 func (r *repo) DeleteModule(id uuid.UUID) error {

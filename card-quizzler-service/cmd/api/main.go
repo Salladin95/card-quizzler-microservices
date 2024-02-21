@@ -63,6 +63,62 @@ func main() {
 		)
 	})
 
+	// adds module to user
+	routes.POST("/add-module-to-user", func(c echo.Context) error {
+		// Retrieve the termID and moduleID query parameters
+		uid := c.QueryParam("userID")
+		mID := c.QueryParam("moduleID")
+
+		if uid == "" {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, "User ID is required")
+		}
+
+		moduleID, err := uuid.Parse(mID)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		err = repository.AddModuleToUser(uid, moduleID)
+
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		// Return a success response
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "The module is added to user", Data: nil})
+	})
+
+	// adds term to the module
+	routes.POST("/folder-to-user", func(c echo.Context) error {
+		// Retrieve the termID and moduleID query parameters
+		tID := c.QueryParam("termID")
+		mID := c.QueryParam("moduleID")
+
+		termID, err := uuid.Parse(tID)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		moduleID, err := uuid.Parse(mID)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		err = repository.AddTermToModule(termID, moduleID)
+
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		// Return a success response
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "The term is added to module", Data: nil})
+	})
+
 	// creates a module
 	routes.POST("/module", func(c echo.Context) error {
 		fmt.Println("processing create module request")
@@ -78,7 +134,7 @@ func main() {
 
 		return c.JSON(
 			http.StatusOK,
-			entities.JsonResponse{Message: "Requested module", Data: module},
+			entities.JsonResponse{Message: "Created module", Data: module},
 		)
 	})
 
@@ -340,6 +396,34 @@ func main() {
 			http.StatusNoContent,
 			entities.JsonResponse{Message: "Folder is deleted", Data: nil},
 		)
+	})
+
+	// add module to the folder
+	routes.DELETE("/delete-module-from-folder", func(c echo.Context) error {
+		// Retrieve the folderID and moduleID query parameters
+		fID := c.QueryParam("folderID")
+		mID := c.QueryParam("moduleID")
+
+		folderID, err := uuid.Parse(fID)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		moduleID, err := uuid.Parse(mID)
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		err = repository.DeleteModuleFromFolder(folderID, moduleID)
+
+		if err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		// Return a success response
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested module deleted from folder", Data: nil})
 	})
 
 	// Start the Echo server in a goroutine.

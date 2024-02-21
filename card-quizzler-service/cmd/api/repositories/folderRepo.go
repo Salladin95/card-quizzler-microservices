@@ -24,22 +24,32 @@ func (r *repo) CreateFolder(dto entities.CreateFolderDto) (models.Folder, error)
 
 func (r *repo) GetFoldersByUID(uid string) ([]models.Folder, error) {
 	var folders []models.Folder
-	res := r.db.Preload("Modules.Terms").Find(&folders).Where("user_ids @> ARRAY[?]::text[]", uid)
-	return folders, res.Error
+	return folders, r.db.
+		Preload("Modules.Terms").
+		Preload("Users").
+		Joins("JOIN user_folders ON folders.id = user_folders.folder_id").
+		Where("user_folders.user_id = ?", uid).
+		Find(&folders).
+		Error
 }
 
 func (r *repo) GetFolderByID(id uuid.UUID) (models.Folder, error) {
 	var folder models.Folder
-	res := r.db.Preload("Modules.Terms").First(&folder).Where("id", id)
-	return folder, res.Error
+	return folder, r.db.Preload("Modules.Terms").First(&folder).Where("id", id).Error
 }
 
 func (r *repo) DeleteFolder(id uuid.UUID) error {
-	folder, err := r.GetFolderByID(id)
+	var folder models.Folder
+	err := r.db.First(&folder).Where("id", id).Error
 	if err != nil {
 		return err
 	}
-	// Delete all of a user's has one, has many, and many2many associations
-	err = r.db.Select(clause.Associations).Delete(&folder).Error
-	return err
+	// Delete all of a folder's has one, has many, and many2many associations
+	return r.db.Select(clause.Associations).Delete(&folder, id).Error
+}
+
+func (r *repo) DeleteModuleFromFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
+	return r.db.Model(&models.Folder{ID: folderID}).
+		Association("Modules").
+		Delete(models.Module{ID: moduleID})
 }

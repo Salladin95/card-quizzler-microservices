@@ -24,7 +24,9 @@ type Repository interface {
 	AddTermToModule(termID uuid.UUID, moduleID uuid.UUID) error
 	DeleteModule(id uuid.UUID) error
 	CreateUser(uid string) error
-	// TODO: ADD METHOD REMOVE MODULE FROM FOLDER
+	AddModuleToUser(uid string, moduleID uuid.UUID) error
+	AddFolderToUser(uid string, moduleID uuid.UUID) error
+	DeleteModuleFromFolder(folderID uuid.UUID, moduleID uuid.UUID) error
 }
 
 func NewRepo(db *gorm.DB) Repository {

@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+// BaseModel contains common fields like ID and timestamps
+type BaseModel struct {
+	ID        uuid.UUID `gorm:"type:uuid;primary_key"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
 type User struct {
 	ID      string   `gorm:"primary_key;unique;" json:"id"`
 	Folders []Folder `gorm:"many2many:user_folders;" json:"folders,omitempty"`

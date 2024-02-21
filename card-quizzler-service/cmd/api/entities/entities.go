@@ -68,6 +68,8 @@ func (dto *CreateModuleDto) ToModel() (models.Module, error) {
 	module = models.Module{
 		ID:    id,
 		Title: dto.Title,
+		// Create association with user
+		Users: []models.User{{ID: dto.UserID}},
 	}
 
 	return module, nil
