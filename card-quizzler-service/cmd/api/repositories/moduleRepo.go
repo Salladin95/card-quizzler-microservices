@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/google/uuid"
@@ -47,9 +48,9 @@ func (r *repo) GetModulesByUID(uid string) ([]models.Module, error) {
 func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {
 	var module models.Module
 	res := r.db.
-		Preload("Terms").
-		First(&module).
-		Where("id", id)
+		Preload("Terms.Modules").
+		Where("id = ?", id).
+		First(&module)
 	return module, res.Error
 }
 
@@ -68,12 +69,29 @@ func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
 	return res
 }
 
+func (r *repo) AddTermToModule(termID uuid.UUID, moduleID uuid.UUID) error {
+	var term models.Term
+	if err := r.db.First(&term, termID).Error; err != nil {
+		return err
+	}
+
+	// Create the association between the term and the module
+	res := r.db.
+		Model(&term).
+		Association("Modules").
+		Append(&models.Module{ID: moduleID})
+
+	return res
+}
+
 func (r *repo) DeleteModule(id uuid.UUID) error {
 	module, err := r.GetModuleByID(id)
 	if err != nil {
 		return err
 	}
-	module.Terms = extractAssosiatedTerms(module.Terms)
+	module.Terms = extractAssociatedTerms(module.Terms)
+
+	fmt.Println(module.Title)
 
 	err = r.db.
 		Select(clause.Associations).

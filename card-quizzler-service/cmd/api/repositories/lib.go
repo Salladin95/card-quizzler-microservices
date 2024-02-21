@@ -18,7 +18,7 @@ func parseCreateTermsPayload(payload []entities.CreateTermDto, module models.Mod
 	return terms, nil
 }
 
-func extractAssosiatedTerms(terms []models.Term) []models.Term {
+func extractAssociatedTerms(terms []models.Term) []models.Term {
 	var filteredTerms []models.Term
 
 	for _, v := range terms {
