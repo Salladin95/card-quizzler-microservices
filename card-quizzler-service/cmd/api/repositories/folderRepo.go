@@ -22,14 +22,19 @@ func (r *repo) CreateFolder(dto entities.CreateFolderDto) (models.Folder, error)
 	return folder, nil
 }
 
-func (r *repo) GetFoldersByUID(uid string) ([]models.Folder, error) {
-	var folders []models.Folder
-	return folders, r.db.
-		Preload("Modules.Terms").
-		Preload("Users").
-		Where("user_id = ?", uid).
-		Find(&folders).
-		Error
+func (r *repo) UpdateFolder(folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error) {
+	folder, err := r.GetFolderByID(folderID)
+	if err != nil {
+		return folder, err
+	}
+
+	folder.Title = dto.Title
+
+	if err := r.db.Save(&folder).Error; err != nil {
+		return folder, err
+	}
+
+	return folder, nil
 }
 
 func (r *repo) GetFolderByID(id uuid.UUID) (models.Folder, error) {

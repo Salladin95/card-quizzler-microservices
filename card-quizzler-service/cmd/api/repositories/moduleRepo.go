@@ -33,43 +33,39 @@ func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error)
 
 func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error) {
 	module, err := r.GetModuleByID(id)
-
 	if err != nil {
 		return module, err
 	}
 
-	modules, err := dto.ToModels()
-
+	parsedDto, err := dto.ToModels()
 	if err != nil {
 		return module, err
 	}
 
-	err = r.db.Model(&module).
-		Where("id = ?", id).
-		Association("Terms").
-		Append(&modules.NewTerms)
+	// Update module title if provided in the DTO
+	if dto.Title != "" {
+		module.Title = dto.Title
+	}
 
-	if err != nil {
+	// Append new terms to the module
+	for _, term := range parsedDto.NewTerms {
+		module.Terms = append(module.Terms, term)
+	}
+
+	if len(dto.UpdatedTerms) > 0 {
+		// update terms
+		if err := r.db.Save(&parsedDto.UpdatedTerms).Error; err != nil {
+			return module, err
+		}
+	}
+
+	// Save the updated module including its associations
+	if err := r.db.Save(&module).Error; err != nil {
 		return module, err
 	}
 
-	err = r.db.Save(&modules.UpdatedTerms).Error
-	if err != nil {
-		return module, err
-	}
-	return r.GetModuleByID(id)
-}
-
-func (r *repo) GetModulesByUID(uid string) ([]models.Module, error) {
-	var userModules []models.Module
-	err := r.db.
-		Preload("Terms").
-		Preload("Users").
-		Preload("Folders").
-		Where("user_id = ?", uid).
-		Find(&userModules).
-		Error
-	return userModules, err
+	// Return the updated module
+	return module, nil
 }
 
 func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {

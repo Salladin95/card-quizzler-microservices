@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/config"
-	migrations "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/db"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
@@ -38,7 +37,7 @@ func main() {
 		log.Fatal("failed to connect database")
 	}
 
-	migrations.Migrate(db)
+	//migrations.Migrate(db)
 
 	repository := repositories.NewRepo(db)
 

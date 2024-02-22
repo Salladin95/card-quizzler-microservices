@@ -11,6 +11,24 @@ func (r *repo) CreateUser(uid string) error {
 	return r.db.Create(models.User{ID: uid}).Error
 }
 
+func (r *repo) GetModulesByUID(uid string) ([]models.User, error) {
+	var user []models.User
+	return user, r.db.
+		Preload("Modules.Terms").
+		Where("id = ?", uid).
+		Find(&user).
+		Error
+}
+
+func (r *repo) GetFoldersByUID(uid string) ([]models.User, error) {
+	var user []models.User
+	return user, r.db.
+		Preload("Folders.Modules.Terms").
+		Where("id = ?", uid).
+		Find(&user).
+		Error
+}
+
 func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 	// Get the module by its ID
 	module, err := r.GetModuleByID(moduleID)
@@ -22,8 +40,7 @@ func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 	newModule := copyModule(module)
 	newModule.UserID = uid // Set the user ID for the new module
 
-	// Associate the new module with the user
-	return r.addUserAssociation(uid, "Modules", &newModule)
+	return r.db.Create(&newModule).Error
 }
 
 func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
@@ -37,12 +54,7 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 	newFolder := copyFolder(folder)
 	newFolder.UserID = uid // Set the user ID for the new folder
 
-	// Associate the new folder with the user
-	return r.addUserAssociation(uid, "Folders", &newFolder)
-}
-
-func (r *repo) addUserAssociation(uid string, associationName string, item interface{}) error {
-	return r.db.Model(&models.User{ID: uid}).Association(associationName).Append(item)
+	return r.db.Create(&newFolder).Error
 }
 
 // Function to create a copy of a module
@@ -51,7 +63,6 @@ func copyModule(src models.Module) models.Module {
 		ID:        uuid.New(),
 		Title:     src.Title,
 		UserID:    src.UserID,
-		Folders:   src.Folders, // Assuming Folders association is already loaded
 		Terms:     copyTerms(src.Terms),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -87,7 +98,7 @@ func copyTerms(src []models.Term) []models.Term {
 			ID:          uuid.New(),
 			Title:       term.Title,
 			Description: term.Description,
-			Modules:     term.Modules, // Assuming Modules association is already loaded
+			Modules:     term.Modules,
 		})
 	}
 	return copies
