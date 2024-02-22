@@ -17,3 +17,23 @@ func parseCreateTermsPayload(payload []entities.CreateTermDto, moduleID uuid.UUI
 	}
 	return terms, nil
 }
+
+// getTermsToDelete returns terms from the module's terms slice that are not included in termsToReplace.
+func getTermsToDelete(module models.Module, termsToReplace []models.Term) []models.Term {
+	// Create a map to store term IDs from termsToReplace for efficient lookup
+	termsToReplaceIDs := make(map[uuid.UUID]struct{})
+	for _, term := range termsToReplace {
+		termsToReplaceIDs[term.ID] = struct{}{}
+	}
+
+	// Filter out terms from the module's terms slice that are not included in termsToReplace
+	var termsToDelete []models.Term
+	for _, term := range module.Terms {
+		// Check if the term's ID is not in the termsToReplaceIDs map
+		if _, ok := termsToReplaceIDs[term.ID]; !ok {
+			// Term is not in termsToReplace, so add it to the termsToDelete slice
+			termsToDelete = append(termsToDelete, term)
+		}
+	}
+	return termsToDelete
+}

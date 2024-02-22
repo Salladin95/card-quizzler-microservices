@@ -31,9 +31,10 @@ func (dto *CreateFolderDto) ToModel() (models.Folder, error) {
 	id := uuid.New()
 
 	return models.Folder{
-		ID:     id,
-		UserID: dto.UserID,
-		Title:  dto.Title,
+		ID:      id,
+		UserID:  dto.UserID,
+		Title:   dto.Title,
+		Modules: []models.Module{},
 	}, nil
 }
 
@@ -66,17 +67,18 @@ func (dto *CreateModuleDto) ToModel() (models.Module, error) {
 	id := uuid.New()
 
 	module = models.Module{
-		ID:     id,
-		Title:  dto.Title,
-		UserID: dto.UserID,
+		ID:      id,
+		Title:   dto.Title,
+		UserID:  dto.UserID,
+		Folders: []models.Folder{},
 	}
 
 	return module, nil
 }
 
 type CreateTermDto struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Title       string `json:"title" validate:"required"`
+	Description string `json:"description" validate:"required"`
 }
 
 func (dto *CreateTermDto) Verify() error {
@@ -84,13 +86,17 @@ func (dto *CreateTermDto) Verify() error {
 }
 
 func (dto *CreateTermDto) ToModel(moduleID uuid.UUID) (models.Term, error) {
-	err := dto.Verify()
 	var model models.Term
+	err := dto.Verify()
 	if err != nil {
 		return model, err
 	}
 
 	id := uuid.New()
+
+	if err != nil {
+		return model, err
+	}
 
 	return models.Term{
 		ID:          id,
@@ -104,14 +110,11 @@ type UpdateModuleDto struct {
 	Title        string          `json:"title" validate:"omitempty"`
 	NewTerms     []CreateTermDto `json:"newTerms" validate:"omitempty"`
 	UpdatedTerms []models.Term   `json:"updatedTerms" validate:"omitempty"`
-	RemovedTerms []models.Term   `json:"updatedTerms" validate:"omitempty"`
 }
 
 type parsedUpdateModuleDto struct {
-	Title        string `json:"title" validate:"omitempty"`
-	NewTerms     []models.Term
-	UpdatedTerms []models.Term
-	RemovedTerms []models.Term
+	Title    string `json:"title" validate:"omitempty"`
+	NewTerms []models.Term
 }
 
 func (dto *UpdateModuleDto) Verify() error {
@@ -125,7 +128,6 @@ func (dto *UpdateModuleDto) ToModels(moduleID uuid.UUID) (parsedUpdateModuleDto,
 	}
 
 	models.Title = dto.Title
-	models.RemovedTerms = dto.RemovedTerms
 
 	for _, v := range dto.NewTerms {
 		model, err := v.ToModel(moduleID)
@@ -135,13 +137,7 @@ func (dto *UpdateModuleDto) ToModels(moduleID uuid.UUID) (parsedUpdateModuleDto,
 		models.NewTerms = append(models.NewTerms, model)
 	}
 
-	for _, v := range dto.NewTerms {
-		model, err := v.ToModel(moduleID)
-		if err != nil {
-			return models, err
-		}
-		models.NewTerms = append(models.NewTerms, model)
-	}
+	models.NewTerms = append(models.NewTerms, dto.UpdatedTerms...)
 
 	return models, nil
 }

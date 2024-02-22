@@ -123,7 +123,6 @@ func main() {
 		fmt.Println("processing create module request")
 		var createModuleDto entities.CreateModuleDto
 		err := lib.BindBodyAndVerify(c, &createModuleDto)
-
 		module, err := repository.CreateModule(createModuleDto)
 
 		if err != nil {
@@ -148,7 +147,10 @@ func main() {
 		}
 
 		var updateModuleDto entities.UpdateModuleDto
-		err = lib.BindBodyAndVerify(c, &updateModuleDto)
+		if err := lib.BindBodyAndVerify(c, &updateModuleDto); err != nil {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
 
 		module, err := repository.UpdateModule(moduleID, updateModuleDto)
 		if err != nil {
