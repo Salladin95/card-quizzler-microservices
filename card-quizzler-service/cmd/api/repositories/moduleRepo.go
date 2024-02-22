@@ -15,7 +15,7 @@ func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error)
 		return module, fmt.Errorf("failed to convert DTO to module: %w", err)
 	}
 
-	terms, err := parseCreateTermsPayload(dto.Terms, module)
+	terms, err := parseCreateTermsPayload(dto.Terms, module.ID)
 	if err != nil {
 		return module, fmt.Errorf("failed to parse terms from DTO: %w", err)
 	}
@@ -37,7 +37,7 @@ func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.
 		return module, err
 	}
 
-	parsedDto, err := dto.ToModels()
+	parsedDto, err := dto.ToModels(id)
 	if err != nil {
 		return module, err
 	}
@@ -47,20 +47,26 @@ func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.
 		module.Title = dto.Title
 	}
 
+	if len(dto.UpdatedTerms) > 0 {
+		// update terms
+		module.Terms = parsedDto.UpdatedTerms
+		//if err := r.db.Save(&parsedDto.UpdatedTerms).Error; err != nil {
+		//	return module, err
+		//}
+	}
+
 	// Append new terms to the module
 	for _, term := range parsedDto.NewTerms {
 		module.Terms = append(module.Terms, term)
 	}
 
-	if len(dto.UpdatedTerms) > 0 {
-		// update terms
-		if err := r.db.Save(&parsedDto.UpdatedTerms).Error; err != nil {
-			return module, err
-		}
+	// Save the updated module
+	if err := r.db.Save(&module).Error; err != nil {
+		return module, err
 	}
 
-	// Save the updated module including its associations
-	if err := r.db.Save(&module).Error; err != nil {
+	// DeleteTerms
+	if err := r.db.Delete(&parsedDto.RemovedTerms).Error; err != nil {
 		return module, err
 	}
 
@@ -71,7 +77,7 @@ func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.
 func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {
 	var module models.Module
 	err := r.db.
-		Preload("Terms.Modules").
+		Preload("Terms").
 		Where("id = ?", id).
 		First(&module).
 		Error
@@ -91,27 +97,11 @@ func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
 		Append(&models.Folder{ID: folderID})
 }
 
-func (r *repo) AddTermToModule(termID uuid.UUID, moduleID uuid.UUID) error {
-	var term models.Term
-	if err := r.db.First(&term, termID).Error; err != nil {
-		return err
-	}
-
-	// Create the association between the term and the module
-	return r.db.
-		Model(&term).
-		Association("Modules").
-		Append(&models.Module{ID: moduleID})
-}
-
 func (r *repo) DeleteModule(id uuid.UUID) error {
 	module, err := r.GetModuleByID(id)
 	if err != nil {
 		return err
 	}
-	module.Terms = extractAssociatedTerms(module.Terms)
-
-	fmt.Println(module.Title)
 
 	err = r.db.
 		Select(clause.Associations).

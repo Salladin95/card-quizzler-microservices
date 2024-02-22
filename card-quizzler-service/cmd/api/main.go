@@ -90,24 +90,24 @@ func main() {
 		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "The module is added to user", Data: nil})
 	})
 
-	// adds term to the module
+	// adds folder to user
 	routes.POST("/folder-to-user", func(c echo.Context) error {
 		// Retrieve the termID and moduleID query parameters
-		tID := c.QueryParam("termID")
-		mID := c.QueryParam("moduleID")
+		uid := c.QueryParam("userID")
+		fID := c.QueryParam("folderID")
 
-		termID, err := uuid.Parse(tID)
+		if uid == "" {
+			fmt.Println(err)
+			return c.String(http.StatusBadRequest, "User ID is required")
+		}
+
+		moduleID, err := uuid.Parse(fID)
 		if err != nil {
 			fmt.Println(err)
 			return c.String(http.StatusBadRequest, err.Error())
 		}
-		moduleID, err := uuid.Parse(mID)
-		if err != nil {
-			fmt.Println(err)
-			return c.String(http.StatusBadRequest, err.Error())
-		}
 
-		err = repository.AddTermToModule(termID, moduleID)
+		err = repository.AddFolderToUser(uid, moduleID)
 
 		if err != nil {
 			fmt.Println(err)
@@ -221,34 +221,6 @@ func main() {
 			http.StatusNoContent,
 			"Module is deleted",
 		)
-	})
-
-	// adds term to the module
-	routes.POST("/add-term-to-module", func(c echo.Context) error {
-		// Retrieve the termID and moduleID query parameters
-		tID := c.QueryParam("termID")
-		mID := c.QueryParam("moduleID")
-
-		termID, err := uuid.Parse(tID)
-		if err != nil {
-			fmt.Println(err)
-			return c.String(http.StatusBadRequest, err.Error())
-		}
-		moduleID, err := uuid.Parse(mID)
-		if err != nil {
-			fmt.Println(err)
-			return c.String(http.StatusBadRequest, err.Error())
-		}
-
-		err = repository.AddTermToModule(termID, moduleID)
-
-		if err != nil {
-			fmt.Println(err)
-			return c.String(http.StatusBadRequest, err.Error())
-		}
-
-		// Return a success response
-		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "The term is added to module", Data: nil})
 	})
 
 	// creates folder

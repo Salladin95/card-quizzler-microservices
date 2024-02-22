@@ -59,11 +59,12 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 
 // Function to create a copy of a module
 func copyModule(src models.Module) models.Module {
+	moduleID := uuid.New()
 	return models.Module{
-		ID:        uuid.New(),
+		ID:        moduleID,
 		Title:     src.Title,
 		UserID:    src.UserID,
-		Terms:     copyTerms(src.Terms),
+		Terms:     copyTerms(src.Terms, moduleID),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -91,14 +92,14 @@ func copyModules(src []models.Module) []models.Module {
 }
 
 // Function to create a copy of an array of terms
-func copyTerms(src []models.Term) []models.Term {
+func copyTerms(src []models.Term, moduleID uuid.UUID) []models.Term {
 	var copies []models.Term
 	for _, term := range src {
 		copies = append(copies, models.Term{
 			ID:          uuid.New(),
 			Title:       term.Title,
 			Description: term.Description,
-			Modules:     term.Modules,
+			ModuleID:    moduleID,
 		})
 	}
 	return copies

@@ -24,7 +24,6 @@ type Repository interface {
 	GetModulesByUID(uid string) ([]models.User, error)
 	GetModuleByID(id uuid.UUID) (models.Module, error)
 	AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error
-	AddTermToModule(termID uuid.UUID, moduleID uuid.UUID) error
 	DeleteModule(id uuid.UUID) error
 	CreateUser(uid string) error
 	AddModuleToUser(uid string, moduleID uuid.UUID) error

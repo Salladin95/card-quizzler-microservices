@@ -83,7 +83,7 @@ func (dto *CreateTermDto) Verify() error {
 	return lib.Verify(dto)
 }
 
-func (dto *CreateTermDto) ToModel() (models.Term, error) {
+func (dto *CreateTermDto) ToModel(moduleID uuid.UUID) (models.Term, error) {
 	err := dto.Verify()
 	var model models.Term
 	if err != nil {
@@ -96,82 +96,51 @@ func (dto *CreateTermDto) ToModel() (models.Term, error) {
 		ID:          id,
 		Description: dto.Description,
 		Title:       dto.Title,
-	}, nil
-}
-
-type UpdateTermDto struct {
-	ID          string `json:"id" validate:"required"`
-	Title       string `json:"title" validate:"omitempty"`
-	Description string `json:"description" validate:"omitempty"`
-}
-
-func (dto *UpdateTermDto) Verify() error {
-	return lib.Verify(dto)
-}
-
-func (dto *UpdateTermDto) ToModel() (models.Term, error) {
-	err := dto.Verify()
-	var model models.Term
-	if err != nil {
-		return model, err
-	}
-
-	id, err := uuid.Parse(dto.ID)
-
-	if err != nil {
-		id = uuid.New()
-	}
-
-	if err != nil {
-		return model, err
-	}
-
-	return models.Term{
-		ID:          id,
-		Description: dto.Description,
-		Title:       dto.Title,
+		ModuleID:    moduleID,
 	}, nil
 }
 
 type UpdateModuleDto struct {
 	Title        string          `json:"title" validate:"omitempty"`
 	NewTerms     []CreateTermDto `json:"newTerms" validate:"omitempty"`
-	UpdatedTerms []UpdateTermDto `json:"updatedTerms" validate:"omitempty"`
+	UpdatedTerms []models.Term   `json:"updatedTerms" validate:"omitempty"`
+	RemovedTerms []models.Term   `json:"updatedTerms" validate:"omitempty"`
 }
 
 type parsedUpdateModuleDto struct {
 	Title        string `json:"title" validate:"omitempty"`
 	NewTerms     []models.Term
 	UpdatedTerms []models.Term
+	RemovedTerms []models.Term
 }
 
 func (dto *UpdateModuleDto) Verify() error {
 	return lib.Verify(dto)
 }
 
-func (dto *UpdateModuleDto) ToModels() (parsedUpdateModuleDto, error) {
-	err := dto.Verify()
+func (dto *UpdateModuleDto) ToModels(moduleID uuid.UUID) (parsedUpdateModuleDto, error) {
 	var models parsedUpdateModuleDto
-	if err != nil {
+	if err := dto.Verify(); err != nil {
 		return models, err
 	}
 
 	models.Title = dto.Title
+	models.RemovedTerms = dto.RemovedTerms
 
 	for _, v := range dto.NewTerms {
-		model, err := v.ToModel()
+		model, err := v.ToModel(moduleID)
 		if err != nil {
 			return models, err
 		}
 		models.NewTerms = append(models.NewTerms, model)
 	}
 
-	for _, v := range dto.UpdatedTerms {
-		model, err := v.ToModel()
+	for _, v := range dto.NewTerms {
+		model, err := v.ToModel(moduleID)
 		if err != nil {
 			return models, err
 		}
-		models.UpdatedTerms = append(models.UpdatedTerms, model)
+		models.NewTerms = append(models.NewTerms, model)
 	}
 
 	return models, nil

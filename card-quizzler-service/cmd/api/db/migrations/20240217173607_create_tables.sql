@@ -38,15 +38,9 @@ CREATE TABLE IF NOT EXISTS terms (
     id UUID PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
+    module_id UUID REFERENCES modules(id),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create the module_terms junction table
-CREATE TABLE IF NOT EXISTS module_terms (
-    module_id UUID REFERENCES modules(id),
-    term_id UUID REFERENCES terms(id),
-    PRIMARY KEY (module_id, term_id)
 );
 
 -- +goose StatementEnd

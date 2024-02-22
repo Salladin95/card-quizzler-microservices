@@ -13,9 +13,9 @@ type User struct {
 
 type Term struct {
 	ID          uuid.UUID `gorm:"primary_key;unique;" json:"id"`
+	ModuleID    uuid.UUID `json:"moduleID"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Modules     []Module  `gorm:"many2many:module_terms;" json:"modules"`
 }
 
 type Module struct {
@@ -23,7 +23,7 @@ type Module struct {
 	Title     string    `json:"title"`
 	UserID    string    `json:"userID"`
 	Folders   []Folder  `gorm:"many2many:folder_modules;" json:"folders,omitempty"`
-	Terms     []Term    `gorm:"many2many:module_terms;" json:"terms"`
+	Terms     []Term    `gorm:"foreignKey:ModuleID;" json:"terms"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
