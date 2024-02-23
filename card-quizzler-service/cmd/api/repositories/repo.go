@@ -3,6 +3,7 @@ package repositories
 import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -32,4 +33,36 @@ type Repository interface {
 
 func NewRepo(db *gorm.DB) Repository {
 	return &repo{db: db}
+}
+
+// withTransaction executes the provided function within a transaction.
+// It begins a transaction, calls the provided function with the transaction,
+// and commits the transaction if the function completes successfully.
+// If an error occurs during any step of the transaction, it rolls back the transaction
+// and returns an error.
+func (r *repo) withTransaction(fn func(tx *gorm.DB) error) error {
+	// Begin a new transaction
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		// If an error occurs while starting the transaction, return an operation failure error
+		return goErrorHandler.OperationFailure("start transaction", tx.Error)
+	}
+	defer func() {
+		// Rollback the transaction if a panic occurs
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+	// Call the provided function with the transaction
+	if err := fn(tx); err != nil {
+		// If an error occurs during the transaction, rollback the transaction and return the error
+		tx.Rollback()
+		return err
+	}
+	// Commit the transaction if no errors occurred
+	if err := tx.Commit().Error; err != nil {
+		// If an error occurs while committing the transaction, log the error
+		goErrorHandler.OperationFailure("commit transaction", err)
+	}
+	return nil
 }
