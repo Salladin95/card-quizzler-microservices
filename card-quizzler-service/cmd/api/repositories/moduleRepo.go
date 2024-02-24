@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 // CreateModule creates a new module in the database using the provided DTO.
@@ -67,6 +68,8 @@ func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
+		module.UpdatedAt = time.Now()
+
 		// Update module's terms if new terms are provided
 		if len(parsedDto.NewTerms) > 0 {
 			module.Terms = parsedDto.NewTerms
@@ -96,6 +99,21 @@ func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.
 
 	// Execute the update function within a transaction
 	return module, r.withTransaction(updateFunc)
+}
+
+// UpdateTerms updates given terms
+func (r *repo) UpdateTerms(terms []models.Term) error {
+	// Define the function to be executed within the transaction
+	updateFunc := func(tx *gorm.DB) error {
+		// Save the updated terms
+		if err := tx.Save(&terms).Error; err != nil {
+			return goErrorHandler.OperationFailure("update terms", err)
+		}
+		return nil
+	}
+
+	// Execute the update function within a transaction
+	return r.withTransaction(updateFunc)
 }
 
 // GetModuleByID retrieves a module from the database by its ID,

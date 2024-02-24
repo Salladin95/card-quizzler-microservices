@@ -12,10 +12,13 @@ type User struct {
 }
 
 type Term struct {
-	ID          uuid.UUID `gorm:"primary_key;unique;" json:"id"`
-	ModuleID    uuid.UUID `json:"moduleID"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
+	ID                   uuid.UUID `gorm:"primary_key;unique;" json:"id"`
+	ModuleID             uuid.UUID `json:"moduleID"`
+	Title                string    `json:"title"`
+	Description          string    `json:"description"`
+	NegativeAnswerStreak int       `json:"negativeAnswerStreak"`
+	PositiveAnswerStreak int       `json:"negativeAnswerStreak"`
+	IsDifficult          bool      `json:"isDifficult"`
 }
 
 type Module struct {

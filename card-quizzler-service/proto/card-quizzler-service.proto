@@ -1,0 +1,91 @@
+syntax = "proto3";
+package card_quizzler_service;
+option go_package = "github.com/Salladin95/card-quizzler-microservices/user-service/card_quizzler_service";
+
+message RequestWithID {
+  string id = 1;
+}
+
+message Response {
+  bytes data = 1;
+  int64 code = 2;
+  string message = 3;
+}
+
+message CreateFolderPayload {
+  string title = 1;
+  string userID = 2;
+}
+
+message CreateFolderRequest {
+  CreateFolderPayload payload = 1;
+}
+
+
+message UpdateFolderPayload {
+  string title = 1;
+  string folderID = 2;
+}
+
+message UpdateFolderRequest {
+  UpdateFolderPayload payload = 1;
+}
+
+message DeleteModuleFromFolderRequest {
+  string moduleID = 1;
+  string folderID = 2;
+}
+
+message AddFolderToUserRequest {
+  string userID = 1;
+  string folderID = 2;
+}
+
+
+message AddModuleToUserRequest {
+  string userID = 1;
+  string moduleID = 2;
+}
+
+message CreateModulePayload {
+  string title = 1;
+  string userID = 2;
+  bytes terms = 3;
+}
+
+message CreateModuleRequest {
+  CreateModulePayload payload = 1;
+}
+
+message UpdateModulePayload {
+  string title = 1;
+  bytes newTerms = 2;
+  bytes updatedTerms = 3;
+  string id = 4;
+}
+
+message UpdateModuleRequest {
+  UpdateModulePayload payload = 1;
+}
+
+message ProcessQuizRequest {
+  bytes terms = 1;
+  string moduleID = 2;
+}
+
+service CardQuizzlerService {
+  rpc ProcessQuizResult(ProcessQuizRequest) returns (Response);
+  rpc GetUserFolders(RequestWithID) returns (Response);
+  rpc GetFolderByID(RequestWithID) returns (Response);
+  rpc CreateFolder(CreateFolderRequest) returns (Response);
+  rpc UpdateFolder(UpdateFolderRequest) returns (Response);
+  rpc DeleteFolder(RequestWithID) returns (Response);
+  rpc DeleteModuleFromFolder(DeleteModuleFromFolderRequest) returns (Response);
+  rpc AddFolderToUser(AddFolderToUserRequest) returns (Response);
+  rpc GetUserModules(RequestWithID) returns (Response);
+  rpc GetModuleByID(RequestWithID) returns (Response);
+  rpc CreateModule(CreateModuleRequest) returns (Response);
+  rpc UpdateModule(UpdateModuleRequest) returns (Response);
+  rpc DeleteModule(RequestWithID) returns (Response);
+  rpc AddModuleToUser(AddModuleToUserRequest) returns (Response);
+}

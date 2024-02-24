@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS terms (
     id UUID PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
+    negative_answer_streak INT NOT NULL DEFAULT 0,
+    positive_answer_streak INT NOT NULL DEFAULT 0,
+    is_difficult BOOLEAN NOT NULL DEFAULT FALSE,
     module_id UUID REFERENCES modules(id),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
