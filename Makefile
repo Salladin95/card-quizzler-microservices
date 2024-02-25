@@ -3,6 +3,7 @@ API_SERVICE_BINARY=apiApp
 USER_SERVICE_BINARY=userApp
 LOGGING_SERVICE_BINARY=loggingApp
 MAIL_SERVICE_BINARY=mailApp
+CARD_QUIZ_SERVICE_BINARY=cardQuizApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -11,7 +12,7 @@ up:
 	@echo Docker images started!
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_api build_user build_mail build_logging
+up_build: build_api build_card_quiz build_user build_mail build_logging
 	@echo Stopping docker images (if running...)
 	docker-compose down
 	@echo Building (when required) and starting docker images...
@@ -28,6 +29,12 @@ down:
 build_api:
 	@echo Building api-service binary...
 	chdir api-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${API_SERVICE_BINARY} ./cmd/api
+	@echo Done!
+
+## build_card_quiz: builds the card-quiz-service binary as a linux executable
+build_card_quiz:
+	@echo Building api-service binary...
+	chdir api-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${CARD_QUIZ_SERVICE_BINARY} ./cmd/api
 	@echo Done!
 
 ## build_user: builds the user-service binary as a linux executable

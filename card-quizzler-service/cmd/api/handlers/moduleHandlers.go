@@ -6,6 +6,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"net/http"
 )
@@ -94,6 +95,45 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 	// Create the module in the repository
 	createdModule, err := cq.repo.CreateModule(createModuleDto)
 	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(createdModule, http.StatusCreated, "module is created")
+}
+
+func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *quizService.CreateModuleInFolderRequest) (*quizService.Response, error) {
+	cq.log(ctx, "start processing grpc request", "info", "CreateModuleInFolder")
+	payload := req.GetPayload()
+
+	fID := req.GetFolderID()
+
+	folderID, err := uuid.Parse(fID)
+
+	if err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrBadRequest, err)
+	}
+
+	// Unmarshal new terms from the payload
+	var newTerms []entities.CreateTermDto
+	if err := lib.UnmarshalData(payload.Terms, &newTerms); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	// Create a CreateModuleDto with extracted data
+	createModuleDto := entities.CreateModuleDto{Title: payload.Title, UserID: payload.UserID, Terms: newTerms}
+
+	if err := createModuleDto.Verify(); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	// Create the module in the repository
+	createdModule, err := cq.repo.CreateModule(createModuleDto)
+
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if err := cq.repo.AddModuleToFolder(folderID, createdModule.ID); err != nil {
 		return buildFailedResponse(err)
 	}
 

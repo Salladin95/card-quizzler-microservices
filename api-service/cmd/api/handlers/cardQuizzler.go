@@ -138,7 +138,7 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetUserFolders")
 
-	uid := c.Param("id")
+	uid := c.Param("uid")
 
 	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
 	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
@@ -270,6 +270,46 @@ func (ah *apiHandlers) CreateModule(c echo.Context) error {
 	return handleGRPCResponse(c, response, unmarshalTo)
 }
 
+func (ah *apiHandlers) CreateModuleInFolder(c echo.Context) error {
+	ctx := c.Request().Context()
+	ah.log(ctx, "start processing request", "info", "CreateModuleInFolder")
+
+	folderID := c.Param("id")
+
+	var dto entities.CreateModuleDto
+	if err := lib.BindBody(c, dto); err != nil {
+		return err
+	}
+
+	terms, err := lib.MarshalData(&dto.Terms)
+	if err != nil {
+		return err
+	}
+
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		CreateModuleInFolder(ctx, &quizService.CreateModuleInFolderRequest{
+			Payload: &quizService.CreateModulePayload{
+				Title:  dto.Title,
+				UserID: dto.UserID,
+				Terms:  terms,
+			},
+			FolderID: folderID,
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("CreateModuleInFolder", err)
+	}
+	var unmarshalTo entities.Module
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
 func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "UpdateModule")
@@ -319,7 +359,7 @@ func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetUserModules")
 
-	uid := c.Param("id")
+	uid := c.Param("uid")
 
 	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
@@ -329,7 +369,7 @@ func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		GetUserFolders(ctx, &quizService.RequestWithID{
+		GetUserModules(ctx, &quizService.RequestWithID{
 			Id: uid,
 		})
 	if err != nil {

@@ -33,6 +33,7 @@ type CardQuizzlerServiceClient interface {
 	GetUserModules(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	GetModuleByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	CreateModule(ctx context.Context, in *CreateModuleRequest, opts ...grpc.CallOption) (*Response, error)
+	CreateModuleInFolder(ctx context.Context, in *CreateModuleInFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	UpdateModule(ctx context.Context, in *UpdateModuleRequest, opts ...grpc.CallOption) (*Response, error)
 	DeleteModule(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	AddModuleToUser(ctx context.Context, in *AddModuleToUserRequest, opts ...grpc.CallOption) (*Response, error)
@@ -145,6 +146,15 @@ func (c *cardQuizzlerServiceClient) CreateModule(ctx context.Context, in *Create
 	return out, nil
 }
 
+func (c *cardQuizzlerServiceClient) CreateModuleInFolder(ctx context.Context, in *CreateModuleInFolderRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/CreateModuleInFolder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cardQuizzlerServiceClient) UpdateModule(ctx context.Context, in *UpdateModuleRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/UpdateModule", in, out, opts...)
@@ -187,6 +197,7 @@ type CardQuizzlerServiceServer interface {
 	GetUserModules(context.Context, *RequestWithID) (*Response, error)
 	GetModuleByID(context.Context, *RequestWithID) (*Response, error)
 	CreateModule(context.Context, *CreateModuleRequest) (*Response, error)
+	CreateModuleInFolder(context.Context, *CreateModuleInFolderRequest) (*Response, error)
 	UpdateModule(context.Context, *UpdateModuleRequest) (*Response, error)
 	DeleteModule(context.Context, *RequestWithID) (*Response, error)
 	AddModuleToUser(context.Context, *AddModuleToUserRequest) (*Response, error)
@@ -229,6 +240,9 @@ func (UnimplementedCardQuizzlerServiceServer) GetModuleByID(context.Context, *Re
 }
 func (UnimplementedCardQuizzlerServiceServer) CreateModule(context.Context, *CreateModuleRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateModule not implemented")
+}
+func (UnimplementedCardQuizzlerServiceServer) CreateModuleInFolder(context.Context, *CreateModuleInFolderRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateModuleInFolder not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) UpdateModule(context.Context, *UpdateModuleRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateModule not implemented")
@@ -450,6 +464,24 @@ func _CardQuizzlerService_CreateModule_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CardQuizzlerService_CreateModuleInFolder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateModuleInFolderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardQuizzlerServiceServer).CreateModuleInFolder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/card_quizzler_service.CardQuizzlerService/CreateModuleInFolder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardQuizzlerServiceServer).CreateModuleInFolder(ctx, req.(*CreateModuleInFolderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CardQuizzlerService_UpdateModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateModuleRequest)
 	if err := dec(in); err != nil {
@@ -554,6 +586,10 @@ var CardQuizzlerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateModule",
 			Handler:    _CardQuizzlerService_CreateModule_Handler,
+		},
+		{
+			MethodName: "CreateModuleInFolder",
+			Handler:    _CardQuizzlerService_CreateModuleInFolder_Handler,
 		},
 		{
 			MethodName: "UpdateModule",

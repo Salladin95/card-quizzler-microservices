@@ -24,6 +24,21 @@ type ApiHandlersInterface interface {
 	GetUserById(c echo.Context) error
 	GetProfile(c echo.Context) error
 	RequestEmailVerification(c echo.Context) error
+	ProcessQuizResult(c echo.Context) error
+	CreateFolder(c echo.Context) error
+	UpdateFolder(c echo.Context) error
+	AddFolderToUser(c echo.Context) error
+	GetUserFolders(c echo.Context) error
+	GetFolderByID(c echo.Context) error
+	DeleteFolder(c echo.Context) error
+	DeleteModuleFromFolder(c echo.Context) error
+	CreateModule(c echo.Context) error
+	CreateModuleInFolder(c echo.Context) error
+	UpdateModule(c echo.Context) error
+	GetUserModules(c echo.Context) error
+	GetModuleByID(c echo.Context) error
+	AddModuleToUser(c echo.Context) error
+	DeleteModule(c echo.Context) error
 }
 
 // apiHandlers implements the ApiHandlersInterface.
