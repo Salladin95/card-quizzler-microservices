@@ -47,10 +47,10 @@ func NewHandlers(
 }
 
 // GetGRPCClientConn establishes a gRPC client connection using the specified URL and returns the connection.
-func (ah *apiHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
+func (ah *apiHandlers) GetGRPCClientConn(url string) (*grpc.ClientConn, error) {
 	// Dial a gRPC server using the provided URL and insecure transport credentials
 	conn, err := grpc.Dial(
-		ah.config.AppCfg.UserServiceUrl,
+		url,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	)
@@ -62,15 +62,15 @@ func (ah *apiHandlers) GetGRPCClientConn() (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-// log sends a log message to the message broker.
+// log sends a log Message to the Message broker.
 func (ah *apiHandlers) log(ctx context.Context, message, level, method string) {
 	var log entities.LogMessage
 
-	// Push log message to the message broker
+	// Push log Message to the Message broker
 	ah.broker.PushToQueue(
 		ctx,
 		constants.LogCommand, // Specify the log command constant
-		// Generate log message with provided details
+		// Generate log Message with provided details
 		log.GenerateLog(message, level, method, "http handlers"),
 	)
 }

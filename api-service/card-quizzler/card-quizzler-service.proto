@@ -47,47 +47,30 @@ message AddModuleToUserRequest {
   string moduleID = 2;
 }
 
-message CreateTermPayload {
-  string title = 1;
-  string description = 2;
-}
-
 message CreateModulePayload {
   string title = 1;
   string userID = 2;
-  repeated CreateTermPayload terms = 3;
+  bytes terms = 3;
 }
 
 message CreateModuleRequest {
   CreateModulePayload payload = 1;
 }
 
-
-message Term {
-  string id = 1;
-  string title = 2;
-  string description = 3;
-}
-
 message UpdateModulePayload {
   string title = 1;
-  repeated CreateTermPayload newTerms = 2;
-  repeated Term updatedTerms = 3;
+  bytes newTerms = 2;
+  bytes updatedTerms = 3;
+  string id = 4;
 }
 
 message UpdateModuleRequest {
   UpdateModulePayload payload = 1;
 }
 
-message QuizResultTerm {
-  string id = 1;
-  string title = 2;
-  string description = 3;
-  string answer = 4;
-}
-
 message ProcessQuizRequest {
-  repeated QuizResultTerm payload = 1;
+  bytes terms = 1;
+  string moduleID = 2;
 }
 
 service CardQuizzlerService {

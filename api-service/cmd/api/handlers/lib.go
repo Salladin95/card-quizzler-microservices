@@ -5,7 +5,6 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
-	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
@@ -83,16 +82,30 @@ func SetHttpOnlyCookie(c echo.Context, name, value string, exp time.Duration, pa
 	c.SetCookie(cookie)
 }
 
-func handleGRPCResponse(c echo.Context, res *userService.Response, unmarshalTo interface{}) error {
-	code := res.GetCode()
+type GrpcResponse interface {
+	GetData() []byte
+	GetCode() int64
+	GetMessage() string
+}
+
+func handleGRPCResponse(c echo.Context, res GrpcResponse, unmarshalTo interface{}) error {
+	code := int(res.GetCode())
 	if code >= http.StatusBadRequest {
-		return c.JSON(int(res.GetCode()), entities.JsonResponse{Message: res.GetMessage()})
+		return c.JSON(code, entities.JsonResponse{Message: res.GetMessage()})
 	}
 	err := lib.UnmarshalData(res.GetData(), &unmarshalTo)
 	if err != nil {
 		return err
 	}
-	return c.JSON(int(res.GetCode()), entities.JsonResponse{Message: res.GetMessage(), Data: unmarshalTo})
+	return c.JSON(code, entities.JsonResponse{Message: res.GetMessage(), Data: unmarshalTo})
+}
+
+func handleGRPCResponseNoContent(c echo.Context, res GrpcResponse) error {
+	code := int(res.GetCode())
+	if code >= http.StatusBadRequest {
+		return c.JSON(code, entities.JsonResponse{Message: res.GetMessage()})
+	}
+	return c.String(code, res.GetMessage())
 }
 
 func handleCacheResponse(c echo.Context, data any) error {

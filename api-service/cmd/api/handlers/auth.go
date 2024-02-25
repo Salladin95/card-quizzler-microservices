@@ -22,7 +22,7 @@ func (ah *apiHandlers) SignIn(c echo.Context) error {
 	}
 
 	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
@@ -36,13 +36,13 @@ func (ah *apiHandlers) SignIn(c echo.Context) error {
 		return goErrorHandler.OperationFailure("sign in", err)
 	}
 
-	// Check the response code from the Auth service
+	// Check the response Code from the Auth service
 	resCode := int(res.GetCode())
 	if resCode >= 400 {
 		return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage()})
 	}
 
-	// Unmarshal the user response data from the gRPC response
+	// Unmarshal the user response Data from the gRPC response
 	var signedInUser entities.UserResponse
 	err = lib.UnmarshalData(res.GetData(), &signedInUser)
 	if err != nil {
@@ -88,34 +88,36 @@ func (ah *apiHandlers) SignUp(c echo.Context) error {
 	}
 
 	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
 	// Make a gRPC call to the SignUp method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).SignUp(ctx, &userService.SignUpRequest{
-		Payload: signUpDTO.ToAuthPayload(),
-	})
+	res, err := userService.
+		NewUserServiceClient(clientConn).
+		SignUp(ctx, &userService.SignUpRequest{
+			Payload: signUpDTO.ToAuthPayload(),
+		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("sign up", err)
 	}
 
-	// Check the response code from the Auth service
+	// Check the response Code from the Auth service
 	resCode := int(res.GetCode())
 	if resCode >= 400 {
 		return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage()})
 	}
 
-	// Unmarshal the user response data from the gRPC response
+	// Unmarshal the user response Data from the gRPC response
 	var userResponse entities.UserResponse
 	err = lib.UnmarshalData(res.GetData(), &userResponse)
 	if err != nil {
-		return goErrorHandler.OperationFailure("unmarshal data", err)
+		return goErrorHandler.OperationFailure("unmarshal Data", err)
 	}
 
-	// Respond with the JSON data containing the user information
+	// Respond with the JSON Data containing the user information
 	return c.JSON(resCode, entities.JsonResponse{Message: res.GetMessage(), Data: userResponse})
 }
 
@@ -185,7 +187,7 @@ func (ah *apiHandlers) Refresh(c echo.Context) error {
 		return err
 	}
 
-	// Respond with the JSON data containing the new access token
+	// Respond with the JSON Data containing the new access token
 	return c.JSON(http.StatusOK, entities.ResponseWithToken{
 		AccessToken: tokens.AccessToken,
 	})

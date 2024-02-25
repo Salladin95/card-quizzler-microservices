@@ -10,11 +10,12 @@ import (
 
 // AppCfg represents the configuration settings for the application.
 type AppCfg struct {
-	ApiServicePort string `validate:"required"`
-	UserServiceUrl string `validate:"required"`
-	RabbitUrl      string `validate:"required"`
-	RedisUrl       string `validate:"required"`
-	RedisPort      string `validate:"required"`
+	ApiServicePort     string `validate:"required"`
+	UserServiceUrl     string `validate:"required"`
+	CardQuizServiceUrl string `validate:"required"`
+	RabbitUrl          string `validate:"required"`
+	RedisUrl           string `validate:"required"`
+	RedisPort          string `validate:"required"`
 }
 
 type JwtCfg struct {
@@ -37,11 +38,12 @@ func NewConfig() (*Config, error) {
 
 	// Create an AppCfg instance from the loaded environment variables.
 	appCfg := AppCfg{
-		ApiServicePort: env["API_SERVICE_PORT"],
-		UserServiceUrl: env["USER_SERVICE_URL"],
-		RabbitUrl:      env["RABBITMQ_URL"],
-		RedisUrl:       env["REDIS_URL"],
-		RedisPort:      env["REDIS_PORT"],
+		ApiServicePort:     env["API_SERVICE_PORT"],
+		UserServiceUrl:     env["USER_SERVICE_URL"],
+		CardQuizServiceUrl: env["CARD_QUIZ_SERVICE_URL"],
+		RabbitUrl:          env["RABBITMQ_URL"],
+		RedisUrl:           env["REDIS_URL"],
+		RedisPort:          env["REDIS_PORT"],
 	}
 
 	accessTokenExpireTime := parseDuration(env, "JWT_ACCESS_TOKEN_EXP", time.Hour*48)

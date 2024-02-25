@@ -23,17 +23,18 @@ func (ah *apiHandlers) GetUserById(c echo.Context) error {
 		return handleCacheResponse(c, user)
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
 	// Make a gRPC call to the SignIn method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).GetUserById(ctx, &userService.RequestWithID{
-		Id: uid,
-	})
+	res, err := userService.
+		NewUserServiceClient(clientConn).
+		GetUserById(ctx, &userService.RequestWithID{
+			Id: uid,
+		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetUserById", err)
 	}
@@ -60,17 +61,18 @@ func (ah *apiHandlers) GetProfile(c echo.Context) error {
 		return handleCacheResponse(c, user)
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
 	// Make a gRPC call to the SignIn method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).GetUserById(ctx, &userService.RequestWithID{
-		Id: claims.Id,
-	})
+	res, err := userService.
+		NewUserServiceClient(clientConn).
+		GetUserById(ctx, &userService.RequestWithID{
+			Id: claims.Id,
+		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetProfile", err)
 	}
@@ -90,17 +92,18 @@ func (ah *apiHandlers) UpdateEmail(c echo.Context) error {
 		return err
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
 	// Make a gRPC call to the SignIn method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).UpdateEmail(ctx, &userService.UpdateEmailRequest{
-		Payload: dto.ToPayload(uid),
-	})
+	res, err := userService.
+		NewUserServiceClient(clientConn).
+		UpdateEmail(ctx, &userService.UpdateEmailRequest{
+			Payload: dto.ToPayload(uid),
+		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("UpdateEmail", err)
 	}
@@ -120,17 +123,18 @@ func (ah *apiHandlers) UpdatePassword(c echo.Context) error {
 		return err
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
 	// Make a gRPC call to the SignIn method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).UpdatePassword(ctx, &userService.UpdatePasswordRequest{
-		Payload: dto.ToPayload(uid),
-	})
+	res, err := userService.
+		NewUserServiceClient(clientConn).
+		UpdatePassword(ctx, &userService.UpdatePasswordRequest{
+			Payload: dto.ToPayload(uid),
+		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("UpdatePassword", err)
 	}
@@ -148,17 +152,18 @@ func (ah *apiHandlers) ResetPassword(c echo.Context) error {
 		return err
 	}
 
-	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
-	clientConn, err := ah.GetGRPCClientConn()
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.UserServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
 	if err != nil {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
 	// Make a gRPC call to the SignIn method of the Auth service
-	res, err := userService.NewUserServiceClient(clientConn).ResetPassword(ctx, &userService.ResetPasswordRequest{
-		Payload: dto.ToPayload(),
-	})
+	res, err := userService.
+		NewUserServiceClient(clientConn).
+		ResetPassword(ctx, &userService.ResetPasswordRequest{
+			Payload: dto.ToPayload(),
+		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("ResetPassword", err)
 	}
@@ -181,5 +186,5 @@ func (ah *apiHandlers) RequestEmailVerification(c echo.Context) error {
 		return err
 	}
 	ah.log(ctx, "generated event for email verification", "info", "RequestEmailVerification")
-	return c.String(http.StatusNoContent, "Verification code is sent.")
+	return c.String(http.StatusNoContent, "Verification Code is sent.")
 }

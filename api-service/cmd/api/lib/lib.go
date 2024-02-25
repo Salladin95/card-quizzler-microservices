@@ -38,6 +38,14 @@ func Verify(data interface{}) error {
 	return nil
 }
 
+func BindBody(c echo.Context, data interface{}) error {
+	// Bind the request body to the DataWithVerify interface
+	if err := c.Bind(&data); err != nil {
+		return goErrorHandler.BindRequestToBodyFailure(err)
+	}
+	return nil
+}
+
 // BindBodyAndVerify binds the request body to a DataWithVerify interface
 // and then calls the Verify method on the provided data.
 func BindBodyAndVerify(c echo.Context, data DataWithVerify) error {
