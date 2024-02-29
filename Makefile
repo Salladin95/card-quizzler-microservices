@@ -33,8 +33,8 @@ build_api:
 
 ## build_card_quiz: builds the card-quiz-service binary as a linux executable
 build_card_quiz:
-	@echo Building api-service binary...
-	chdir api-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${CARD_QUIZ_SERVICE_BINARY} ./cmd/api
+	@echo Building card-quizzler-service binary...
+	chdir card-quizzler-service && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${CARD_QUIZ_SERVICE_BINARY} ./cmd/api
 	@echo Done!
 
 ## build_user: builds the user-service binary as a linux executable

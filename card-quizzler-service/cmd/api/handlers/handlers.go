@@ -12,8 +12,8 @@ import (
 
 type CardQuizzlerServer struct {
 	quizService.UnimplementedCardQuizzlerServiceServer
-	repo   repositories.Repository
-	broker rmqtools.MessageBroker
+	Repo   repositories.Repository
+	Broker rmqtools.MessageBroker
 }
 
 func RegisterQuizzlerServer(
@@ -21,21 +21,21 @@ func RegisterQuizzlerServer(
 	repo repositories.Repository,
 	broker rmqtools.MessageBroker,
 ) {
-	// Register the AuthServer implementation with the gRPC server.
+	// Register the CardQuizzlerServer implementation with the gRPC server.
 	quizService.RegisterCardQuizzlerServiceServer(
 		gRPCServer,
 		&CardQuizzlerServer{
-			repo:   repo,
-			broker: broker,
+			Repo:   repo,
+			Broker: broker,
 		},
 	)
 }
 
-// log sends a log message to the message broker.
+// log sends a log message to the message Broker.
 func (cq *CardQuizzlerServer) log(ctx context.Context, message, level, method string) {
 	var log entities.LogMessage // Create a new LogMessage struct
-	// Push log message to the message broker
-	cq.broker.PushToQueue(
+	// Push log message to the message Broker
+	cq.Broker.PushToQueue(
 		ctx,
 		constants.LogCommand, // Specify the log command constant
 		// Generate log message with provided details

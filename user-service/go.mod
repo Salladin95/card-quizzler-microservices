@@ -7,7 +7,6 @@ require (
 	github.com/Salladin95/rmqtools v1.0.10
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.9.0
 	go.mongodb.org/mongo-driver v1.13.1

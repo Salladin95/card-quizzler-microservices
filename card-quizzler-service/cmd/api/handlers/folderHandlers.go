@@ -16,7 +16,7 @@ func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService
 		return buildFailedResponse(err)
 	}
 	// Create the folder using the repository
-	createdFolder, err := cq.repo.CreateFolder(createFolderDto)
+	createdFolder, err := cq.Repo.CreateFolder(createFolderDto)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -34,7 +34,7 @@ func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService
 	if err := updateFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
-	updateFolder, err := cq.repo.UpdateFolder(folderID, updateFolderDto)
+	updateFolder, err := cq.Repo.UpdateFolder(folderID, updateFolderDto)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -52,7 +52,7 @@ func (cq *CardQuizzlerServer) AddFolderToUser(ctx context.Context, req *quizServ
 	if userID == "" {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "User id is required"}, nil
 	}
-	if err := cq.repo.AddFolderToUser(userID, folderID); err != nil {
+	if err := cq.Repo.AddFolderToUser(userID, folderID); err != nil {
 		return buildFailedResponse(err)
 	}
 	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "folder is added to user")
@@ -65,7 +65,7 @@ func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
-	if err := cq.repo.DeleteFolder(folderID); err != nil {
+	if err := cq.Repo.DeleteFolder(folderID); err != nil {
 		return buildFailedResponse(err)
 	}
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Folder is deleted")
@@ -83,7 +83,7 @@ func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *q
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
-	if err := cq.repo.DeleteModuleFromFolder(folderID, moduleID); err != nil {
+	if err := cq.Repo.DeleteModuleFromFolder(folderID, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Module is deleted from folder ")
@@ -96,7 +96,7 @@ func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizServi
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
 	}
 
-	folders, err := cq.repo.GetFoldersByUID(uid)
+	folders, err := cq.Repo.GetFoldersByUID(uid)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -111,7 +111,7 @@ func (cq *CardQuizzlerServer) GetUserFolderByID(ctx context.Context, req *quizSe
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
 
-	folders, err := cq.repo.GetFolderByID(parsedID)
+	folders, err := cq.Repo.GetFolderByID(parsedID)
 	if err != nil {
 		return buildFailedResponse(err)
 	}

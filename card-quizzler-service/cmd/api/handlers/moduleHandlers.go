@@ -31,7 +31,7 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 		answerMap[term.ID] = term.Answer
 	}
 
-	module, err := cq.repo.GetModuleByID(moduleID)
+	module, err := cq.Repo.GetModuleByID(moduleID)
 
 	// Update streaks and difficulty for each term in the module
 	for _, term := range module.Terms {
@@ -40,7 +40,7 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 	}
 
 	// Update the module with the updated terms
-	if _, err := cq.repo.UpdateModule(moduleID, entities.UpdateModuleDto{
+	if _, err := cq.Repo.UpdateModule(moduleID, entities.UpdateModuleDto{
 		UpdatedTerms: module.Terms,
 	}); err != nil {
 		// Return a failed response if module update fails
@@ -68,7 +68,7 @@ func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizServ
 	}
 
 	// Add module to user in the repository
-	if err := cq.repo.AddModuleToUser(userID, moduleID); err != nil {
+	if err := cq.Repo.AddModuleToUser(userID, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -93,7 +93,7 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 	}
 
 	// Create the module in the repository
-	createdModule, err := cq.repo.CreateModule(createModuleDto)
+	createdModule, err := cq.Repo.CreateModule(createModuleDto)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -127,13 +127,13 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 	}
 
 	// Create the module in the repository
-	createdModule, err := cq.repo.CreateModule(createModuleDto)
+	createdModule, err := cq.Repo.CreateModule(createModuleDto)
 
 	if err != nil {
 		return buildFailedResponse(err)
 	}
 
-	if err := cq.repo.AddModuleToFolder(folderID, createdModule.ID); err != nil {
+	if err := cq.Repo.AddModuleToFolder(folderID, createdModule.ID); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -171,7 +171,7 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	}
 
 	// Update the module in the repository
-	updatedModule, err := cq.repo.UpdateModule(moduleID, updateModuleDTO)
+	updatedModule, err := cq.Repo.UpdateModule(moduleID, updateModuleDTO)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -189,7 +189,7 @@ func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService
 	}
 
 	// Delete the module from the repository
-	if err := cq.repo.DeleteModule(moduleID); err != nil {
+	if err := cq.Repo.DeleteModule(moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -205,7 +205,7 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 	}
 
 	// Retrieve modules associated with the user from the repository
-	folders, err := cq.repo.GetModulesByUID(uid)
+	folders, err := cq.Repo.GetModulesByUID(uid)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -223,7 +223,7 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 	}
 
 	// Retrieve the module by its ID from the repository
-	module, err := cq.repo.GetModuleByID(parsedID)
+	module, err := cq.Repo.GetModuleByID(parsedID)
 	if err != nil {
 		// Return a failed response if retrieving the module fails
 	}

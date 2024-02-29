@@ -10,5 +10,4 @@ FROM alpine
 WORKDIR /app
 COPY --from=build /go/src/app/main cardQuizApp
 COPY .env ./
-EXPOSE 8080
 CMD ["./cardQuizApp"]

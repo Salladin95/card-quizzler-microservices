@@ -27,6 +27,19 @@ services:
     networks:
       - myapp-network
 
+  card-quiz-service:
+    container_name: card-quizzler-service-container
+    image: card-quizzler-service-image
+    build:
+      context: ./card-quizzler-service
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - redis
+      - postgres
+    networks:
+      - myapp-network
+
   logging-service:
     container_name: logging-service-container
     image: logging-service-image
@@ -53,11 +66,11 @@ services:
   rabbitmq:
     image: "rabbitmq:management"
     ports:
-      - "5672:5672"  # RabbitMQ default port
-      - "15672:15672"  # RabbitMQ Management Plugin
+      - ${RABBIT_PORT}:${RABBIT_PORT}  # RabbitMQ default port
+      - ${RABBIT_MANAGEMENT_PORT}:${RABBIT_MANAGEMENT_PORT} # RabbitMQ Management Plugin
     environment:
-      RABBITMQ_DEFAULT_USER: "khalid"
-      RABBITMQ_DEFAULT_PASS: "12345"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     deploy:
       mode: replicated
       replicas: 1
@@ -66,16 +79,14 @@ services:
     volumes:
       - ./volumes/rabbitmq/:/var/lib/rabbitmq/
 
-
   redis:
     image: "redis:alpine"
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:${REDIS_PORT}
     volumes:
       - ./volumes/broker-redis:/data
     networks:
       - myapp-network
-
 
   mongo:
     image: 'mongo:4.2.16-bionic'
@@ -111,53 +122,9 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_LISTEN_PORT: ${PGADMIN_LISTEN_PORT}
     ports:
-      - "${PGADMIN_LISTEN_PORT}:${PGADMIN_LISTEN_PORT}"
+      - ${PGADMIN_LISTEN_PORT}:${PGADMIN_LISTEN_PORT}
     networks:
       - myapp-network
-
-#  api-redis:
-#    image: "redis:alpine"
-#    ports:
-#      - "6379:6379"
-#    volumes:
-#      - ./volumes/broker-redis:/data
-#    networks:
-#      - myapp-network
-#
-#  user-redis:
-#    image: "redis:alpine"
-#    ports:
-#      - "6380:6380"
-#    volumes:
-#      - ./volumes/auth-redis:/data
-#    networks:
-#      - myapp-network
-
-#  user-db:
-#    image: 'mongo:4.2.16-bionic'
-#    ports:
-#      - ${USER_DB_PORT}:${USER_DB_PORT}
-#    environment:
-#      MONGO_INITDB_DATABASE: ${USER_DB_DATABASE}
-#      MONGO_INITDB_ROOT_USERNAME: ${USER_DB_USER}
-#      MONGO_INITDB_ROOT_PASSWORD: ${USER_DB_PASSWORD}
-#    volumes:
-#      - ./volumes/mongo/:/data/db
-#    networks:
-#      - myapp-network
-#
-#  logging-db:
-#    image: 'mongo:4.2.16-bionic'
-#    ports:
-#      - ${LOGGING_DB_PORT}:${LOGGING_DB_PORT}
-#    environment:
-#      MONGO_INITDB_DATABASE: ${LOGGING_DB_DATABASE}
-#      MONGO_INITDB_ROOT_USERNAME: ${LOGGING_DB_USER}
-#      MONGO_INITDB_ROOT_PASSWORD: ${LOGGING_DB_PASSWORD}
-#    volumes:
-#      - ./volumes/mongo/:/data/db
-#    networks:
-#      - myapp-network
 
 networks:
   myapp-network:

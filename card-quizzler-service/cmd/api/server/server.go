@@ -57,9 +57,7 @@ func (app *App) Start() {
 	defer cancel()
 	repo := repositories.NewRepo(app.db)
 
-	listeners := subscribers.NewMessageBrokerSubscribers(app.broker, repo)
-
-	go listeners.SubscribeToUserCreation(ctx)
+	go subscribers.NewMessageBrokerSubscribers(app.broker, repo).SubscribeToUserCreation(ctx)
 
 	// Start the application by invoking the gRPC listener.
 	app.gRPCListen(repo)
