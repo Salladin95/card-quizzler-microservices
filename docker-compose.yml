@@ -13,6 +13,12 @@ services:
       - redis
     networks:
       - myapp-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
 
   user-service:
     container_name: user-service-container
@@ -26,6 +32,12 @@ services:
       - mongo
     networks:
       - myapp-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
 
   card-quiz-service:
     container_name: card-quizzler-service-container
@@ -39,6 +51,12 @@ services:
       - postgres
     networks:
       - myapp-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
 
   logging-service:
     container_name: logging-service-container
@@ -52,6 +70,13 @@ services:
     networks:
       - myapp-network
 
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
+
   mail-service:
     container_name: mail-service-container
     image: mail-service-image
@@ -62,6 +87,12 @@ services:
       - rabbitmq
     networks:
       - myapp-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
 
   rabbitmq:
     image: "rabbitmq:management"

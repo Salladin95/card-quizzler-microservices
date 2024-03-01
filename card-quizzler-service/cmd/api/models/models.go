@@ -16,8 +16,8 @@ type Term struct {
 	ModuleID             uuid.UUID `json:"moduleID"`
 	Title                string    `json:"title"`
 	Description          string    `json:"description"`
-	NegativeAnswerStreak int       `json:"negativeAnswerStreak"`
-	PositiveAnswerStreak int       `json:"negativeAnswerStreak"`
+	NegativeAnswerStreak int       `gorm:"column:negative_answer_streak" json:"negativeAnswerStreak"`
+	PositiveAnswerStreak int       `gorm:"column:positive_answer_streak" json:"negativeAnswerStreak"`
 	IsDifficult          bool      `json:"isDifficult"`
 }
 

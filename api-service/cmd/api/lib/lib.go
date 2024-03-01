@@ -38,9 +38,11 @@ func Verify(data interface{}) error {
 	return nil
 }
 
-func BindBody(c echo.Context, data interface{}) error {
+// BindBody bind body from request to bindTo param
+// Note - bindTo must be pointer !!!
+func BindBody(c echo.Context, bindTo interface{}) error {
 	// Bind the request body to the DataWithVerify interface
-	if err := c.Bind(&data); err != nil {
+	if err := c.Bind(&bindTo); err != nil {
 		return goErrorHandler.BindRequestToBodyFailure(err)
 	}
 	return nil
@@ -48,20 +50,21 @@ func BindBody(c echo.Context, data interface{}) error {
 
 // BindBodyAndVerify binds the request body to a DataWithVerify interface
 // and then calls the Verify method on the provided data.
-func BindBodyAndVerify(c echo.Context, data DataWithVerify) error {
+// Note - bindTo must be pointer !!!
+func BindBodyAndVerify(c echo.Context, bindTo DataWithVerify) error {
 	// Bind the request body to the DataWithVerify interface
-	if err := c.Bind(&data); err != nil {
+	if err := c.Bind(bindTo); err != nil {
 		return goErrorHandler.BindRequestToBodyFailure(err)
 	}
 
-	// Call the Verify method on the provided data
-	err := data.Verify()
+	// Call the Verify method on the provided bindTo
+	err := bindTo.Verify()
 	return err
 }
 
 // UnmarshalData unmarshals JSON data into the provided unmarshalTo interface.
 // It returns an error if any issues occur during the unmarshaling process.
-// Not - unmarshalTo must be pointer !!!
+// Note - unmarshalTo must be pointer !!!
 func UnmarshalData(data []byte, unmarshalTo interface{}) error {
 	err := json.Unmarshal(data, unmarshalTo)
 	if err != nil {

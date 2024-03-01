@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/config"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/db/migrations"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/server"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
@@ -25,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to connect database")
 	}
+
+	migrations.Migrate(db)
 
 	// Connect to RabbitMQ s using the provided URL.
 	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.RabbitUrl)

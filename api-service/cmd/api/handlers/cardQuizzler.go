@@ -13,7 +13,7 @@ func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 	ah.log(ctx, "start processing request", "info", "ProcessQuizResult")
 
 	var dto entities.QuizResultDto
-	if err := lib.BindBody(c, dto); err != nil {
+	if err := lib.BindBody(c, &dto); err != nil {
 		return err
 	}
 
@@ -49,7 +49,7 @@ func (ah *apiHandlers) CreateFolder(c echo.Context) error {
 	ah.log(ctx, "start processing request", "info", "CreateFolder")
 
 	var dto entities.CreateFolderDto
-	if err := lib.BindBody(c, dto); err != nil {
+	if err := lib.BindBody(c, &dto); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 	id := c.Param("id")
 
 	var dto entities.UpdateFolderDto
-	if err := lib.BindBody(c, dto); err != nil {
+	if err := lib.BindBody(c, &dto); err != nil {
 		return err
 	}
 
@@ -238,7 +238,7 @@ func (ah *apiHandlers) CreateModule(c echo.Context) error {
 	ah.log(ctx, "start processing request", "info", "CreateModule")
 
 	var dto entities.CreateModuleDto
-	if err := lib.BindBody(c, dto); err != nil {
+	if err := lib.BindBody(c, &dto); err != nil {
 		return err
 	}
 
@@ -277,7 +277,7 @@ func (ah *apiHandlers) CreateModuleInFolder(c echo.Context) error {
 	folderID := c.Param("id")
 
 	var dto entities.CreateModuleDto
-	if err := lib.BindBody(c, dto); err != nil {
+	if err := lib.BindBody(c, &dto); err != nil {
 		return err
 	}
 
@@ -315,7 +315,7 @@ func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 	ah.log(ctx, "start processing request", "info", "UpdateModule")
 
 	var dto entities.UpdateModuleDto
-	if err := lib.BindBody(c, dto); err != nil {
+	if err := lib.BindBody(c, &dto); err != nil {
 		return err
 	}
 
