@@ -1,5 +1,7 @@
 package entities
 
+import "github.com/google/uuid"
+
 type JsonResponse struct {
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
@@ -34,4 +36,9 @@ type resultTerm struct {
 
 type QuizResultDto struct {
 	Terms []resultTerm `json:"terms" validate:"required"`
+}
+
+type FolderAndModuleIDS struct {
+	FolderID uuid.UUID
+	ModuleID uuid.UUID
 }

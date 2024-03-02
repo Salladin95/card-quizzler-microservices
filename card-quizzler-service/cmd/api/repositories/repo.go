@@ -1,39 +1,42 @@
 package repositories
 
 import (
+	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
+	"github.com/Salladin95/rmqtools"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type repo struct {
-	db *gorm.DB
+	db     *gorm.DB
+	broker rmqtools.MessageBroker
 }
 
 type Repository interface {
-	GetFoldersByUID(uid string) ([]models.User, error)
-	GetFolderByID(id uuid.UUID) (models.Folder, error)
-	CreateFolder(dto entities.CreateFolderDto) (models.Folder, error)
-	UpdateFolder(folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error)
-	DeleteFolder(id uuid.UUID) error
+	GetFoldersByUID(ctx context.Context, uid string) ([]models.Folder, error)
+	GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, error)
+	CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (models.Folder, error)
+	UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error)
+	DeleteFolder(ctx context.Context, id uuid.UUID) error
 
-	DeleteModuleFromFolder(folderID uuid.UUID, moduleID uuid.UUID) error
+	DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error
 	AddFolderToUser(uid string, folderID uuid.UUID) error
-	AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error
-	GetModulesByUID(uid string) ([]models.User, error)
-	GetModuleByID(id uuid.UUID) (models.Module, error)
-	CreateModule(dto entities.CreateModuleDto) (models.Module, error)
-	UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error)
-	DeleteModule(id uuid.UUID) error
+	AddModuleToFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error
+	GetModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
+	GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, error)
+	CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error)
+	UpdateModule(ctx context.Context, id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error)
+	DeleteModule(ctx context.Context, id uuid.UUID) error
 	AddModuleToUser(uid string, moduleID uuid.UUID) error
 	CreateUser(uid string) error
 	UpdateTerms(terms []models.Term) error
 }
 
-func NewRepo(db *gorm.DB) Repository {
-	return &repo{db: db}
+func NewRepo(db *gorm.DB, broker rmqtools.MessageBroker) Repository {
+	return &repo{db: db, broker: broker}
 }
 
 // withTransaction executes the provided function within a transaction.

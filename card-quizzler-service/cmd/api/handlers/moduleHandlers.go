@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -31,7 +32,7 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 		answerMap[term.ID] = term.Answer
 	}
 
-	module, err := cq.Repo.GetModuleByID(moduleID)
+	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
 
 	// Update streaks and difficulty for each term in the module
 	for _, term := range module.Terms {
@@ -40,12 +41,14 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 	}
 
 	// Update the module with the updated terms
-	if _, err := cq.Repo.UpdateModule(moduleID, entities.UpdateModuleDto{
+	if _, err := cq.Repo.UpdateModule(ctx, moduleID, entities.UpdateModuleDto{
 		UpdatedTerms: module.Terms,
 	}); err != nil {
 		// Return a failed response if module update fails
 		return buildFailedResponse(err)
 	}
+
+	cq.Broker.PushToQueue(ctx, constants.MutateModuleKey, module)
 
 	return buildSuccessfulResponse(nil, http.StatusOK, "Quiz has been processed")
 }
@@ -93,10 +96,11 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 	}
 
 	// Create the module in the repository
-	createdModule, err := cq.Repo.CreateModule(createModuleDto)
+	createdModule, err := cq.Repo.CreateModule(ctx, createModuleDto)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
+	cq.Broker.PushToQueue(ctx, constants.CreateModuleKey, createdModule)
 
 	return buildSuccessfulResponse(createdModule, http.StatusCreated, "module is created")
 }
@@ -127,16 +131,18 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 	}
 
 	// Create the module in the repository
-	createdModule, err := cq.Repo.CreateModule(createModuleDto)
+	createdModule, err := cq.Repo.CreateModule(ctx, createModuleDto)
 
 	if err != nil {
 		return buildFailedResponse(err)
 	}
 
-	if err := cq.Repo.AddModuleToFolder(folderID, createdModule.ID); err != nil {
+	if err := cq.Repo.AddModuleToFolder(ctx, folderID, createdModule.ID); err != nil {
 		return buildFailedResponse(err)
 	}
 
+	cq.Broker.PushToQueue(ctx, constants.CreateModuleKey, createdModule)
+	cq.Broker.PushToQueue(ctx, constants.MutateFolderKey, models.Folder{ID: folderID})
 	return buildSuccessfulResponse(createdModule, http.StatusCreated, "module is created")
 }
 
@@ -171,11 +177,12 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	}
 
 	// Update the module in the repository
-	updatedModule, err := cq.Repo.UpdateModule(moduleID, updateModuleDTO)
+	updatedModule, err := cq.Repo.UpdateModule(ctx, moduleID, updateModuleDTO)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
 
+	cq.Broker.PushToQueue(ctx, constants.MutateModuleKey, updatedModule)
 	return buildSuccessfulResponse(updatedModule, http.StatusOK, "module is updated")
 }
 
@@ -189,10 +196,10 @@ func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService
 	}
 
 	// Delete the module from the repository
-	if err := cq.Repo.DeleteModule(moduleID); err != nil {
+	if err := cq.Repo.DeleteModule(ctx, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
-
+	cq.Broker.PushToQueue(ctx, constants.DeleteModuleKey, models.Module{ID: moduleID})
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Module is deleted")
 }
 
@@ -205,12 +212,13 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 	}
 
 	// Retrieve modules associated with the user from the repository
-	folders, err := cq.Repo.GetModulesByUID(uid)
+	modules, err := cq.Repo.GetModulesByUID(ctx, uid)
 	if err != nil {
 		return buildFailedResponse(err)
 	}
 
-	return buildSuccessfulResponse(folders, http.StatusOK, "requested modules")
+	cq.Broker.PushToQueue(ctx, constants.FetchUserModulesKey, modules)
+	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
 }
 
 func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
@@ -223,10 +231,11 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 	}
 
 	// Retrieve the module by its ID from the repository
-	module, err := cq.Repo.GetModuleByID(parsedID)
+	module, err := cq.Repo.GetModuleByID(ctx, parsedID)
 	if err != nil {
 		// Return a failed response if retrieving the module fails
 	}
 
+	cq.Broker.PushToQueue(ctx, constants.FetchModuleKey, module)
 	return buildSuccessfulResponse(module, http.StatusOK, "requested module")
 }

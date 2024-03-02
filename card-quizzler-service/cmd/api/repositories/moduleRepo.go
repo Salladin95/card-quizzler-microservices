@@ -1,7 +1,9 @@
 package repositories
 
 import (
+	"context"
 	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
@@ -12,7 +14,7 @@ import (
 )
 
 // CreateModule creates a new module in the database using the provided DTO.
-func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error) {
+func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error) {
 	// Convert DTO to model
 	module, err := dto.ToModel()
 	if err != nil {
@@ -43,6 +45,8 @@ func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error)
 		return module, goErrorHandler.OperationFailure("create module", err)
 	}
 
+	r.broker.PushToQueue(ctx, constants.MutateModuleKey, module)
+
 	// Return the created module
 	return module, nil
 }
@@ -50,7 +54,7 @@ func (r *repo) CreateModule(dto entities.CreateModuleDto) (models.Module, error)
 // UpdateModule updates a module with the given ID using the provided DTO.
 // It replaces module's terms with the terms provided in newTerms.
 // If newTerms are provided, the module will contain only these terms, the same applies to updatedTerms.
-func (r *repo) UpdateModule(id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error) {
+func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error) {
 	var module models.Module
 	// Parse DTO to models
 	parsedDto, err := dto.ToModels(id)
@@ -117,7 +121,7 @@ func (r *repo) UpdateTerms(terms []models.Term) error {
 }
 
 // GetModuleByID retrieves a module from the database by its ID,
-func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {
+func (r *repo) GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, error) {
 	// Declare a variable to hold the retrieved module
 	var module models.Module
 
@@ -136,7 +140,7 @@ func (r *repo) GetModuleByID(id uuid.UUID) (models.Module, error) {
 }
 
 // AddModuleToFolder adds a module to a folder within a transaction.
-func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
+func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
 	// Execute the provided function within a transaction
 	return r.withTransaction(func(tx *gorm.DB) error {
 		// Retrieve the module from the database by its ID, preloading its associated terms
@@ -158,13 +162,14 @@ func (r *repo) AddModuleToFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
 			// If an error occurs while creating the association, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
+
 		// If no errors occurred, return nil
 		return nil
 	})
 }
 
 // DeleteModule deletes a module with the given ID from the database within a transaction.
-func (r *repo) DeleteModule(id uuid.UUID) error {
+func (r *repo) DeleteModule(ctx context.Context, id uuid.UUID) error {
 	// Execute the provided function within a transaction
 	return r.withTransaction(func(tx *gorm.DB) error {
 		// Declare a variable to hold the module to be deleted
@@ -181,7 +186,6 @@ func (r *repo) DeleteModule(id uuid.UUID) error {
 			// If an error occurs while deleting the module, return an operation failure error
 			return goErrorHandler.OperationFailure("delete module", err)
 		}
-
 		// If no errors occurred, return nil
 		return nil
 	})

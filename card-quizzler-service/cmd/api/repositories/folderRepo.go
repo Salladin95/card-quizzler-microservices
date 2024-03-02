@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
@@ -10,7 +11,7 @@ import (
 )
 
 // CreateFolder creates a new folder in the database using the provided DTO.
-func (r *repo) CreateFolder(dto entities.CreateFolderDto) (models.Folder, error) {
+func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (models.Folder, error) {
 	// Convert the DTO to a model
 	folder, err := dto.ToModel()
 	if err != nil {
@@ -27,7 +28,7 @@ func (r *repo) CreateFolder(dto entities.CreateFolderDto) (models.Folder, error)
 }
 
 // UpdateFolder updates a folder in the database with the given ID using the provided DTO.
-func (r *repo) UpdateFolder(folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error) {
+func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error) {
 	// Declare a variable to hold the folder
 	var folder models.Folder
 
@@ -47,6 +48,7 @@ func (r *repo) UpdateFolder(folderID uuid.UUID, dto entities.UpdateFolderDto) (m
 
 		// Save the updated folder in the database
 		if err := tx.Save(&folder).Error; err != nil {
+
 			// If an error occurs while updating the folder, return an operation failure error
 			return goErrorHandler.OperationFailure("update folder", err)
 		}
@@ -57,7 +59,7 @@ func (r *repo) UpdateFolder(folderID uuid.UUID, dto entities.UpdateFolderDto) (m
 }
 
 // GetFolderByID retrieves a folder from the database by its ID.
-func (r *repo) GetFolderByID(id uuid.UUID) (models.Folder, error) {
+func (r *repo) GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, error) {
 	// Declare a variable to hold the folder
 	var folder models.Folder
 
@@ -78,7 +80,7 @@ func (r *repo) GetFolderByID(id uuid.UUID) (models.Folder, error) {
 // If the folder is not found, it returns a not found error.
 // If an error occurs during the database operation or transaction execution,
 // it returns the underlying error.
-func (r *repo) DeleteFolder(id uuid.UUID) error {
+func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
 	// Execute the provided function within a transaction
 	return r.withTransaction(func(tx *gorm.DB) error {
 		// Declare a variable to hold the folder
@@ -106,7 +108,7 @@ func (r *repo) DeleteFolder(id uuid.UUID) error {
 
 // DeleteModuleFromFolder deletes a module from a folder in the database.
 // It removes the association between the specified module and folder.
-func (r *repo) DeleteModuleFromFolder(folderID uuid.UUID, moduleID uuid.UUID) error {
+func (r *repo) DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
 	// Delete the association between the specified module and folder
 	if err := r.db.Model(&models.Folder{ID: folderID}).
 		Association("Modules").
@@ -114,7 +116,6 @@ func (r *repo) DeleteModuleFromFolder(folderID uuid.UUID, moduleID uuid.UUID) er
 		// If an error occurs during deletion, return the error
 		return goErrorHandler.OperationFailure("delete module from folder", err)
 	}
-
 	// If deletion is successful, return nil
 	return nil
 }

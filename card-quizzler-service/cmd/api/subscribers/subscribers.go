@@ -2,10 +2,8 @@ package subscribers
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	"github.com/Salladin95/rmqtools"
 )
@@ -16,7 +14,11 @@ type subscribers struct {
 }
 
 type Subscribers interface {
-	SubscribeToUserCreation(ctx context.Context)
+	Listen(ctx context.Context)
+}
+
+func (s *subscribers) Listen(ctx context.Context) {
+	s.subscribeToUserCreation(ctx)
 }
 
 func NewMessageBrokerSubscribers(
@@ -27,56 +29,6 @@ func NewMessageBrokerSubscribers(
 		broker: broker,
 		repo:   repo,
 	}
-}
-
-func (s *subscribers) SubscribeToUserCreation(ctx context.Context) {
-	s.log(
-		ctx,
-		"subscribing to events",
-		"info",
-		"SubscribeToUserCreation",
-	)
-
-	s.broker.ListenForUpdates(
-		[]string{constants.CreatedUserKey},
-		func(_ string, payload []byte) {
-			// TODO: extract to a function
-			var createUserDto entities.CreateUserDto
-			if err := lib.UnmarshalData(payload, &createUserDto); err != nil {
-				s.log(
-					ctx,
-					fmt.Sprintf("unmarshall payload - %v", err),
-					"error",
-					"SubscribeToUserCreation",
-				)
-				return
-			}
-			if err := createUserDto.Verify(); err != nil {
-				s.log(
-					ctx,
-					fmt.Sprintf("invalid payload - %v", err),
-					"error",
-					"SubscribeToUserCreation",
-				)
-				return
-			}
-			if err := s.repo.CreateUser(createUserDto.ID); err != nil {
-				s.log(
-					ctx,
-					fmt.Sprintf("failed to create user record - %v", err),
-					"error",
-					"SubscribeToUserCreation",
-				)
-				return
-			}
-			s.log(
-				ctx,
-				"user record is created",
-				"info",
-				"SubscribeToUserCreation",
-			)
-		},
-	)
 }
 
 // log sends a log message to the message broker.

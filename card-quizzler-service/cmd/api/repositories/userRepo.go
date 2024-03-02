@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
@@ -18,8 +19,8 @@ func (r *repo) CreateUser(uid string) error {
 }
 
 // GetModulesByUID retrieves modules associated with a user by their UID from the database.
-func (r *repo) GetModulesByUID(uid string) ([]models.User, error) {
-	var userModules []models.User
+func (r *repo) GetModulesByUID(ctx context.Context, uid string) ([]models.Module, error) {
+	var userModules []models.Module
 	if err := r.db.
 		Preload("Modules.Terms").
 		Where("id = ?", uid).
@@ -27,12 +28,13 @@ func (r *repo) GetModulesByUID(uid string) ([]models.User, error) {
 		Error; err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
+
 	return userModules, nil
 }
 
 // GetFoldersByUID retrieves folders associated with a user by their UID from the database
-func (r *repo) GetFoldersByUID(uid string) ([]models.User, error) {
-	var userFolders []models.User
+func (r *repo) GetFoldersByUID(ctx context.Context, uid string) ([]models.Folder, error) {
+	var userFolders []models.Folder
 	if err := r.db.
 		Preload("Folders.Modules.Terms").
 		Where("id = ?", uid).
@@ -40,6 +42,7 @@ func (r *repo) GetFoldersByUID(uid string) ([]models.User, error) {
 		Error; err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
+
 	return userFolders, nil
 }
 
