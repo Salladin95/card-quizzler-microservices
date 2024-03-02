@@ -69,7 +69,7 @@ func (app *App) Start() {
 		}
 	}()
 
-	go listeners.SubscribeToUserEvents(ctx)
+	listeners.Listen(ctx)
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
 	// Use a buffered channel to avoid missing signals as recommended for signal.Notify
