@@ -51,7 +51,7 @@ func (ah *apiHandlers) GetProfile(c echo.Context) error {
 	if !ok {
 		return goErrorHandler.NewError(
 			goErrorHandler.ErrUnauthorized,
-			errors.New("refresh, failed to cast claims"),
+			errors.New("failed to cast claims"),
 		)
 	}
 

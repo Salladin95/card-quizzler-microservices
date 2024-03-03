@@ -21,7 +21,6 @@ message CreateFolderRequest {
   CreateFolderPayload payload = 1;
 }
 
-
 message UpdateFolderPayload {
   string title = 1;
   string folderID = 2;
@@ -44,6 +43,11 @@ message AddFolderToUserRequest {
 
 message AddModuleToUserRequest {
   string userID = 1;
+  string moduleID = 2;
+}
+
+message AddModuleToFolderRequest {
+  string folderID = 1;
   string moduleID = 2;
 }
 
@@ -94,4 +98,5 @@ service CardQuizzlerService {
   rpc UpdateModule(UpdateModuleRequest) returns (Response);
   rpc DeleteModule(RequestWithID) returns (Response);
   rpc AddModuleToUser(AddModuleToUserRequest) returns (Response);
+  rpc AddModuleToFolder(AddModuleToFolderRequest) returns (Response);
 }

@@ -34,6 +34,19 @@ var userEvents = []string{
 	constants.FetchedUserKey,
 }
 
+var cardQuizEvents = []string{
+	constants.CreatedFolderKey,
+	constants.CreatedModuleKey,
+	constants.FetchUserFoldersKey,
+	constants.FetchedUserModulesKey,
+	constants.FetchedFolderKey,
+	constants.FetchedModuleKey,
+	constants.DeletedFolderKey,
+	constants.DeletedModuleKey,
+	constants.MutatedFolderKey,
+	constants.MutatedModuleKey,
+}
+
 func (s *subscribers) Listen(ctx context.Context) {
 	s.log(
 		ctx,
@@ -43,6 +56,7 @@ func (s *subscribers) Listen(ctx context.Context) {
 	)
 
 	go s.listenToUserEvents(ctx)
+	go s.listenToCardQuizEvents(ctx)
 }
 
 func (s *subscribers) listenToUserEvents(ctx context.Context) {
@@ -55,6 +69,18 @@ func (s *subscribers) listenToUserEvents(ctx context.Context) {
 
 	e := s.broker.ListenForUpdates(userEvents, s.userEventHandler)
 	s.log(ctx, e.Error(), "error", "listenToUserEvents")
+}
+
+func (s *subscribers) listenToCardQuizEvents(ctx context.Context) {
+	s.log(
+		ctx,
+		"subscribing to card quiz events",
+		"info",
+		"listenToCardQuizEvents",
+	)
+
+	e := s.broker.ListenForUpdates(cardQuizEvents, s.cardQuizEventHandler)
+	s.log(ctx, e.Error(), "error", "listenToCardQuizEvents")
 }
 
 func (s *subscribers) log(ctx context.Context, message, level, method string) {

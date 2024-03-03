@@ -28,7 +28,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 
 	switch key {
 	case constants.CreatedUserKey:
-		s.cacheManager.SetCacheInPipeline(
+		s.cacheManager.SetCacheByKeys(
 			s.cacheManager.UserHashKey(user.ID),
 			cacheManager.UserKey,
 			payload,
@@ -40,7 +40,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 		s.log(
 			ctx,
 			"new user case, clearing cache for [s.key, email, id]",
-			"error",
+			"info",
 			"userEventHandler",
 		)
 	case constants.UpdatedUserKey:
@@ -51,7 +51,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 		s.log(
 			ctx,
 			"user updated case, clearing cache for [s.key, email, id]",
-			"error",
+			"info",
 			"userEventHandler",
 		)
 	case constants.DeletedUserKey:
@@ -61,11 +61,11 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 		s.log(
 			ctx,
 			"user updated case, clearing cache for [s.key, email, id]",
-			"error",
+			"info",
 			"userEventHandler",
 		)
 	case constants.FetchedUserKey:
-		s.cacheManager.SetCacheInPipeline(
+		s.cacheManager.SetCacheByKeys(
 			s.cacheManager.UserHashKey(user.ID),
 			cacheManager.UserKey,
 			payload,

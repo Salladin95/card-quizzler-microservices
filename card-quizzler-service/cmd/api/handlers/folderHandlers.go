@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/google/uuid"
 	"net/http"
@@ -22,7 +20,6 @@ func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService
 	if err != nil {
 		return buildFailedResponse(err)
 	}
-	cq.Broker.PushToQueue(ctx, constants.CreateFolderKey, createdFolder)
 	return buildSuccessfulResponse(createdFolder, http.StatusCreated, "created folder")
 }
 
@@ -41,7 +38,6 @@ func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService
 	if err != nil {
 		return buildFailedResponse(err)
 	}
-	cq.Broker.PushToQueue(ctx, constants.MutateFolderKey, updateFolder)
 	return buildSuccessfulResponse(updateFolder, http.StatusOK, "updated folder")
 }
 
@@ -72,7 +68,6 @@ func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService
 	if err := cq.Repo.DeleteFolder(ctx, folderID); err != nil {
 		return buildFailedResponse(err)
 	}
-	cq.Broker.PushToQueue(ctx, constants.DeleteFolderKey, models.Folder{ID: folderID})
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Folder is deleted")
 }
 
@@ -91,10 +86,6 @@ func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *q
 	if err := cq.Repo.DeleteModuleFromFolder(ctx, folderID, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
-	cq.Broker.PushToQueue(ctx, constants.MutateFolderAndModule, entities.FolderAndModuleIDS{
-		FolderID: folderID,
-		ModuleID: moduleID,
-	})
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Module is deleted from folder ")
 }
 
@@ -110,11 +101,10 @@ func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizServi
 		return buildFailedResponse(err)
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.FetchUserFoldersKey, folders)
 	return buildSuccessfulResponse(folders, http.StatusOK, "requested folders")
 }
 
-func (cq *CardQuizzlerServer) GetUserFolderByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) GetFolderByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "GetUserFolderByID")
 	id := req.GetId()
 	parsedID, err := uuid.Parse(id)
@@ -127,6 +117,5 @@ func (cq *CardQuizzlerServer) GetUserFolderByID(ctx context.Context, req *quizSe
 		return buildFailedResponse(err)
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.FetchFolderKey, folder)
 	return buildSuccessfulResponse(folder, http.StatusOK, "requested folder")
 }

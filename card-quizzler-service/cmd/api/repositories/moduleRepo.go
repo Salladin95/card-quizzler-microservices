@@ -45,7 +45,7 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 		return module, goErrorHandler.OperationFailure("create module", err)
 	}
 
-	r.broker.PushToQueue(ctx, constants.MutateModuleKey, module)
+	r.broker.PushToQueue(ctx, constants.CreatedModuleKey, module)
 
 	// Return the created module
 	return module, nil
@@ -98,6 +98,8 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 			}
 		}
 
+		r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+
 		return nil
 	}
 
@@ -135,16 +137,17 @@ func (r *repo) GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, 
 		return module, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
+	r.broker.PushToQueue(ctx, constants.FetchedModuleKey, module)
 	// If no error occurred, return the retrieved module
 	return module, nil
 }
 
 // AddModuleToFolder adds a module to a folder within a transaction.
 func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
+	// Retrieve the module from the database by its ID, preloading its associated terms
+	var module models.Module
 	// Execute the provided function within a transaction
-	return r.withTransaction(func(tx *gorm.DB) error {
-		// Retrieve the module from the database by its ID, preloading its associated terms
-		var module models.Module
+	if err := r.withTransaction(func(tx *gorm.DB) error {
 		if err := r.db.
 			Preload("Terms").
 			Where("id = ?", moduleID).
@@ -165,15 +168,20 @@ func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, module
 
 		// If no errors occurred, return nil
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	r.broker.PushToQueue(ctx, constants.CreatedModuleKey, module)
+	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, models.Folder{ID: folderID, UserID: module.UserID})
+	return nil
 }
 
 // DeleteModule deletes a module with the given ID from the database within a transaction.
 func (r *repo) DeleteModule(ctx context.Context, id uuid.UUID) error {
+	// Declare a variable to hold the module to be deleted
+	var module models.Module
 	// Execute the provided function within a transaction
-	return r.withTransaction(func(tx *gorm.DB) error {
-		// Declare a variable to hold the module to be deleted
-		var module models.Module
+	if err := r.withTransaction(func(tx *gorm.DB) error {
 
 		// Retrieve the module from the database by its ID, preloading its associated terms
 		if err := tx.Preload("Terms").Where("id = ?", id).First(&module).Error; err != nil {
@@ -186,7 +194,12 @@ func (r *repo) DeleteModule(ctx context.Context, id uuid.UUID) error {
 			// If an error occurs while deleting the module, return an operation failure error
 			return goErrorHandler.OperationFailure("delete module", err)
 		}
+
 		// If no errors occurred, return nil
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	r.broker.PushToQueue(ctx, constants.DeletedModuleKey, module)
+	return nil
 }

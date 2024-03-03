@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
@@ -22,13 +23,14 @@ func (r *repo) CreateUser(uid string) error {
 func (r *repo) GetModulesByUID(ctx context.Context, uid string) ([]models.Module, error) {
 	var userModules []models.Module
 	if err := r.db.
-		Preload("Modules.Terms").
-		Where("id = ?", uid).
+		Preload("Terms").
+		Where("user_id = ?", uid).
 		Find(&userModules).
 		Error; err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
+	r.broker.PushToQueue(ctx, constants.FetchedUserModulesKey, userModules)
 	return userModules, nil
 }
 
@@ -36,13 +38,14 @@ func (r *repo) GetModulesByUID(ctx context.Context, uid string) ([]models.Module
 func (r *repo) GetFoldersByUID(ctx context.Context, uid string) ([]models.Folder, error) {
 	var userFolders []models.Folder
 	if err := r.db.
-		Preload("Folders.Modules.Terms").
-		Where("id = ?", uid).
+		Preload("Modules.Terms").
+		Where("user_id = ?", uid).
 		Find(&userFolders).
 		Error; err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
+	r.broker.PushToQueue(ctx, constants.FetchedUserFoldersKey, userFolders)
 	return userFolders, nil
 }
 

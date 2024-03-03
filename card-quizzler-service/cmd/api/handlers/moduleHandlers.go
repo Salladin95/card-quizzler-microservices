@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -48,8 +47,6 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 		return buildFailedResponse(err)
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.MutateModuleKey, module)
-
 	return buildSuccessfulResponse(nil, http.StatusOK, "Quiz has been processed")
 }
 
@@ -78,6 +75,32 @@ func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizServ
 	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "Module is added to user")
 }
 
+func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizService.AddModuleToFolderRequest) (*quizService.Response, error) {
+	// Log the start of processing the gRPC request
+	cq.log(ctx, "start processing grpc request", "info", "AddModuleToUser")
+
+	// Extract module and user IDs from the request
+	mID := req.GetModuleID()
+	fID := req.GetFolderID()
+
+	folderID, err := uuid.Parse(fID)
+	if err != nil {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	moduleID, err := uuid.Parse(mID)
+	if err != nil {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	// Add module to user in the repository
+	if err := cq.Repo.AddModuleToFolder(ctx, folderID, moduleID); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "Module is added to folder")
+}
+
 func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService.CreateModuleRequest) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "CreateModule")
 	payload := req.GetPayload()
@@ -100,7 +123,6 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 	if err != nil {
 		return buildFailedResponse(err)
 	}
-	cq.Broker.PushToQueue(ctx, constants.CreateModuleKey, createdModule)
 
 	return buildSuccessfulResponse(createdModule, http.StatusCreated, "module is created")
 }
@@ -141,8 +163,6 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 		return buildFailedResponse(err)
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.CreateModuleKey, createdModule)
-	cq.Broker.PushToQueue(ctx, constants.MutateFolderKey, models.Folder{ID: folderID})
 	return buildSuccessfulResponse(createdModule, http.StatusCreated, "module is created")
 }
 
@@ -182,7 +202,6 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 		return buildFailedResponse(err)
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.MutateModuleKey, updatedModule)
 	return buildSuccessfulResponse(updatedModule, http.StatusOK, "module is updated")
 }
 
@@ -199,7 +218,6 @@ func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService
 	if err := cq.Repo.DeleteModule(ctx, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
-	cq.Broker.PushToQueue(ctx, constants.DeleteModuleKey, models.Module{ID: moduleID})
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Module is deleted")
 }
 
@@ -217,7 +235,6 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 		return buildFailedResponse(err)
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.FetchUserModulesKey, modules)
 	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
 }
 
@@ -236,6 +253,5 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 		// Return a failed response if retrieving the module fails
 	}
 
-	cq.Broker.PushToQueue(ctx, constants.FetchModuleKey, module)
 	return buildSuccessfulResponse(module, http.StatusOK, "requested module")
 }

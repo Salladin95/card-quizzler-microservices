@@ -34,6 +34,6 @@ func (cm *cacheManager) SetTokenPair(uid string, tokenPair *entities.TokenPair) 
 	if err != nil {
 		return err
 	}
-	err = cm.SetCacheInPipeline(cm.UserHashKey(uid), TokensKey, parsedData, cm.cfg.JwtCfg.RefreshTokenExpTime)
+	err = cm.SetCacheByKeys(cm.UserHashKey(uid), TokensKey, parsedData, cm.cfg.JwtCfg.RefreshTokenExpTime)
 	return err
 }

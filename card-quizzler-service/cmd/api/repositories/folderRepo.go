@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
@@ -23,6 +24,8 @@ func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (
 		// If an error occurs during creation, return the folder and an operation failure error
 		return folder, goErrorHandler.OperationFailure("create folder", err)
 	}
+
+	r.broker.PushToQueue(ctx, constants.CreatedFolderKey, folder)
 	// If creation is successful, return the created folder and a nil error
 	return folder, nil
 }
@@ -33,7 +36,7 @@ func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entitie
 	var folder models.Folder
 
 	// Execute the provided function within a transaction
-	return folder, r.withTransaction(func(tx *gorm.DB) error {
+	if err := r.withTransaction(func(tx *gorm.DB) error {
 		// Retrieve the folder by ID from the database, preloading its associated modules and terms
 		if err := tx.
 			Preload("Modules.Terms").
@@ -55,7 +58,11 @@ func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entitie
 
 		// If no errors occurred, return nil
 		return nil
-	})
+	}); err != nil {
+		return folder, err
+	}
+	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
+	return folder, nil
 }
 
 // GetFolderByID retrieves a folder from the database by its ID.
@@ -69,6 +76,8 @@ func (r *repo) GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, 
 		return folder, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
+	r.broker.PushToQueue(ctx, constants.FetchedFolderKey, folder)
+
 	// If the folder is found, return the folder and a nil error
 	return folder, nil
 }
@@ -81,10 +90,10 @@ func (r *repo) GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, 
 // If an error occurs during the database operation or transaction execution,
 // it returns the underlying error.
 func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
+	// Declare a variable to hold the folder
+	var folder models.Folder
 	// Execute the provided function within a transaction
-	return r.withTransaction(func(tx *gorm.DB) error {
-		// Declare a variable to hold the folder
-		var folder models.Folder
+	if err := r.withTransaction(func(tx *gorm.DB) error {
 
 		// Retrieve the folder by its ID from the database, preloading its associated modules and terms
 		if err := tx.
@@ -103,19 +112,51 @@ func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
 
 		// If no errors occurred, return nil
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	r.broker.PushToQueue(ctx, constants.DeletedFolderKey, folder)
+	return nil
 }
 
 // DeleteModuleFromFolder deletes a module from a folder in the database.
 // It removes the association between the specified module and folder.
 func (r *repo) DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
-	// Delete the association between the specified module and folder
-	if err := r.db.Model(&models.Folder{ID: folderID}).
-		Association("Modules").
-		Delete(models.Module{ID: moduleID}); err != nil {
-		// If an error occurs during deletion, return the error
-		return goErrorHandler.OperationFailure("delete module from folder", err)
+	// Declare a variable to hold the folder
+	var folder models.Folder
+	// Execute the provided function within a transaction
+	// Declare a variable to hold the module
+	var module models.Module
+
+	if err := r.withTransaction(func(tx *gorm.DB) error {
+		if err := tx.
+			First(&folder).
+			Where("id", folderID).Error; err != nil {
+			// If the folder is not found, return the error
+			return err
+		}
+
+		if err := tx.
+			First(&module).
+			Where("id", moduleID).Error; err != nil {
+			// If the folder is not found, return the error
+			return err
+		}
+
+		if err := r.db.Model(&folder).
+			Association("Modules").
+			Delete(&module); err != nil {
+			// If an error occurs during deletion, return the error
+			return goErrorHandler.OperationFailure("delete module from folder", err)
+		}
+
+		return nil
+	}); err != nil {
+		return err
 	}
-	// If deletion is successful, return nil
+
+	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
+	r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+
 	return nil
 }

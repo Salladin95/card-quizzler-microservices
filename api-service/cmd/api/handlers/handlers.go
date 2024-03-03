@@ -38,6 +38,7 @@ type ApiHandlersInterface interface {
 	GetUserModules(c echo.Context) error
 	GetModuleByID(c echo.Context) error
 	AddModuleToUser(c echo.Context) error
+	AddModuleToFolder(c echo.Context) error
 	DeleteModule(c echo.Context) error
 }
 

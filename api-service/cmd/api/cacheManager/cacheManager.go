@@ -29,7 +29,7 @@ type CacheManager interface {
 	ClearCacheByKeys(key1, key2 string) error
 	SetTokenPair(uid string, tokenPair *entities.TokenPair) error
 	GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error)
-	SetCacheInPipeline(key string, hash string, data []byte, exp time.Duration) error
+	SetCacheByKeys(key string, hash string, data []byte, exp time.Duration) error
 	SetCacheByKey(key string, data []byte) error
 	ReadCacheByKey(readTo interface{}, key string) error
 	ReadCacheByKeys(readTo interface{}, key, hashKey string) error
@@ -42,6 +42,10 @@ const (
 	TokensKey = "hash:token-pair"
 	UsersKey  = "hash:users"
 	UserKey   = "hash:user"
+	Folders   = "hash:folders"
+	Folder    = "hash:folder"
+	Modules   = "hash:modules"
+	Module    = "hash:module"
 )
 
 // NewCacheManager creates a new CacheManager instance with the provided Redis client and configuration.
@@ -128,10 +132,10 @@ func (cm *cacheManager) SetCacheByKey(key string, data []byte) error {
 	return nil
 }
 
-// SetCacheInPipeline sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
+// SetCacheByKeys sets data in the cache using a Redis pipeline to perform multiple operations in a single round trip.
 // It takes the specified key, hash, data and exp as parameters, marshals the data into JSON format,
 // It returns an error if any issues occur during the marshaling or cache setting process.
-func (cm *cacheManager) SetCacheInPipeline(key string, hash string, data []byte, exp time.Duration) error {
+func (cm *cacheManager) SetCacheByKeys(key string, hash string, data []byte, exp time.Duration) error {
 	// Create a new Redis pipeline
 	pipe := cm.redisClient.Pipeline()
 	defer pipe.Close()

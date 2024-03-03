@@ -52,6 +52,8 @@ func (app *App) setupRoutes(
 	protectedRoutes.DELETE("/folder/:id", handlers.DeleteFolder)
 	// adds module to user
 	protectedRoutes.POST("/add-module-to-user", handlers.AddModuleToUser)
+	// adds module to user
+	protectedRoutes.POST("/add-module-to-folder", handlers.AddModuleToFolder)
 	// creates module and adds to the folder with passed folderID
 	protectedRoutes.POST("/module/:id", handlers.CreateModuleInFolder)
 	// creates a module
