@@ -238,6 +238,23 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
 }
 
+func (cq *CardQuizzlerServer) GetDifficultModulesByUID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+	cq.log(ctx, "start processing grpc request", "info", "GetDifficultUserModules")
+
+	uid := req.GetId()
+	if uid == "" {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
+	}
+
+	// Retrieve modules associated with the user from the repository
+	modules, err := cq.Repo.GetDifficultModulesByUID(ctx, uid)
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
+}
+
 func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "GetModuleByID")
 

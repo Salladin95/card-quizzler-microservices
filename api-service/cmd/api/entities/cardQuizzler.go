@@ -49,9 +49,8 @@ type CreateTermDto struct {
 }
 
 type CreateModuleDto struct {
-	Title  string          `json:"title" validate:"required"`
-	UserID string          `json:"userID" validate:"required"`
-	Terms  []CreateTermDto `json:"terms" validate:"required"`
+	Title string          `json:"title" validate:"required"`
+	Terms []CreateTermDto `json:"terms" validate:"required"`
 }
 
 type UpdateModuleDto struct {
@@ -61,11 +60,9 @@ type UpdateModuleDto struct {
 }
 
 type CreateFolderDto struct {
-	Title  string `json:"title" validate:"required"`
-	UserID string `json:"userID" validate:"required"`
+	Title string `json:"title" validate:"required"`
 }
 
 type UpdateFolderDto struct {
 	Title string `json:"title" validate:"omitempty"`
 }
-

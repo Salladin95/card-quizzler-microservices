@@ -92,6 +92,7 @@ service CardQuizzlerService {
   rpc DeleteModuleFromFolder(DeleteModuleFromFolderRequest) returns (Response);
   rpc AddFolderToUser(AddFolderToUserRequest) returns (Response);
   rpc GetUserModules(RequestWithID) returns (Response);
+  rpc GetDifficultModulesByUID(RequestWithID) returns (Response);
   rpc GetModuleByID(RequestWithID) returns (Response);
   rpc CreateModule(CreateModuleRequest) returns (Response);
   rpc CreateModuleInFolder(CreateModuleInFolderRequest) returns (Response);

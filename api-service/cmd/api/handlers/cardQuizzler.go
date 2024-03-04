@@ -15,12 +15,21 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetUserFolders")
 
-	uid := c.Param("uid")
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
 
 	var folders []entities.Folder
 	err := ah.cacheManager.ReadCacheByKeys(&folders, ah.cacheManager.UserHashKey(uid), cacheManager.Folders)
 
 	if err == nil {
+		ah.log(ctx, "retrieved from cache", "info", "GetUserFolders")
 		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested folders", Data: folders})
 	}
 
@@ -60,9 +69,14 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 	}
 
 	var folder entities.Folder
-	err := ah.cacheManager.ReadCacheByKeys(&folder, ah.cacheManager.UserHashKey(claims.Id), cacheManager.Folder)
+	err := ah.cacheManager.ReadCacheByKeys(
+		&folder,
+		ah.cacheManager.UserHashKey(claims.Id),
+		cacheManager.FolderKey(id),
+	)
 
 	if err == nil {
+		ah.log(ctx, "retrieved from cache", "info", "GetFolderByID")
 		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested folder", Data: folder})
 	}
 
@@ -80,15 +94,22 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetFolderByID", err)
 	}
-	var unmarshalTo entities.Folder
-	return handleGRPCResponse(c, response, unmarshalTo)
+	return handleGRPCResponse(c, response, &folder)
 }
 
 func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetUserModules")
 
-	uid := c.Param("uid")
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
 
 	var modules []entities.Module
 	err := ah.cacheManager.ReadCacheByKeys(&modules, ah.cacheManager.UserHashKey(uid), cacheManager.Modules)
@@ -115,6 +136,49 @@ func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 	return handleGRPCResponse(c, response, unmarshalTo)
 }
 
+func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
+	ctx := c.Request().Context()
+	ah.log(ctx, "start processing request", "info", "GetDifficultModules")
+
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
+	var modules []entities.Module
+	err := ah.cacheManager.ReadCacheByKeys(
+		&modules,
+		ah.cacheManager.UserHashKey(claims.Id),
+		cacheManager.DifficultModules,
+	)
+
+	if err == nil {
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested modules", Data: modules})
+	}
+
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		GetDifficultModulesByUID(ctx, &quizService.RequestWithID{
+			Id: uid,
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("GetDifficultModules", err)
+	}
+	var unmarshalTo []entities.Module
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
 func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetModuleByID")
@@ -131,7 +195,11 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 	}
 
 	var module entities.Module
-	err := ah.cacheManager.ReadCacheByKeys(&module, ah.cacheManager.UserHashKey(claims.Id), cacheManager.Module)
+	err := ah.cacheManager.ReadCacheByKeys(
+		&module,
+		ah.cacheManager.UserHashKey(claims.Id),
+		cacheManager.ModuleKey(id),
+	)
 
 	if err == nil {
 		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested module", Data: module})
@@ -207,12 +275,22 @@ func (ah *apiHandlers) CreateFolder(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		CreateFolder(ctx, &quizService.CreateFolderRequest{
 			Payload: &quizService.CreateFolderPayload{
 				Title:  dto.Title,
-				UserID: dto.UserID,
+				UserID: uid,
 			},
 		})
 	if err != nil {
@@ -377,12 +455,22 @@ func (ah *apiHandlers) CreateModule(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		CreateModule(ctx, &quizService.CreateModuleRequest{
 			Payload: &quizService.CreateModulePayload{
 				Title:  dto.Title,
-				UserID: dto.UserID,
+				UserID: uid,
 				Terms:  terms,
 			},
 		})
@@ -416,12 +504,22 @@ func (ah *apiHandlers) CreateModuleInFolder(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		CreateModuleInFolder(ctx, &quizService.CreateModuleInFolderRequest{
 			Payload: &quizService.CreateModulePayload{
 				Title:  dto.Title,
-				UserID: dto.UserID,
+				UserID: uid,
 				Terms:  terms,
 			},
 			FolderID: folderID,

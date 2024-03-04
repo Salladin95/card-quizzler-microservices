@@ -31,6 +31,7 @@ type CardQuizzlerServiceClient interface {
 	DeleteModuleFromFolder(ctx context.Context, in *DeleteModuleFromFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	AddFolderToUser(ctx context.Context, in *AddFolderToUserRequest, opts ...grpc.CallOption) (*Response, error)
 	GetUserModules(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
+	GetDifficultModulesByUID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	GetModuleByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	CreateModule(ctx context.Context, in *CreateModuleRequest, opts ...grpc.CallOption) (*Response, error)
 	CreateModuleInFolder(ctx context.Context, in *CreateModuleInFolderRequest, opts ...grpc.CallOption) (*Response, error)
@@ -129,6 +130,15 @@ func (c *cardQuizzlerServiceClient) GetUserModules(ctx context.Context, in *Requ
 	return out, nil
 }
 
+func (c *cardQuizzlerServiceClient) GetDifficultModulesByUID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetDifficultModulesByUID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cardQuizzlerServiceClient) GetModuleByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetModuleByID", in, out, opts...)
@@ -205,6 +215,7 @@ type CardQuizzlerServiceServer interface {
 	DeleteModuleFromFolder(context.Context, *DeleteModuleFromFolderRequest) (*Response, error)
 	AddFolderToUser(context.Context, *AddFolderToUserRequest) (*Response, error)
 	GetUserModules(context.Context, *RequestWithID) (*Response, error)
+	GetDifficultModulesByUID(context.Context, *RequestWithID) (*Response, error)
 	GetModuleByID(context.Context, *RequestWithID) (*Response, error)
 	CreateModule(context.Context, *CreateModuleRequest) (*Response, error)
 	CreateModuleInFolder(context.Context, *CreateModuleInFolderRequest) (*Response, error)
@@ -245,6 +256,9 @@ func (UnimplementedCardQuizzlerServiceServer) AddFolderToUser(context.Context, *
 }
 func (UnimplementedCardQuizzlerServiceServer) GetUserModules(context.Context, *RequestWithID) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserModules not implemented")
+}
+func (UnimplementedCardQuizzlerServiceServer) GetDifficultModulesByUID(context.Context, *RequestWithID) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDifficultModulesByUID not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) GetModuleByID(context.Context, *RequestWithID) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetModuleByID not implemented")
@@ -442,6 +456,24 @@ func _CardQuizzlerService_GetUserModules_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CardQuizzlerService_GetDifficultModulesByUID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestWithID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardQuizzlerServiceServer).GetDifficultModulesByUID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/card_quizzler_service.CardQuizzlerService/GetDifficultModulesByUID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardQuizzlerServiceServer).GetDifficultModulesByUID(ctx, req.(*RequestWithID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CardQuizzlerService_GetModuleByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestWithID)
 	if err := dec(in); err != nil {
@@ -610,6 +642,10 @@ var CardQuizzlerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserModules",
 			Handler:    _CardQuizzlerService_GetUserModules_Handler,
+		},
+		{
+			MethodName: "GetDifficultModulesByUID",
+			Handler:    _CardQuizzlerService_GetDifficultModulesByUID_Handler,
 		},
 		{
 			MethodName: "GetModuleByID",

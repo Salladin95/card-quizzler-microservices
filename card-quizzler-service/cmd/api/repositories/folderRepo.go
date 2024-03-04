@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -24,7 +25,6 @@ func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (
 		// If an error occurs during creation, return the folder and an operation failure error
 		return folder, goErrorHandler.OperationFailure("create folder", err)
 	}
-
 	r.broker.PushToQueue(ctx, constants.CreatedFolderKey, folder)
 	// If creation is successful, return the created folder and a nil error
 	return folder, nil
@@ -34,14 +34,13 @@ func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (
 func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error) {
 	// Declare a variable to hold the folder
 	var folder models.Folder
-
 	// Execute the provided function within a transaction
-	if err := r.withTransaction(func(tx *gorm.DB) error {
+	return folder, r.withTransaction(func(tx *gorm.DB) error {
 		// Retrieve the folder by ID from the database, preloading its associated modules and terms
 		if err := tx.
 			Preload("Modules.Terms").
-			First(&folder).
-			Where("id", folderID).Error; err != nil {
+			First(&folder, folderID).
+			Error; err != nil {
 			// If the folder is not found, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
@@ -51,18 +50,14 @@ func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entitie
 
 		// Save the updated folder in the database
 		if err := tx.Save(&folder).Error; err != nil {
-
 			// If an error occurs while updating the folder, return an operation failure error
 			return goErrorHandler.OperationFailure("update folder", err)
 		}
+		r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
 
 		// If no errors occurred, return nil
 		return nil
-	}); err != nil {
-		return folder, err
-	}
-	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
-	return folder, nil
+	})
 }
 
 // GetFolderByID retrieves a folder from the database by its ID.
@@ -71,7 +66,10 @@ func (r *repo) GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, 
 	var folder models.Folder
 
 	// Retrieve the folder by its ID from the database, preloading its associated modules and terms
-	if err := r.db.Preload("Modules.Terms").First(&folder).Where("id", id).Error; err != nil {
+	if err := r.db.
+		Preload("Modules.Terms").
+		First(&folder, id).
+		Error; err != nil {
 		// If the folder is not found, return a not found error
 		return folder, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
@@ -90,16 +88,16 @@ func (r *repo) GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, 
 // If an error occurs during the database operation or transaction execution,
 // it returns the underlying error.
 func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
-	// Declare a variable to hold the folder
-	var folder models.Folder
 	// Execute the provided function within a transaction
-	if err := r.withTransaction(func(tx *gorm.DB) error {
+	return r.withTransaction(func(tx *gorm.DB) error {
+		// Declare a variable to hold the folder
+		var folder models.Folder
 
 		// Retrieve the folder by its ID from the database, preloading its associated modules and terms
 		if err := tx.
 			Preload("Modules.Terms").
-			First(&folder).
-			Where("id", id).Error; err != nil {
+			First(&folder, id).
+			Error; err != nil {
 			// If the folder is not found, return the error
 			return err
 		}
@@ -109,54 +107,40 @@ func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
 			// If an error occurs while deleting associations, return the error
 			return err
 		}
+		r.broker.PushToQueue(ctx, constants.DeletedFolderKey, folder)
 
 		// If no errors occurred, return nil
 		return nil
-	}); err != nil {
-		return err
-	}
-	r.broker.PushToQueue(ctx, constants.DeletedFolderKey, folder)
-	return nil
+	})
 }
 
 // DeleteModuleFromFolder deletes a module from a folder in the database.
 // It removes the association between the specified module and folder.
 func (r *repo) DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
-	// Declare a variable to hold the folder
-	var folder models.Folder
 	// Execute the provided function within a transaction
-	// Declare a variable to hold the module
-	var module models.Module
+	return r.withTransaction(func(tx *gorm.DB) error {
+		// Declare variables to hold the folder and module
+		var folder models.Folder
+		var module models.Module
 
-	if err := r.withTransaction(func(tx *gorm.DB) error {
-		if err := tx.
-			First(&folder).
-			Where("id", folderID).Error; err != nil {
-			// If the folder is not found, return the error
-			return err
+		// Fetch the folder and module within the transaction
+		if err := tx.First(&folder, folderID).Error; err != nil {
+			return fmt.Errorf("failed to find folder: %w", err)
 		}
 
-		if err := tx.
-			First(&module).
-			Where("id", moduleID).Error; err != nil {
-			// If the folder is not found, return the error
-			return err
+		if err := tx.First(&module, moduleID).Error; err != nil {
+			return fmt.Errorf("failed to find module: %w", err)
 		}
 
-		if err := r.db.Model(&folder).
-			Association("Modules").
-			Delete(&module); err != nil {
-			// If an error occurs during deletion, return the error
-			return goErrorHandler.OperationFailure("delete module from folder", err)
+		// Remove the association between the module and folder
+		if err := tx.Model(&folder).Association("Modules").Delete(&module); err != nil {
+			return fmt.Errorf("failed to delete module from folder: %w", err)
 		}
+
+		// Push to queue after successful deletion
+		r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
+		r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
 
 		return nil
-	}); err != nil {
-		return err
-	}
-
-	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
-	r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
-
-	return nil
+	})
 }

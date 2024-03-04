@@ -39,6 +39,7 @@ var cardQuizEvents = []string{
 	constants.CreatedModuleKey,
 	constants.FetchUserFoldersKey,
 	constants.FetchedUserModulesKey,
+	constants.FetchedDifficultModulesKey,
 	constants.FetchedFolderKey,
 	constants.FetchedModuleKey,
 	constants.DeletedFolderKey,

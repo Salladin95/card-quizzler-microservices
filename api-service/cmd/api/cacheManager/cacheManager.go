@@ -38,15 +38,22 @@ type CacheManager interface {
 }
 
 const (
-	RootKey   = "hash:api-service_user"
-	TokensKey = "hash:token-pair"
-	UsersKey  = "hash:users"
-	UserKey   = "hash:user"
-	Folders   = "hash:folders"
-	Folder    = "hash:folder"
-	Modules   = "hash:modules"
-	Module    = "hash:module"
+	RootKey          = "hash:api-service_user"
+	TokensKey        = "hash:token-pair"
+	UsersKey         = "hash:users"
+	UserKey          = "hash:user"
+	Folders          = "hash:folders"
+	Modules          = "hash:modules"
+	DifficultModules = "difficult:modules"
 )
+
+func FolderKey(id string) string {
+	return fmt.Sprintf("folder:%s", id)
+}
+
+func ModuleKey(id string) string {
+	return fmt.Sprintf("module:%s", id)
+}
 
 // NewCacheManager creates a new CacheManager instance with the provided Redis client and configuration.
 func NewCacheManager(
@@ -73,7 +80,11 @@ func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
 
 // ClearCacheByKeys drops specified cache
 func (cm *cacheManager) ClearCacheByKeys(key string, key2 string) error {
-	return cm.redisClient.HDel(key, key2).Err()
+	if err := cm.redisClient.HDel(key, key2).Err(); err != nil {
+		cm.log(context.Background(), err.Error(), "error", "ClearCacheByKeys")
+		return goErrorHandler.OperationFailure("clear cache", err)
+	}
+	return nil
 }
 
 // UserHashKey generates a Redis hash key for user-related data based on the user's Id.

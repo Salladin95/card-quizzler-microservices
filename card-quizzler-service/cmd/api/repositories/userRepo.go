@@ -34,6 +34,21 @@ func (r *repo) GetModulesByUID(ctx context.Context, uid string) ([]models.Module
 	return userModules, nil
 }
 
+// GetDifficultModulesByUID retrieves difficult modules associated with a user by their UID from the database.
+func (r *repo) GetDifficultModulesByUID(ctx context.Context, uid string) ([]models.Module, error) {
+	var difficultModules []models.Module
+	if err := r.db.
+		Preload("Terms", "is_difficult = ?", true).
+		Where("user_id = ?", uid).
+		Find(&difficultModules).
+		Error; err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
+	}
+
+	r.broker.PushToQueue(ctx, constants.FetchedDifficultModulesKey, difficultModules)
+	return difficultModules, nil
+}
+
 // GetFoldersByUID retrieves folders associated with a user by their UID from the database
 func (r *repo) GetFoldersByUID(ctx context.Context, uid string) ([]models.Folder, error) {
 	var userFolders []models.Folder
@@ -87,7 +102,7 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 		if err := tx.
 			Preload("Modules.Terms").
 			First(&folder).
-			Where("id", folderID).Error; err != nil {
+			Where("id = ?", folderID).Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 		// Create a copy of the folder

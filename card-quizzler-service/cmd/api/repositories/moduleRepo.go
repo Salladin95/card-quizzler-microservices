@@ -66,9 +66,12 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 	termsToDelete := getTermsToDelete(module, parsedDto.NewTerms)
 
 	// Define the function to be executed within the transaction
-	updateFunc := func(tx *gorm.DB) error {
+	if err := r.withTransaction(func(tx *gorm.DB) error {
 		// Fetch module within the transaction
-		if err := tx.Preload("Terms").Where("id = ?", id).First(&module).Error; err != nil {
+		if err := tx.
+			Preload("Terms").
+			Preload("Folders").
+			First(&module, id).Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
@@ -81,6 +84,7 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 
 		// Update module's title if provided in the DTO
 		if dto.Title != "" {
+			module.Title = dto.Title
 			if err := tx.Save(&module).Error; err != nil {
 				return goErrorHandler.OperationFailure("update module", err)
 			}
@@ -98,13 +102,14 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 			}
 		}
 
-		r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
-
 		return nil
+	}); err != nil {
+		return module, err
 	}
 
+	r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
 	// Execute the update function within a transaction
-	return module, r.withTransaction(updateFunc)
+	return module, nil
 }
 
 // UpdateTerms updates given terms
@@ -129,10 +134,9 @@ func (r *repo) GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, 
 
 	// Retrieve the module with the given ID from the database
 	if err := r.db.
-		Preload("Terms").    // Preload associated terms
-		Where("id = ?", id). // Filter by module ID
-		First(&module).      // Execute query and store result in 'module'
-		Error; err != nil {  // Check for errors
+		Preload("Terms").   // Preload associated terms
+		First(&module, id). // Execute query and store result in 'module'
+		Error; err != nil { // Check for errors
 		// If an error occurred, return a not found error
 		return module, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
@@ -150,8 +154,8 @@ func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, module
 	if err := r.withTransaction(func(tx *gorm.DB) error {
 		if err := r.db.
 			Preload("Terms").
-			Where("id = ?", moduleID).
-			First(&module).
+			Preload("Folders").
+			First(&module, moduleID).
 			Error; err != nil {
 			// If the module is not found, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
@@ -171,7 +175,7 @@ func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, module
 	}); err != nil {
 		return err
 	}
-	r.broker.PushToQueue(ctx, constants.CreatedModuleKey, module)
+	r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
 	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, models.Folder{ID: folderID, UserID: module.UserID})
 	return nil
 }
@@ -184,7 +188,10 @@ func (r *repo) DeleteModule(ctx context.Context, id uuid.UUID) error {
 	if err := r.withTransaction(func(tx *gorm.DB) error {
 
 		// Retrieve the module from the database by its ID, preloading its associated terms
-		if err := tx.Preload("Terms").Where("id = ?", id).First(&module).Error; err != nil {
+		if err := tx.
+			Preload("Terms").
+			Preload("Folders").
+			First(&module, id).Error; err != nil {
 			// If the module is not found, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}

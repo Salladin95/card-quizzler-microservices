@@ -26,6 +26,7 @@ type Repository interface {
 	AddFolderToUser(uid string, folderID uuid.UUID) error
 	AddModuleToFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error
 	GetModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
+	GetDifficultModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
 	GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, error)
 	CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error)
 	UpdateModule(ctx context.Context, id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error)

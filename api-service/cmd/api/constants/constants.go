@@ -12,6 +12,7 @@ const (
 	FetchUserFoldersKey             = "card-quizzler-service.user-folders.fetched"
 	FetchedFolderKey                = "card-quizzler-service.folder.fetched"
 	FetchedUserModulesKey           = "card-quizzler-service.user-modules.fetched"
+	FetchedDifficultModulesKey      = "card-quizzler-service.user's-difficult-modules.fetched"
 	FetchedModuleKey                = "card-quizzler-service.module.fetched"
 	MutatedFolderKey                = "card-quizzler-service.folder.mutated"
 	CreatedFolderKey                = "card-quizzler-service.folder.created"
