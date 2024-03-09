@@ -20,29 +20,30 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
 
-	var dto entities.QuizResultDto
-	if err := lib.UnmarshalData(payload, &dto); err != nil {
+	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
+	if err != nil {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	var resultTerms []entities.ResultTerm
+	if err := lib.UnmarshalData(payload, &resultTerms); err != nil {
 		return buildFailedResponse(err)
 	}
 
 	// Create a map to store terms and their answers
-	answerMap := make(map[string]bool)
-	for _, term := range dto.Terms {
-		answerMap[term.ID] = term.Answer
+	answersMap := make(map[string]bool)
+	for _, term := range resultTerms {
+		answersMap[term.ID] = term.Answer
 	}
 
-	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
-
 	// Update streaks and difficulty for each term in the module
-	for _, term := range module.Terms {
-		answer := answerMap[term.ID.String()]
-		term.UpdateStreaksAndUpdateDifficulty(answer)
+	for i := range module.Terms {
+		answer := answersMap[module.Terms[i].ID.String()]
+		models.UpdateStreaksAndUpdateDifficulty(&module.Terms[i], answer)
 	}
 
 	// Update the module with the updated terms
-	if _, err := cq.Repo.UpdateModule(ctx, moduleID, entities.UpdateModuleDto{
-		UpdatedTerms: module.Terms,
-	}); err != nil {
+	if err := cq.Repo.UpdateTerms(module.Terms); err != nil {
 		// Return a failed response if module update fails
 		return buildFailedResponse(err)
 	}

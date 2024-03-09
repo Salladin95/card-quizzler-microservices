@@ -62,9 +62,6 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 		return module, err
 	}
 
-	// Determine terms to delete
-	termsToDelete := getTermsToDelete(module, parsedDto.NewTerms)
-
 	// Define the function to be executed within the transaction
 	if err := r.withTransaction(func(tx *gorm.DB) error {
 		// Fetch module within the transaction
@@ -74,6 +71,9 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 			First(&module, id).Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
+
+		// Determine terms to delete
+		termsToDelete := getTermsToDelete(module, parsedDto.NewTerms)
 
 		module.UpdatedAt = time.Now()
 
@@ -97,7 +97,7 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 
 		// Delete terms
 		if len(termsToDelete) > 0 {
-			if err := tx.Delete(termsToDelete).Error; err != nil {
+			if err := tx.Delete(&termsToDelete).Error; err != nil {
 				return goErrorHandler.OperationFailure("delete terms", err)
 			}
 		}
@@ -115,16 +115,13 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 // UpdateTerms updates given terms
 func (r *repo) UpdateTerms(terms []models.Term) error {
 	// Define the function to be executed within the transaction
-	updateFunc := func(tx *gorm.DB) error {
+	return r.withTransaction(func(tx *gorm.DB) error {
 		// Save the updated terms
 		if err := tx.Save(&terms).Error; err != nil {
 			return goErrorHandler.OperationFailure("update terms", err)
 		}
 		return nil
-	}
-
-	// Execute the update function within a transaction
-	return r.withTransaction(updateFunc)
+	})
 }
 
 // GetModuleByID retrieves a module from the database by its ID,

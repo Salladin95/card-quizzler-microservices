@@ -232,7 +232,7 @@ func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 		return err
 	}
 
-	id := c.Param("moduleID")
+	id := c.QueryParam("moduleID")
 
 	terms, err := lib.MarshalData(&dto.Terms)
 

@@ -35,8 +35,8 @@ type Folder struct {
 }
 
 type resultTerm struct {
-	ID     string `json:"id" validate:"required"`
-	Answer bool   `json:"id" validate:"required"`
+	Term
+	Answer bool `json:"answer" validate:"required"`
 }
 
 type QuizResultDto struct {
