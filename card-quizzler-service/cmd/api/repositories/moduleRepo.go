@@ -54,10 +54,10 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 // UpdateModule updates a module with the given ID using the provided DTO.
 // It replaces module's terms with the terms provided in newTerms.
 // If newTerms are provided, the module will contain only these terms, the same applies to updatedTerms.
-func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error) {
+func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) {
 	var module models.Module
 	// Parse DTO to models
-	parsedDto, err := dto.ToModels(id)
+	parsedDto, err := payload.Dto.ToModels(payload.ModuleID)
 	if err != nil {
 		return module, err
 	}
@@ -68,7 +68,7 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 		if err := tx.
 			Preload("Terms").
 			Preload("Folders").
-			First(&module, id).Error; err != nil {
+			First(&module, payload.ModuleID).Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
@@ -83,8 +83,8 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 		}
 
 		// Update module's title if provided in the DTO
-		if dto.Title != "" {
-			module.Title = dto.Title
+		if payload.Dto.Title != "" {
+			module.Title = payload.Dto.Title
 			if err := tx.Save(&module).Error; err != nil {
 				return goErrorHandler.OperationFailure("update module", err)
 			}
@@ -107,7 +107,7 @@ func (r *repo) UpdateModule(ctx context.Context, id uuid.UUID, dto entities.Upda
 		return module, err
 	}
 
-	r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+	r.broker.PushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
 	// Execute the update function within a transaction
 	return module, nil
 }
@@ -144,7 +144,7 @@ func (r *repo) GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, 
 }
 
 // AddModuleToFolder adds a module to a folder within a transaction.
-func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
+func (r *repo) AddModuleToFolder(payload FolderModuleAssociation) error {
 	// Retrieve the module from the database by its ID, preloading its associated terms
 	var module models.Module
 	// Execute the provided function within a transaction
@@ -152,7 +152,7 @@ func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, module
 		if err := r.db.
 			Preload("Terms").
 			Preload("Folders").
-			First(&module, moduleID).
+			First(&module, payload.ModuleID).
 			Error; err != nil {
 			// If the module is not found, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
@@ -162,7 +162,7 @@ func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, module
 		if err := tx.
 			Model(&module).
 			Association("Folders").
-			Append(&models.Folder{ID: folderID}); err != nil {
+			Append(&models.Folder{ID: payload.FolderID}); err != nil {
 			// If an error occurs while creating the association, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
@@ -172,8 +172,8 @@ func (r *repo) AddModuleToFolder(ctx context.Context, folderID uuid.UUID, module
 	}); err != nil {
 		return err
 	}
-	r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
-	r.broker.PushToQueue(ctx, constants.MutatedFolderKey, models.Folder{ID: folderID, UserID: module.UserID})
+	r.broker.PushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
+	r.broker.PushToQueue(payload.Ctx, constants.MutatedFolderKey, models.Folder{ID: payload.FolderID, UserID: module.UserID})
 	return nil
 }
 

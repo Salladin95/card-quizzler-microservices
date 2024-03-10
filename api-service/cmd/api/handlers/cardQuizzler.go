@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	quizService "github.com/Salladin95/card-quizzler-microservices/api-service/card-quizzler"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
@@ -15,6 +16,15 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetUserFolders")
 
+	limit := ParseInt(c.QueryParam("limit"), foldersDefaultLimit)
+	page := ParseInt(c.QueryParam("page"), 1)
+	sortBy := ParseSortBy(
+		c.QueryParam("sortBy"),
+		"asc",
+		"created_at",
+		FolderKeysMap,
+	)
+
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*lib.JwtUserClaims)
 	if !ok {
@@ -26,7 +36,11 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	uid := claims.Id
 
 	var folders []entities.Folder
-	err := ah.cacheManager.ReadCacheByKeys(&folders, ah.cacheManager.UserHashKey(uid), cacheManager.Folders)
+	err := ah.cacheManager.ReadCacheByKeys(
+		&folders,
+		cacheManager.FoldersKey(uid),
+		fmt.Sprintf("%d:%d:%s", limit, page, sortBy),
+	)
 
 	if err == nil {
 		ah.log(ctx, "retrieved from cache", "info", "GetUserFolders")
@@ -43,8 +57,13 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	// Make a gRPC call to the SignIn method of the Auth service
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		GetUserFolders(ctx, &quizService.RequestWithID{
+		GetUserFolders(ctx, &quizService.GetUserFoldersRequest{
 			Id: uid,
+			Payload: &quizService.SortOptions{
+				Limit:  limit,
+				Page:   page,
+				SortBy: sortBy,
+			},
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetUserFolders", err)
@@ -71,7 +90,7 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 	var folder entities.Folder
 	err := ah.cacheManager.ReadCacheByKeys(
 		&folder,
-		ah.cacheManager.UserHashKey(claims.Id),
+		cacheManager.FolderKey(claims.Id),
 		cacheManager.FolderKey(id),
 	)
 
@@ -101,44 +120,14 @@ func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 	ctx := c.Request().Context()
 	ah.log(ctx, "start processing request", "info", "GetUserModules")
 
-	// Retrieve user claims from the context
-	claims, ok := c.Get("user").(*lib.JwtUserClaims)
-	if !ok {
-		return goErrorHandler.NewError(
-			goErrorHandler.ErrUnauthorized,
-			errors.New("failed to cast claims"),
-		)
-	}
-	uid := claims.Id
-
-	var modules []entities.Module
-	err := ah.cacheManager.ReadCacheByKeys(&modules, ah.cacheManager.UserHashKey(uid), cacheManager.Modules)
-
-	if err == nil {
-		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested modules", Data: modules})
-	}
-
-	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
-	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
-	if err != nil {
-		return err // Return an error if obtaining the client connection fails.
-	}
-
-	response, err := quizService.
-		NewCardQuizzlerServiceClient(clientConn).
-		GetUserModules(ctx, &quizService.RequestWithID{
-			Id: uid,
-		})
-	if err != nil {
-		return goErrorHandler.OperationFailure("GetUserModules", err)
-	}
-	var unmarshalTo []entities.Module
-	return handleGRPCResponse(c, response, unmarshalTo)
-}
-
-func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
-	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetDifficultModules")
+	limit := ParseInt(c.QueryParam("limit"), modulesDefaultLimit)
+	page := ParseInt(c.QueryParam("page"), 1)
+	sortBy := ParseSortBy(
+		c.QueryParam("sortBy"),
+		"asc",
+		"created_at",
+		ModuleKeysMap,
+	)
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*lib.JwtUserClaims)
@@ -153,8 +142,8 @@ func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
 	var modules []entities.Module
 	err := ah.cacheManager.ReadCacheByKeys(
 		&modules,
-		ah.cacheManager.UserHashKey(claims.Id),
-		cacheManager.DifficultModules,
+		cacheManager.ModulesKey(uid),
+		fmt.Sprintf("%d:%d:%s", limit, page, sortBy),
 	)
 
 	if err == nil {
@@ -169,11 +158,16 @@ func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
 
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		GetDifficultModulesByUID(ctx, &quizService.RequestWithID{
+		GetUserModules(ctx, &quizService.GetUserModulesRequest{
 			Id: uid,
+			Payload: &quizService.SortOptions{
+				Limit:  limit,
+				Page:   page,
+				SortBy: sortBy,
+			},
 		})
 	if err != nil {
-		return goErrorHandler.OperationFailure("GetDifficultModules", err)
+		return goErrorHandler.OperationFailure("GetUserModules", err)
 	}
 	var unmarshalTo []entities.Module
 	return handleGRPCResponse(c, response, unmarshalTo)
@@ -197,7 +191,7 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 	var module entities.Module
 	err := ah.cacheManager.ReadCacheByKeys(
 		&module,
-		ah.cacheManager.UserHashKey(claims.Id),
+		cacheManager.ModuleKey(claims.Id),
 		cacheManager.ModuleKey(id),
 	)
 
@@ -220,6 +214,49 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 		return goErrorHandler.OperationFailure("GetModuleByID", err)
 	}
 	var unmarshalTo entities.Module
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
+func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
+	ctx := c.Request().Context()
+	ah.log(ctx, "start processing request", "info", "GetDifficultModules")
+
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
+	var modules []entities.Module
+	err := ah.cacheManager.ReadCacheByKeys(
+		&modules,
+		cacheManager.ModulesKey(claims.Id),
+		cacheManager.DifficultModules,
+	)
+
+	if err == nil {
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested modules", Data: modules})
+	}
+
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		GetDifficultModulesByUID(ctx, &quizService.GetDifficultModulesRequest{
+			Id: uid,
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("GetDifficultModules", err)
+	}
+	var unmarshalTo []entities.Module
 	return handleGRPCResponse(c, response, unmarshalTo)
 }
 

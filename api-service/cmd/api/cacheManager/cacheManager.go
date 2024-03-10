@@ -27,6 +27,7 @@ type CacheManager interface {
 	RefreshToken(uid string) (string, error)
 	ClearUserRelatedCache(uid string) error
 	ClearCacheByKeys(key1, key2 string) error
+	ClearCacheByKey(key string) error
 	SetTokenPair(uid string, tokenPair *entities.TokenPair) error
 	GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error)
 	SetCacheByKeys(key string, hash string, data []byte, exp time.Duration) error
@@ -43,7 +44,9 @@ const (
 	UsersKey         = "hash:users"
 	UserKey          = "hash:user"
 	Folders          = "hash:folders"
+	Folder           = "hash:folder"
 	Modules          = "hash:modules"
+	Module           = "hash:module"
 	DifficultModules = "difficult:modules"
 )
 
@@ -53,6 +56,14 @@ func FolderKey(id string) string {
 
 func ModuleKey(id string) string {
 	return fmt.Sprintf("module:%s", id)
+}
+
+func FoldersKey(uid string) string {
+	return fmt.Sprintf("%s:%s", Folders, uid)
+}
+
+func ModulesKey(uid string) string {
+	return fmt.Sprintf("%s:%s", Modules, uid)
 }
 
 // NewCacheManager creates a new CacheManager instance with the provided Redis client and configuration.
@@ -81,6 +92,15 @@ func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
 // ClearCacheByKeys drops specified cache
 func (cm *cacheManager) ClearCacheByKeys(key string, key2 string) error {
 	if err := cm.redisClient.HDel(key, key2).Err(); err != nil {
+		cm.log(context.Background(), err.Error(), "error", "ClearCacheByKeys")
+		return goErrorHandler.OperationFailure("clear cache", err)
+	}
+	return nil
+}
+
+// ClearCacheByKey drops specified cache
+func (cm *cacheManager) ClearCacheByKey(key string) error {
+	if err := cm.redisClient.Del(key).Err(); err != nil {
 		cm.log(context.Background(), err.Error(), "error", "ClearCacheByKeys")
 		return goErrorHandler.OperationFailure("clear cache", err)
 	}

@@ -15,21 +15,46 @@ type repo struct {
 	broker rmqtools.MessageBroker
 }
 
+type UidSortPayload struct {
+	Ctx    context.Context
+	Uid    string
+	Limit  int64
+	Page   int64
+	SortBy string
+}
+
+type FolderModuleAssociation struct {
+	Ctx      context.Context
+	FolderID uuid.UUID
+	ModuleID uuid.UUID
+}
+
+type UpdateModulePayload struct {
+	Ctx      context.Context
+	ModuleID uuid.UUID
+	Dto      entities.UpdateModuleDto
+}
+
+type UpdateFolderPayload struct {
+	Ctx      context.Context
+	FolderID uuid.UUID
+	Dto      entities.UpdateFolderDto
+}
+
 type Repository interface {
-	GetFoldersByUID(ctx context.Context, uid string) ([]models.Folder, error)
+	GetFoldersByUID(req UidSortPayload) ([]models.Folder, error)
 	GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, error)
 	CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (models.Folder, error)
-	UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error)
+	UpdateFolder(req UpdateFolderPayload) (models.Folder, error)
 	DeleteFolder(ctx context.Context, id uuid.UUID) error
-
-	DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error
+	DeleteModuleFromFolder(FolderModuleAssociation) error
 	AddFolderToUser(uid string, folderID uuid.UUID) error
-	AddModuleToFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error
-	GetModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
+	AddModuleToFolder(FolderModuleAssociation) error
+	GetModulesByUID(req UidSortPayload) ([]models.Module, error)
 	GetDifficultModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
 	GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, error)
 	CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error)
-	UpdateModule(ctx context.Context, id uuid.UUID, dto entities.UpdateModuleDto) (models.Module, error)
+	UpdateModule(req UpdateModulePayload) (models.Module, error)
 	DeleteModule(ctx context.Context, id uuid.UUID) error
 	AddModuleToUser(uid string, moduleID uuid.UUID) error
 	CreateUser(uid string) error

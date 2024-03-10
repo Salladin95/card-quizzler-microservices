@@ -9,6 +9,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -113,4 +116,59 @@ func handleCacheResponse(c echo.Context, data any) error {
 		Message: "success",
 		Data:    data,
 	})
+}
+
+// ParseInt parses the provided int string into an integer.
+// If the parsing fails, it returns the provided defaultValue.
+func ParseInt(instString string, defaultValue int64) int64 {
+	// Attempt to parse the instString string into an integer using base 10 and a bit size of 64.
+	parsedLimit, err := strconv.ParseInt(instString, 10, 64)
+
+	// Check if an error occurred during parsing.
+	if err != nil {
+		// If an error occurred, return the defaultValue.
+		return defaultValue
+	}
+
+	// Convert the parsedLimit to an int and return it.
+	return int64(parsedLimit)
+}
+
+// ParseSortBy parses a string representing a sorting parameter and splits it into fieldName and sort direction.
+// It returns a string containing the parsed fieldName and sort direction concatenated with a space.
+// If the input string does not match the expected pattern [a-zA-Z]+[+-]?,
+// it immediately returns the default values for fieldName and sort direction.
+func ParseSortBy(
+	sortByQueryParam string,
+	defaultDirection string,
+	defaultFieldName string,
+	modelMap map[string]bool,
+) string {
+	sortByField := defaultFieldName
+	sortDirection := defaultDirection
+
+	// Define a helper function to update field and direction
+	updateFieldAndDirection := func(direction, field string) {
+		if _, ok := modelMap[field]; ok {
+			sortByField = field
+			sortDirection = direction
+		}
+	}
+
+	// Check if sortByQueryParam matches the expected pattern
+	match, err := regexp.MatchString(`^[a-zA-Z_]+[+-]?$`, sortByQueryParam)
+	if err != nil || !match {
+		return fmt.Sprintf("%s %s", sortByField, sortDirection)
+	}
+
+	// Check if sortByQueryParam contains '+' or '-'
+	if strings.Contains(sortByQueryParam, "+") {
+		updateFieldAndDirection("asc", strings.Split(sortByQueryParam, "+")[0])
+	} else if strings.Contains(sortByQueryParam, "-") {
+		updateFieldAndDirection("desc", strings.Split(sortByQueryParam, "-")[0])
+	} else {
+		updateFieldAndDirection(defaultDirection, sortByQueryParam)
+	}
+
+	return fmt.Sprintf("%s %s", sortByField, sortDirection)
 }

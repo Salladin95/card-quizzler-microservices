@@ -11,11 +11,11 @@ import (
 )
 
 // userEventHandler is a callback function to handle user-related events received from RabbitMQ.
-// It processes each event based on the key and performs corresponding actions.
+// It processes each event based on the Key and performs corresponding actions.
 func (s *subscribers) userEventHandler(key string, payload []byte) {
 	ctx := context.Background()
 
-	s.log(ctx, fmt.Sprintf("start processing key - %s", key), "info", "userEventHandler")
+	s.log(ctx, fmt.Sprintf("start processing Key - %s", key), "info", "userEventHandler")
 
 	var user entities.UserResponse
 	err := lib.UnmarshalData(payload, &user)
@@ -39,7 +39,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 
 		s.log(
 			ctx,
-			"new user case, clearing cache for [s.key, email, id]",
+			"new user case, clearing cache for [s.Key, email, id]",
 			"info",
 			"userEventHandler",
 		)
@@ -50,7 +50,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 
 		s.log(
 			ctx,
-			"user updated case, clearing cache for [s.key, email, id]",
+			"user updated case, clearing cache for [s.Key, email, id]",
 			"info",
 			"userEventHandler",
 		)
@@ -60,7 +60,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 
 		s.log(
 			ctx,
-			"user updated case, clearing cache for [s.key, email, id]",
+			"user updated case, clearing cache for [s.Key, email, id]",
 			"info",
 			"userEventHandler",
 		)

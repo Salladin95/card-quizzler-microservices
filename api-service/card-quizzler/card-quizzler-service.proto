@@ -82,17 +82,37 @@ message ProcessQuizRequest {
   string moduleID = 2;
 }
 
+message SortOptions {
+  int64 limit = 1;
+  int64 page = 2;
+  string sortBy = 3;
+}
+
+message GetUserFoldersRequest {
+  string id = 1;
+  SortOptions payload = 2;
+}
+
+message GetUserModulesRequest {
+  string id = 1;
+  SortOptions payload = 2;
+}
+
+message GetDifficultModulesRequest {
+  string id = 1;
+}
+
 service CardQuizzlerService {
   rpc ProcessQuizResult(ProcessQuizRequest) returns (Response);
-  rpc GetUserFolders(RequestWithID) returns (Response);
+  rpc GetUserFolders(GetUserFoldersRequest) returns (Response);
   rpc GetFolderByID(RequestWithID) returns (Response);
   rpc CreateFolder(CreateFolderRequest) returns (Response);
   rpc UpdateFolder(UpdateFolderRequest) returns (Response);
   rpc DeleteFolder(RequestWithID) returns (Response);
   rpc DeleteModuleFromFolder(DeleteModuleFromFolderRequest) returns (Response);
   rpc AddFolderToUser(AddFolderToUserRequest) returns (Response);
-  rpc GetUserModules(RequestWithID) returns (Response);
-  rpc GetDifficultModulesByUID(RequestWithID) returns (Response);
+  rpc GetUserModules(GetUserModulesRequest) returns (Response);
+  rpc GetDifficultModulesByUID(GetDifficultModulesRequest) returns (Response);
   rpc GetModuleByID(RequestWithID) returns (Response);
   rpc CreateModule(CreateModuleRequest) returns (Response);
   rpc CreateModuleInFolder(CreateModuleInFolderRequest) returns (Response);

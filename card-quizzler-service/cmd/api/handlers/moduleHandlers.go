@@ -5,6 +5,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
@@ -95,7 +96,11 @@ func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizSe
 	}
 
 	// Add module to user in the repository
-	if err := cq.Repo.AddModuleToFolder(ctx, folderID, moduleID); err != nil {
+	if err := cq.Repo.AddModuleToFolder(repositories.FolderModuleAssociation{
+		Ctx:      ctx,
+		FolderID: folderID,
+		ModuleID: moduleID,
+	}); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -160,7 +165,11 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 		return buildFailedResponse(err)
 	}
 
-	if err := cq.Repo.AddModuleToFolder(ctx, folderID, createdModule.ID); err != nil {
+	if err := cq.Repo.AddModuleToFolder(repositories.FolderModuleAssociation{
+		Ctx:      ctx,
+		FolderID: folderID,
+		ModuleID: createdModule.ID,
+	}); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -198,7 +207,11 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	}
 
 	// Update the module in the repository
-	updatedModule, err := cq.Repo.UpdateModule(ctx, moduleID, updateModuleDTO)
+	updatedModule, err := cq.Repo.UpdateModule(repositories.UpdateModulePayload{
+		Ctx:      ctx,
+		ModuleID: moduleID,
+		Dto:      updateModuleDTO,
+	})
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -222,7 +235,7 @@ func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Module is deleted")
 }
 
-func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizService.GetUserModulesRequest) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "GetUserModules")
 
 	uid := req.GetId()
@@ -230,8 +243,16 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
 	}
 
+	payload := req.GetPayload()
+
 	// Retrieve modules associated with the user from the repository
-	modules, err := cq.Repo.GetModulesByUID(ctx, uid)
+	modules, err := cq.Repo.GetModulesByUID(repositories.UidSortPayload{
+		Ctx:    ctx,
+		Uid:    uid,
+		Limit:  payload.Limit,
+		Page:   payload.Page,
+		SortBy: payload.SortBy,
+	})
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -239,7 +260,7 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
 }
 
-func (cq *CardQuizzlerServer) GetDifficultModulesByUID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) GetDifficultModulesByUID(ctx context.Context, req *quizService.GetDifficultModulesRequest) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "GetDifficultUserModules")
 
 	uid := req.GetId()

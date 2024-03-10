@@ -4,7 +4,22 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
+
+type paginate struct {
+	limit int
+	page  int
+}
+
+func newPaginate(limit int, page int) *paginate {
+	return &paginate{limit: limit, page: page}
+}
+
+func (p *paginate) paginatedResult(db *gorm.DB) *gorm.DB {
+	offset := (p.page - 1) * p.limit
+	return db.Offset(offset).Limit(p.limit)
+}
 
 func parseCreateTermsPayload(payload []entities.CreateTermDto, moduleID uuid.UUID) ([]models.Term, error) {
 	var terms []models.Term

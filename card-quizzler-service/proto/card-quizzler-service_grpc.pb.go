@@ -23,15 +23,15 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CardQuizzlerServiceClient interface {
 	ProcessQuizResult(ctx context.Context, in *ProcessQuizRequest, opts ...grpc.CallOption) (*Response, error)
-	GetUserFolders(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
+	GetUserFolders(ctx context.Context, in *GetUserFoldersRequest, opts ...grpc.CallOption) (*Response, error)
 	GetFolderByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	CreateFolder(ctx context.Context, in *CreateFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	UpdateFolder(ctx context.Context, in *UpdateFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	DeleteFolder(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	DeleteModuleFromFolder(ctx context.Context, in *DeleteModuleFromFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	AddFolderToUser(ctx context.Context, in *AddFolderToUserRequest, opts ...grpc.CallOption) (*Response, error)
-	GetUserModules(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
-	GetDifficultModulesByUID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
+	GetUserModules(ctx context.Context, in *GetUserModulesRequest, opts ...grpc.CallOption) (*Response, error)
+	GetDifficultModulesByUID(ctx context.Context, in *GetDifficultModulesRequest, opts ...grpc.CallOption) (*Response, error)
 	GetModuleByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	CreateModule(ctx context.Context, in *CreateModuleRequest, opts ...grpc.CallOption) (*Response, error)
 	CreateModuleInFolder(ctx context.Context, in *CreateModuleInFolderRequest, opts ...grpc.CallOption) (*Response, error)
@@ -58,7 +58,7 @@ func (c *cardQuizzlerServiceClient) ProcessQuizResult(ctx context.Context, in *P
 	return out, nil
 }
 
-func (c *cardQuizzlerServiceClient) GetUserFolders(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
+func (c *cardQuizzlerServiceClient) GetUserFolders(ctx context.Context, in *GetUserFoldersRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetUserFolders", in, out, opts...)
 	if err != nil {
@@ -121,7 +121,7 @@ func (c *cardQuizzlerServiceClient) AddFolderToUser(ctx context.Context, in *Add
 	return out, nil
 }
 
-func (c *cardQuizzlerServiceClient) GetUserModules(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
+func (c *cardQuizzlerServiceClient) GetUserModules(ctx context.Context, in *GetUserModulesRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetUserModules", in, out, opts...)
 	if err != nil {
@@ -130,7 +130,7 @@ func (c *cardQuizzlerServiceClient) GetUserModules(ctx context.Context, in *Requ
 	return out, nil
 }
 
-func (c *cardQuizzlerServiceClient) GetDifficultModulesByUID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
+func (c *cardQuizzlerServiceClient) GetDifficultModulesByUID(ctx context.Context, in *GetDifficultModulesRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetDifficultModulesByUID", in, out, opts...)
 	if err != nil {
@@ -207,15 +207,15 @@ func (c *cardQuizzlerServiceClient) AddModuleToFolder(ctx context.Context, in *A
 // for forward compatibility
 type CardQuizzlerServiceServer interface {
 	ProcessQuizResult(context.Context, *ProcessQuizRequest) (*Response, error)
-	GetUserFolders(context.Context, *RequestWithID) (*Response, error)
+	GetUserFolders(context.Context, *GetUserFoldersRequest) (*Response, error)
 	GetFolderByID(context.Context, *RequestWithID) (*Response, error)
 	CreateFolder(context.Context, *CreateFolderRequest) (*Response, error)
 	UpdateFolder(context.Context, *UpdateFolderRequest) (*Response, error)
 	DeleteFolder(context.Context, *RequestWithID) (*Response, error)
 	DeleteModuleFromFolder(context.Context, *DeleteModuleFromFolderRequest) (*Response, error)
 	AddFolderToUser(context.Context, *AddFolderToUserRequest) (*Response, error)
-	GetUserModules(context.Context, *RequestWithID) (*Response, error)
-	GetDifficultModulesByUID(context.Context, *RequestWithID) (*Response, error)
+	GetUserModules(context.Context, *GetUserModulesRequest) (*Response, error)
+	GetDifficultModulesByUID(context.Context, *GetDifficultModulesRequest) (*Response, error)
 	GetModuleByID(context.Context, *RequestWithID) (*Response, error)
 	CreateModule(context.Context, *CreateModuleRequest) (*Response, error)
 	CreateModuleInFolder(context.Context, *CreateModuleInFolderRequest) (*Response, error)
@@ -233,7 +233,7 @@ type UnimplementedCardQuizzlerServiceServer struct {
 func (UnimplementedCardQuizzlerServiceServer) ProcessQuizResult(context.Context, *ProcessQuizRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessQuizResult not implemented")
 }
-func (UnimplementedCardQuizzlerServiceServer) GetUserFolders(context.Context, *RequestWithID) (*Response, error) {
+func (UnimplementedCardQuizzlerServiceServer) GetUserFolders(context.Context, *GetUserFoldersRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserFolders not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) GetFolderByID(context.Context, *RequestWithID) (*Response, error) {
@@ -254,10 +254,10 @@ func (UnimplementedCardQuizzlerServiceServer) DeleteModuleFromFolder(context.Con
 func (UnimplementedCardQuizzlerServiceServer) AddFolderToUser(context.Context, *AddFolderToUserRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddFolderToUser not implemented")
 }
-func (UnimplementedCardQuizzlerServiceServer) GetUserModules(context.Context, *RequestWithID) (*Response, error) {
+func (UnimplementedCardQuizzlerServiceServer) GetUserModules(context.Context, *GetUserModulesRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserModules not implemented")
 }
-func (UnimplementedCardQuizzlerServiceServer) GetDifficultModulesByUID(context.Context, *RequestWithID) (*Response, error) {
+func (UnimplementedCardQuizzlerServiceServer) GetDifficultModulesByUID(context.Context, *GetDifficultModulesRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDifficultModulesByUID not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) GetModuleByID(context.Context, *RequestWithID) (*Response, error) {
@@ -313,7 +313,7 @@ func _CardQuizzlerService_ProcessQuizResult_Handler(srv interface{}, ctx context
 }
 
 func _CardQuizzlerService_GetUserFolders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestWithID)
+	in := new(GetUserFoldersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -325,7 +325,7 @@ func _CardQuizzlerService_GetUserFolders_Handler(srv interface{}, ctx context.Co
 		FullMethod: "/card_quizzler_service.CardQuizzlerService/GetUserFolders",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardQuizzlerServiceServer).GetUserFolders(ctx, req.(*RequestWithID))
+		return srv.(CardQuizzlerServiceServer).GetUserFolders(ctx, req.(*GetUserFoldersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -439,7 +439,7 @@ func _CardQuizzlerService_AddFolderToUser_Handler(srv interface{}, ctx context.C
 }
 
 func _CardQuizzlerService_GetUserModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestWithID)
+	in := new(GetUserModulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -451,13 +451,13 @@ func _CardQuizzlerService_GetUserModules_Handler(srv interface{}, ctx context.Co
 		FullMethod: "/card_quizzler_service.CardQuizzlerService/GetUserModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardQuizzlerServiceServer).GetUserModules(ctx, req.(*RequestWithID))
+		return srv.(CardQuizzlerServiceServer).GetUserModules(ctx, req.(*GetUserModulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _CardQuizzlerService_GetDifficultModulesByUID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestWithID)
+	in := new(GetDifficultModulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -469,7 +469,7 @@ func _CardQuizzlerService_GetDifficultModulesByUID_Handler(srv interface{}, ctx 
 		FullMethod: "/card_quizzler_service.CardQuizzlerService/GetDifficultModulesByUID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardQuizzlerServiceServer).GetDifficultModulesByUID(ctx, req.(*RequestWithID))
+		return srv.(CardQuizzlerServiceServer).GetDifficultModulesByUID(ctx, req.(*GetDifficultModulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

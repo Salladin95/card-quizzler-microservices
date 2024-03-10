@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
@@ -19,18 +20,55 @@ func (r *repo) CreateUser(uid string) error {
 	return nil
 }
 
+type fetchedData struct {
+	Key    string      `json:"key"`
+	UserID string      `json:"userID"`
+	Data   interface{} `json:"data"`
+}
+
+// GetFoldersByUID retrieves folders associated with a user by their UID from the database
+func (r *repo) GetFoldersByUID(payload UidSortPayload) ([]models.Folder, error) {
+	var userFolders []models.Folder
+	if err := r.db.
+		Preload("Modules.Terms").
+		Where("user_id = ?", payload.Uid).
+		Order(payload.SortBy).
+		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
+		Find(&userFolders).
+		Error; err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
+	}
+
+	data := fetchedData{
+		UserID: payload.Uid,
+		Key:    fmt.Sprintf("%d:%d:%s", payload.Limit, payload.Page, payload.SortBy),
+		Data:   userFolders,
+	}
+
+	r.broker.PushToQueue(payload.Ctx, constants.FetchedUserFoldersKey, data)
+	return userFolders, nil
+}
+
 // GetModulesByUID retrieves modules associated with a user by their UID from the database.
-func (r *repo) GetModulesByUID(ctx context.Context, uid string) ([]models.Module, error) {
+func (r *repo) GetModulesByUID(payload UidSortPayload) ([]models.Module, error) {
 	var userModules []models.Module
 	if err := r.db.
 		Preload("Terms").
-		Where("user_id = ?", uid).
+		Where("user_id = ?", payload.Uid).
+		Order(payload.SortBy).
+		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
 		Find(&userModules).
 		Error; err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
-	r.broker.PushToQueue(ctx, constants.FetchedUserModulesKey, userModules)
+	data := fetchedData{
+		UserID: payload.Uid,
+		Key:    fmt.Sprintf("%d:%d:%s", payload.Limit, payload.Page, payload.SortBy),
+		Data:   userModules,
+	}
+
+	r.broker.PushToQueue(payload.Ctx, constants.FetchedUserModulesKey, data)
 	return userModules, nil
 }
 
@@ -47,21 +85,6 @@ func (r *repo) GetDifficultModulesByUID(ctx context.Context, uid string) ([]mode
 
 	r.broker.PushToQueue(ctx, constants.FetchedDifficultModulesKey, difficultModules)
 	return difficultModules, nil
-}
-
-// GetFoldersByUID retrieves folders associated with a user by their UID from the database
-func (r *repo) GetFoldersByUID(ctx context.Context, uid string) ([]models.Folder, error) {
-	var userFolders []models.Folder
-	if err := r.db.
-		Preload("Modules.Terms").
-		Where("user_id = ?", uid).
-		Find(&userFolders).
-		Error; err != nil {
-		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
-	}
-
-	r.broker.PushToQueue(ctx, constants.FetchedUserFoldersKey, userFolders)
-	return userFolders, nil
 }
 
 // AddModuleToUser associates a module with a user.

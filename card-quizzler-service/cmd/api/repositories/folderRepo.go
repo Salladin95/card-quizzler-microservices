@@ -31,7 +31,7 @@ func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (
 }
 
 // UpdateFolder updates a folder in the database with the given ID using the provided DTO.
-func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entities.UpdateFolderDto) (models.Folder, error) {
+func (r *repo) UpdateFolder(payload UpdateFolderPayload) (models.Folder, error) {
 	// Declare a variable to hold the folder
 	var folder models.Folder
 	// Execute the provided function within a transaction
@@ -39,21 +39,21 @@ func (r *repo) UpdateFolder(ctx context.Context, folderID uuid.UUID, dto entitie
 		// Retrieve the folder by ID from the database, preloading its associated modules and terms
 		if err := tx.
 			Preload("Modules.Terms").
-			First(&folder, folderID).
+			First(&folder, payload.FolderID).
 			Error; err != nil {
 			// If the folder is not found, return a not found error
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
 		// Update the folder's title with the data from the DTO
-		folder.Title = dto.Title
+		folder.Title = payload.Dto.Title
 
 		// Save the updated folder in the database
 		if err := tx.Save(&folder).Error; err != nil {
 			// If an error occurs while updating the folder, return an operation failure error
 			return goErrorHandler.OperationFailure("update folder", err)
 		}
-		r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
+		r.broker.PushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
 
 		// If no errors occurred, return nil
 		return nil
@@ -116,7 +116,7 @@ func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
 
 // DeleteModuleFromFolder deletes a module from a folder in the database.
 // It removes the association between the specified module and folder.
-func (r *repo) DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, moduleID uuid.UUID) error {
+func (r *repo) DeleteModuleFromFolder(payload FolderModuleAssociation) error {
 	// Execute the provided function within a transaction
 	return r.withTransaction(func(tx *gorm.DB) error {
 		// Declare variables to hold the folder and module
@@ -124,11 +124,11 @@ func (r *repo) DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, m
 		var module models.Module
 
 		// Fetch the folder and module within the transaction
-		if err := tx.First(&folder, folderID).Error; err != nil {
+		if err := tx.First(&folder, payload.FolderID).Error; err != nil {
 			return fmt.Errorf("failed to find folder: %w", err)
 		}
 
-		if err := tx.First(&module, moduleID).Error; err != nil {
+		if err := tx.First(&module, payload.ModuleID).Error; err != nil {
 			return fmt.Errorf("failed to find module: %w", err)
 		}
 
@@ -138,8 +138,8 @@ func (r *repo) DeleteModuleFromFolder(ctx context.Context, folderID uuid.UUID, m
 		}
 
 		// Push to queue after successful deletion
-		r.broker.PushToQueue(ctx, constants.MutatedFolderKey, folder)
-		r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+		r.broker.PushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
+		r.broker.PushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
 
 		return nil
 	})

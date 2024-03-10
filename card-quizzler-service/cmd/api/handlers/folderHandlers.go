@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/google/uuid"
 	"net/http"
@@ -34,7 +35,11 @@ func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService
 	if err := updateFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
-	updateFolder, err := cq.Repo.UpdateFolder(ctx, folderID, updateFolderDto)
+	updateFolder, err := cq.Repo.UpdateFolder(repositories.UpdateFolderPayload{
+		Ctx:      ctx,
+		FolderID: folderID,
+		Dto:      updateFolderDto,
+	})
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -83,20 +88,31 @@ func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *q
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
-	if err := cq.Repo.DeleteModuleFromFolder(ctx, folderID, moduleID); err != nil {
+	if err := cq.Repo.DeleteModuleFromFolder(repositories.FolderModuleAssociation{
+		Ctx:      ctx,
+		FolderID: folderID,
+		ModuleID: moduleID,
+	}); err != nil {
 		return buildFailedResponse(err)
 	}
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Module is deleted from folder ")
 }
 
-func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizService.GetUserFoldersRequest) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "GetUserFolders")
 	uid := req.GetId()
 	if uid == "" {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
 	}
+	payload := req.GetPayload()
 
-	folders, err := cq.Repo.GetFoldersByUID(ctx, uid)
+	folders, err := cq.Repo.GetFoldersByUID(repositories.UidSortPayload{
+		Ctx:    ctx,
+		Uid:    uid,
+		Limit:  payload.Limit,
+		Page:   payload.Page,
+		SortBy: payload.SortBy,
+	})
 	if err != nil {
 		return buildFailedResponse(err)
 	}
