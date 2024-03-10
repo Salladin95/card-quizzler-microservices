@@ -15,16 +15,6 @@ import (
 func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizService.ProcessQuizRequest) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "ProcessQuizResult")
 	payload := req.GetTerms()
-	mID := req.GetModuleID()
-	moduleID, err := uuid.Parse(mID)
-	if err != nil {
-		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
-	}
-
-	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
-	if err != nil {
-		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
-	}
 
 	var resultTerms []entities.ResultTerm
 	if err := lib.UnmarshalData(payload, &resultTerms); err != nil {
@@ -37,14 +27,28 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 		answersMap[term.ID] = term.Answer
 	}
 
+	var termIDS []uuid.UUID
+	for _, term := range resultTerms {
+		id, err := uuid.Parse(term.ID)
+		if err != nil {
+			return buildFailedResponse(goErrorHandler.OperationFailure("parse UUID", err))
+		}
+		termIDS = append(termIDS, id)
+	}
+
+	terms, err := cq.Repo.GetTerms(termIDS)
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
 	// Update streaks and difficulty for each term in the module
-	for i := range module.Terms {
-		answer := answersMap[module.Terms[i].ID.String()]
-		models.UpdateStreaksAndUpdateDifficulty(&module.Terms[i], answer)
+	for i := range terms {
+		answer := answersMap[terms[i].ID.String()]
+		models.UpdateStreaksAndUpdateDifficulty(&terms[i], answer)
 	}
 
 	// Update the module with the updated terms
-	if err := cq.Repo.UpdateTerms(module.Terms); err != nil {
+	if err := cq.Repo.UpdateTerms(ctx, terms); err != nil {
 		// Return a failed response if module update fails
 		return buildFailedResponse(err)
 	}

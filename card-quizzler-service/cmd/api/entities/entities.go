@@ -1,6 +1,8 @@
 package entities
 
-import "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
+import (
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
+)
 
 type JsonResponse struct {
 	Message string      `json:"message"`

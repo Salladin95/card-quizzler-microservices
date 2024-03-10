@@ -113,12 +113,45 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 }
 
 // UpdateTerms updates given terms
-func (r *repo) UpdateTerms(terms []models.Term) error {
+func (r *repo) UpdateTerms(ctx context.Context, terms []models.Term) error {
 	// Define the function to be executed within the transaction
 	return r.withTransaction(func(tx *gorm.DB) error {
 		// Save the updated terms
 		if err := tx.Save(&terms).Error; err != nil {
 			return goErrorHandler.OperationFailure("update terms", err)
+		}
+
+		modulesIDSMap := make(map[uuid.UUID]bool)
+		for _, v := range terms {
+			modulesIDSMap[v.ModuleID] = true
+		}
+
+		ids := make([]uuid.UUID, 0, len(modulesIDSMap))
+		for id := range modulesIDSMap {
+			ids = append(ids, id)
+		}
+
+		var modules []models.Module
+		if err := tx.Find(&modules, ids).Error; err != nil {
+			return err
+		}
+
+		for _, module := range modules {
+			r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+		}
+
+		return nil
+	})
+}
+
+// GetTerms fetches given terms
+func (r *repo) GetTerms(termIDS []uuid.UUID) ([]models.Term, error) {
+	var terms []models.Term
+	// Define the function to be executed within the transaction
+	return terms, r.withTransaction(func(tx *gorm.DB) error {
+		// Save the updated terms
+		if err := tx.Find(&terms, &termIDS).Error; err != nil {
+			return goErrorHandler.OperationFailure("fetch terms", err)
 		}
 		return nil
 	})

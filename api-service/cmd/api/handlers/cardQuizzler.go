@@ -269,8 +269,6 @@ func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 		return err
 	}
 
-	id := c.QueryParam("moduleID")
-
 	terms, err := lib.MarshalData(&dto.Terms)
 
 	if err != nil {
@@ -287,8 +285,7 @@ func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		ProcessQuizResult(ctx, &quizService.ProcessQuizRequest{
-			Terms:    terms,
-			ModuleID: id,
+			Terms: terms,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("ProcessQuizResult", err)

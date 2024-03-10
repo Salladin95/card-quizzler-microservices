@@ -58,7 +58,8 @@ type Repository interface {
 	DeleteModule(ctx context.Context, id uuid.UUID) error
 	AddModuleToUser(uid string, moduleID uuid.UUID) error
 	CreateUser(uid string) error
-	UpdateTerms(terms []models.Term) error
+	UpdateTerms(ctx context.Context, terms []models.Term) error
+	GetTerms(resTerms []uuid.UUID) ([]models.Term, error)
 }
 
 func NewRepo(db *gorm.DB, broker rmqtools.MessageBroker) Repository {

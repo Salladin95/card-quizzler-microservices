@@ -74,17 +74,36 @@ func (r *repo) GetModulesByUID(payload UidSortPayload) ([]models.Module, error) 
 
 // GetDifficultModulesByUID retrieves difficult modules associated with a user by their UID from the database.
 func (r *repo) GetDifficultModulesByUID(ctx context.Context, uid string) ([]models.Module, error) {
-	var difficultModules []models.Module
+	var difficultTerms []models.Term
 	if err := r.db.
-		Preload("Terms", "is_difficult = ?", true).
-		Where("user_id = ?", uid).
-		Find(&difficultModules).
+		Joins("JOIN modules ON terms.module_id = modules.id").
+		Where("modules.user_id = ?", uid).
+		Where("terms.is_difficult = ?", true).
+		Find(&difficultTerms).
 		Error; err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
-	r.broker.PushToQueue(ctx, constants.FetchedDifficultModulesKey, difficultModules)
-	return difficultModules, nil
+	var newModules []models.Module
+	numModules := (len(difficultTerms) + 4) / 5
+
+	for i := 0; i < numModules; i++ {
+		start := i * 5
+		end := (i + 1) * 5
+		if end > len(difficultTerms) {
+			end = len(difficultTerms)
+		}
+		moduleTerms := difficultTerms[start:end]
+		newModule := models.Module{
+			Title:  fmt.Sprintf("Module - %d", len(newModules)+1),
+			UserID: uid,
+			Terms:  moduleTerms,
+		}
+		newModules = append(newModules, newModule)
+	}
+
+	r.broker.PushToQueue(ctx, constants.FetchedDifficultModulesKey, newModules)
+	return newModules, nil
 }
 
 // AddModuleToUser associates a module with a user.
