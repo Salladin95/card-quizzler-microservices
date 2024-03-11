@@ -15,13 +15,18 @@ func (app *App) setupRoutes(
 	handlers handlers.ApiHandlersInterface,
 	cacheManager cacheManager.CacheManager,
 ) {
+	appThrottler := middlewares.NewThrottler(10, 14)
+
 	routes := app.server.Group("/v1/api")
+	routes.Use(appThrottler.Middleware)
 
 	// ********** PROMETHEUS METRICS ****************
 	routes.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	// ****************** AUTH **********************
 	authRoutes := routes.Group("/auth")
+	authThrottler := middlewares.NewThrottler(1, 1)
+	authRoutes.Use(authThrottler.Middleware)
 	authRoutes.POST("/sign-in", handlers.SignIn)
 	authRoutes.POST("/sign-up", handlers.SignUp)
 	authRoutes.GET("/refresh", handlers.Refresh)

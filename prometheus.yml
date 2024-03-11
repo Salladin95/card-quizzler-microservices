@@ -18,7 +18,7 @@ scrape_configs:
     metrics_path: /v1/api/metrics
 
     static_configs:
-      - targets: [ 'api-service:8080' ]
+      - targets: [ 'api-service:7000' ]
         labels:
           name: 'app-exporter'
 
