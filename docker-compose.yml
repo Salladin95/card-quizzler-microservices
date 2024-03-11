@@ -94,6 +94,19 @@ services:
         max_attempts: 5
         window: 60s
 
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./volumes/prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      #      - ${PROMETHEUS_PORT}:${PROMETHEUS_PORT}
+      - "19090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - myapp-network
+
   rabbitmq:
     image: "rabbitmq:management"
     ports:

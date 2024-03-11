@@ -5,6 +5,8 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/handlers"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/middlewares"
 	"github.com/Salladin95/rmqtools"
+	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // setupRoutes configures and defines API routes for the Echo server.
@@ -14,6 +16,9 @@ func (app *App) setupRoutes(
 	cacheManager cacheManager.CacheManager,
 ) {
 	routes := app.server.Group("/v1/api")
+
+	// ********** PROMETHEUS METRICS ****************
+	routes.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	// ****************** AUTH **********************
 	authRoutes := routes.Group("/auth")
