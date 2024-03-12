@@ -84,17 +84,20 @@ func (r *repo) GetDifficultModulesByUID(ctx context.Context, uid string) ([]mode
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
+	const maxTerms = 30
+
 	var newModules []models.Module
-	numModules := (len(difficultTerms) + 4) / 5
+	numModules := (len(difficultTerms) + (maxTerms - 1)) / maxTerms
 
 	for i := 0; i < numModules; i++ {
-		start := i * 5
-		end := (i + 1) * 5
+		start := i * maxTerms
+		end := (i + 1) * maxTerms
 		if end > len(difficultTerms) {
 			end = len(difficultTerms)
 		}
 		moduleTerms := difficultTerms[start:end]
 		newModule := models.Module{
+			ID:     uuid.New(),
 			Title:  fmt.Sprintf("Module - %d", len(newModules)+1),
 			UserID: uid,
 			Terms:  moduleTerms,
