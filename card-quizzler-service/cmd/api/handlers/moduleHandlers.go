@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -15,6 +16,26 @@ import (
 func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizService.ProcessQuizRequest) (*quizService.Response, error) {
 	cq.log(ctx, "start processing grpc request", "info", "ProcessQuizResult")
 	payload := req.GetTerms()
+	id := req.GetModuleID()
+
+	// if there's id we want to update updated_at, so we can fetch recent opened modules
+	if id != "" {
+		moduleID, err := uuid.Parse(id)
+		if err != nil {
+			return buildFailedResponse(err)
+		}
+
+		if _, err = cq.Repo.UpdateModule(repositories.UpdateModulePayload{
+			Ctx:      ctx,
+			ModuleID: moduleID,
+			Dto:      entities.UpdateModuleDto{},
+		}); err != nil {
+			return buildFailedResponse(err)
+		}
+		fmt.Println("********************")
+		fmt.Println(err)
+		fmt.Println("********************")
+	}
 
 	var resultTerms []entities.ResultTerm
 	if err := lib.UnmarshalData(payload, &resultTerms); err != nil {
@@ -37,6 +58,11 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 	}
 
 	terms, err := cq.Repo.GetTerms(termIDS)
+	fmt.Println("@@@@@@@@@@@@@@@@@@@@@")
+	fmt.Println(payload)
+	fmt.Println(termIDS)
+	fmt.Println(terms)
+	fmt.Println("@@@@@@@@@@@@@@@@@@@@@")
 	if err != nil {
 		return buildFailedResponse(err)
 	}

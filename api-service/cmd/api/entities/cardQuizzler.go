@@ -40,7 +40,8 @@ type resultTerm struct {
 }
 
 type QuizResultDto struct {
-	Terms []resultTerm `json:"terms" validate:"required"`
+	Terms    []resultTerm `json:"terms" validate:"required"`
+	ModuleID string       `json:"moduleID" validate:"omitempty"`
 }
 
 type CreateTermDto struct {

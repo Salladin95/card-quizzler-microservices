@@ -79,6 +79,7 @@ message UpdateModuleRequest {
 
 message ProcessQuizRequest {
   bytes terms = 1;
+  string moduleID = 2;
 }
 
 message SortOptions {

@@ -285,7 +285,8 @@ func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		ProcessQuizResult(ctx, &quizService.ProcessQuizRequest{
-			Terms: terms,
+			Terms:    terms,
+			ModuleID: dto.ModuleID,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("ProcessQuizResult", err)

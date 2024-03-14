@@ -72,22 +72,25 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
-		// Determine terms to delete
-		termsToDelete := getTermsToDelete(module, parsedDto.NewTerms)
-
 		module.UpdatedAt = time.Now()
-
-		// Update module's terms if new terms are provided
-		if len(parsedDto.NewTerms) > 0 {
-			module.Terms = parsedDto.NewTerms
-		}
 
 		// Update module's title if provided in the DTO
 		if payload.Dto.Title != "" {
 			module.Title = payload.Dto.Title
-			if err := tx.Save(&module).Error; err != nil {
-				return goErrorHandler.OperationFailure("update module", err)
-			}
+		}
+
+		var termsToDelete []models.Term
+		// Update module's terms if new terms are provided
+		if len(parsedDto.NewTerms) > 0 {
+			// Determine terms to delete
+			termsToDelete = getTermsToDelete(module, parsedDto.NewTerms)
+
+			// replace module's terms
+			module.Terms = parsedDto.NewTerms
+		}
+
+		if err := tx.Save(&module).Error; err != nil {
+			return goErrorHandler.OperationFailure("update module", err)
 		}
 
 		// Save the updated terms
