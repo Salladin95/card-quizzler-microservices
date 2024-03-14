@@ -15,7 +15,7 @@ func (app *App) setupRoutes(
 	handlers handlers.ApiHandlersInterface,
 	cacheManager cacheManager.CacheManager,
 ) {
-	appThrottler := middlewares.NewThrottler(16, 20)
+	appThrottler := middlewares.NewThrottler(20, 30)
 
 	routes := app.server.Group("/v1/api")
 	routes.Use(appThrottler.Middleware)
