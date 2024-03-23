@@ -41,6 +41,7 @@ type ApiHandlersInterface interface {
 	AddModuleToUser(c echo.Context) error
 	AddModuleToFolder(c echo.Context) error
 	DeleteModule(c echo.Context) error
+	UpdateTerm(c echo.Context) error
 }
 
 // apiHandlers implements the ApiHandlersInterface.

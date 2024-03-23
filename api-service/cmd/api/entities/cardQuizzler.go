@@ -67,3 +67,9 @@ type CreateFolderDto struct {
 type UpdateFolderDto struct {
 	Title string `json:"title" validate:"omitempty"`
 }
+
+type UpdateTermDto struct {
+	ModuleID    string `json:"moduleID" validate:"required"`
+	Title       string `json:"title" validate:"omitempty"`
+	Description string `json:"description" validate:"omitempty"`
+}

@@ -147,6 +147,37 @@ func (r *repo) UpdateTerms(ctx context.Context, terms []models.Term) error {
 	})
 }
 
+// UpdateTerm updates given term
+func (r *repo) UpdateTerm(ctx context.Context, updateTermDTO entities.UpdateTermDto) error {
+	// Define the function to be executed within the transaction
+	return r.withTransaction(func(tx *gorm.DB) error {
+		var term models.Term
+		if err := tx.Find(&term, updateTermDTO.Id).Error; err != nil {
+			return goErrorHandler.OperationFailure("get term", err)
+		}
+
+		if updateTermDTO.Title != "" {
+			term.Title = updateTermDTO.Title
+		}
+
+		if updateTermDTO.Description != "" {
+			term.Description = updateTermDTO.Description
+		}
+
+		// Save the updated term
+		if err := tx.Save(&term).Error; err != nil {
+			return goErrorHandler.OperationFailure("update term", err)
+		}
+
+		var module models.Module
+		if err := tx.Find(&module, term.ModuleID).Error; err != nil {
+			return goErrorHandler.OperationFailure("get module", err)
+		}
+		r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+		return nil
+	})
+}
+
 // GetTerms fetches given terms
 func (r *repo) GetTerms(termIDS []uuid.UUID) ([]models.Term, error) {
 	var terms []models.Term

@@ -102,6 +102,13 @@ message GetDifficultModulesRequest {
   string id = 1;
 }
 
+message UpdaterTermRequest {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string moduleID = 4;
+}
+
 service CardQuizzlerService {
   rpc ProcessQuizResult(ProcessQuizRequest) returns (Response);
   rpc GetUserFolders(GetUserFoldersRequest) returns (Response);
@@ -120,4 +127,5 @@ service CardQuizzlerService {
   rpc DeleteModule(RequestWithID) returns (Response);
   rpc AddModuleToUser(AddModuleToUserRequest) returns (Response);
   rpc AddModuleToFolder(AddModuleToFolderRequest) returns (Response);
+  rpc UpdateTerm(UpdaterTermRequest) returns (Response);
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -32,9 +31,6 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 		}); err != nil {
 			return buildFailedResponse(err)
 		}
-		fmt.Println("********************")
-		fmt.Println(err)
-		fmt.Println("********************")
 	}
 
 	var resultTerms []entities.ResultTerm
@@ -58,11 +54,6 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 	}
 
 	terms, err := cq.Repo.GetTerms(termIDS)
-	fmt.Println("@@@@@@@@@@@@@@@@@@@@@")
-	fmt.Println(payload)
-	fmt.Println(termIDS)
-	fmt.Println(terms)
-	fmt.Println("@@@@@@@@@@@@@@@@@@@@@")
 	if err != nil {
 		return buildFailedResponse(err)
 	}
@@ -323,4 +314,38 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 	}
 
 	return buildSuccessfulResponse(module, http.StatusOK, "requested module")
+}
+
+func (cq *CardQuizzlerServer) UpdateTerm(ctx context.Context, req *quizService.UpdaterTermRequest) (*quizService.Response, error) {
+	cq.log(ctx, "start processing grpc request", "info", "UpdateTerm")
+	termID, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+	moduleID, err := uuid.Parse(req.GetModuleID())
+	if err != nil {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	updateTermDto := entities.UpdateTermDto{
+		Id:          termID,
+		ModuleID:    moduleID,
+		Title:       req.GetTitle(),
+		Description: req.GetDescription(),
+	}
+
+	if err := updateTermDto.Verify(); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	// Create the module in the repository
+	if err := cq.Repo.UpdateTerm(ctx, updateTermDto); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return &quizService.Response{
+		Data:    nil,
+		Code:    http.StatusOK,
+		Message: "Term has been updated",
+	}, nil
 }

@@ -658,3 +658,35 @@ func (ah *apiHandlers) DeleteModule(c echo.Context) error {
 	}
 	return handleGRPCResponseNoContent(c, response)
 }
+
+func (ah *apiHandlers) UpdateTerm(c echo.Context) error {
+	ctx := c.Request().Context()
+	ah.log(ctx, "start processing request", "info", "UpdateTerm")
+
+	id := c.Param("id")
+
+	var dto entities.UpdateTermDto
+	if err := lib.BindBody(c, &dto); err != nil {
+		return err
+	}
+
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		UpdateTerm(ctx, &quizService.UpdaterTermRequest{
+			Id:          id,
+			ModuleID:    dto.ModuleID,
+			Title:       dto.Title,
+			Description: dto.Description,
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("UpdateTerm", err)
+	}
+	return handleGRPCResponseNoContent(c, response)
+}

@@ -105,9 +105,6 @@ func handleGRPCResponse(c echo.Context, res GrpcResponse, unmarshalTo interface{
 
 func handleGRPCResponseNoContent(c echo.Context, res GrpcResponse) error {
 	code := int(res.GetCode())
-	if code >= http.StatusBadRequest {
-		return c.JSON(code, entities.JsonResponse{Message: res.GetMessage()})
-	}
 	return c.String(code, res.GetMessage())
 }
 

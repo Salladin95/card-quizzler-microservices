@@ -39,6 +39,7 @@ type CardQuizzlerServiceClient interface {
 	DeleteModule(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	AddModuleToUser(ctx context.Context, in *AddModuleToUserRequest, opts ...grpc.CallOption) (*Response, error)
 	AddModuleToFolder(ctx context.Context, in *AddModuleToFolderRequest, opts ...grpc.CallOption) (*Response, error)
+	UpdateTerm(ctx context.Context, in *UpdaterTermRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type cardQuizzlerServiceClient struct {
@@ -202,6 +203,15 @@ func (c *cardQuizzlerServiceClient) AddModuleToFolder(ctx context.Context, in *A
 	return out, nil
 }
 
+func (c *cardQuizzlerServiceClient) UpdateTerm(ctx context.Context, in *UpdaterTermRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/UpdateTerm", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CardQuizzlerServiceServer is the server API for CardQuizzlerService service.
 // All implementations must embed UnimplementedCardQuizzlerServiceServer
 // for forward compatibility
@@ -223,6 +233,7 @@ type CardQuizzlerServiceServer interface {
 	DeleteModule(context.Context, *RequestWithID) (*Response, error)
 	AddModuleToUser(context.Context, *AddModuleToUserRequest) (*Response, error)
 	AddModuleToFolder(context.Context, *AddModuleToFolderRequest) (*Response, error)
+	UpdateTerm(context.Context, *UpdaterTermRequest) (*Response, error)
 	mustEmbedUnimplementedCardQuizzlerServiceServer()
 }
 
@@ -280,6 +291,9 @@ func (UnimplementedCardQuizzlerServiceServer) AddModuleToUser(context.Context, *
 }
 func (UnimplementedCardQuizzlerServiceServer) AddModuleToFolder(context.Context, *AddModuleToFolderRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddModuleToFolder not implemented")
+}
+func (UnimplementedCardQuizzlerServiceServer) UpdateTerm(context.Context, *UpdaterTermRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTerm not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) mustEmbedUnimplementedCardQuizzlerServiceServer() {}
 
@@ -600,6 +614,24 @@ func _CardQuizzlerService_AddModuleToFolder_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CardQuizzlerService_UpdateTerm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdaterTermRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardQuizzlerServiceServer).UpdateTerm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/card_quizzler_service.CardQuizzlerService/UpdateTerm",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardQuizzlerServiceServer).UpdateTerm(ctx, req.(*UpdaterTermRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CardQuizzlerService_ServiceDesc is the grpc.ServiceDesc for CardQuizzlerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -674,6 +706,10 @@ var CardQuizzlerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddModuleToFolder",
 			Handler:    _CardQuizzlerService_AddModuleToFolder_Handler,
+		},
+		{
+			MethodName: "UpdateTerm",
+			Handler:    _CardQuizzlerService_UpdateTerm_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

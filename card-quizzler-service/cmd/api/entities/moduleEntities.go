@@ -101,3 +101,14 @@ func (dto *UpdateModuleDto) ToModels(moduleID uuid.UUID) (parsedUpdateModuleDto,
 
 	return models, nil
 }
+
+type UpdateTermDto struct {
+	Id          uuid.UUID `json:"id" validate:"required"`
+	ModuleID    uuid.UUID `json:"moduleID" validate:"required"`
+	Title       string    `json:"title" validate:"omitempty"`
+	Description string    `json:"description" validate:"omitempty"`
+}
+
+func (dto *UpdateTermDto) Verify() error {
+	return lib.Verify(dto)
+}

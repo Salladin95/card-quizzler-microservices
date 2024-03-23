@@ -80,4 +80,6 @@ func (app *App) setupRoutes(
 	protectedRoutes.DELETE("/module/:id", handlers.DeleteModule)
 	// deletes module from the folder
 	protectedRoutes.PATCH("/delete-module-from-folder", handlers.DeleteModuleFromFolder)
+	// updates term
+	protectedRoutes.PATCH("/term/:id", handlers.UpdateTerm)
 }

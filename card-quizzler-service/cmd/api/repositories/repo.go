@@ -59,6 +59,7 @@ type Repository interface {
 	AddModuleToUser(uid string, moduleID uuid.UUID) error
 	CreateUser(uid string) error
 	UpdateTerms(ctx context.Context, terms []models.Term) error
+	UpdateTerm(ctx context.Context, updateTermDTO entities.UpdateTermDto) error
 	GetTerms(resTerms []uuid.UUID) ([]models.Term, error)
 }
 
