@@ -42,10 +42,12 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 	case constants.FetchUserFoldersKey:
 		var dto foldersDto
 		if err := lib.UnmarshalData(payload, &dto); err != nil {
+			s.log(ctx, err.Error(), "error", "cardQuizEventHandler")
 			return
 		}
 		marshalledData, err := lib.MarshalData(dto.Data)
 		if err != nil {
+			s.log(ctx, err.Error(), "error", "cardQuizEventHandler")
 			return
 		}
 

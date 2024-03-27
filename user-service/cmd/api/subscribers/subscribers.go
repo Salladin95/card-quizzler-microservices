@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	appEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/cachedRepository"
@@ -38,16 +39,14 @@ func (s *subscribers) SubscribeToEmailVerificationReqs(ctx context.Context) {
 	s.broker.ListenForUpdates(
 		[]string{constants.EmailVerificationCodeCommand},
 		func(_ string, payload []byte) {
-			err := s.cachedRepo.SetEmailVerificationCode(ctx, payload)
-			if err != nil {
-				s.log(ctx, err.Error(), "error", "SubscribeToEmailVerificationReqs")
+			if err := s.cachedRepo.SetEmailVerificationCode(ctx, payload); err == nil {
+				s.log(
+					ctx,
+					"email verification code is saved to cache",
+					"info",
+					"SubscribeToEmailVerificationReqs",
+				)
 			}
-			s.log(
-				ctx,
-				"email verification code is saved to cache",
-				"info",
-				"SubscribeToEmailVerificationReqs",
-			)
 		},
 	)
 }
@@ -56,10 +55,12 @@ func (s *subscribers) SubscribeToEmailVerificationReqs(ctx context.Context) {
 func (s *subscribers) log(ctx context.Context, message, level, method string) {
 	var log appEntities.LogMessage // Create a new LogMessage struct
 	// Push log message to the message broker
-	s.broker.PushToQueue(
+	if err := s.broker.PushToQueue(
 		ctx,
 		constants.LogCommand, // Specify the log command constant
 		// Generate log message with provided details
 		log.GenerateLog(message, level, method, "broker message subscribers"),
-	)
+	); err != nil {
+		fmt.Printf("[subscribers] Failed to generate log event - %v\n", err)
+	}
 }

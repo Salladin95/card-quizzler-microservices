@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
@@ -88,10 +89,12 @@ func (s *subscribers) log(ctx context.Context, message, level, method string) {
 	var log entities.LogMessage
 
 	// Push log message to the message broker
-	s.broker.PushToQueue(
+	if err := s.broker.PushToQueue(
 		ctx,
 		constants.LogCommand, // Specify the log command constant
 		// Generate log message with provided details
 		log.GenerateLog(message, level, method, "events listener"),
-	)
+	); err != nil {
+		fmt.Printf("[subscribers] Failed to generate log event - %v\n", err)
+	}
 }

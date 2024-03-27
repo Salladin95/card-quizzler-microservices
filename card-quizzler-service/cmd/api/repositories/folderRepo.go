@@ -25,7 +25,7 @@ func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (
 		// If an error occurs during creation, return the folder and an operation failure error
 		return folder, goErrorHandler.OperationFailure("create folder", err)
 	}
-	r.broker.PushToQueue(ctx, constants.CreatedFolderKey, folder)
+	r.pushToQueue(ctx, constants.CreatedFolderKey, folder)
 	// If creation is successful, return the created folder and a nil error
 	return folder, nil
 }
@@ -53,7 +53,7 @@ func (r *repo) UpdateFolder(payload UpdateFolderPayload) (models.Folder, error) 
 			// If an error occurs while updating the folder, return an operation failure error
 			return goErrorHandler.OperationFailure("update folder", err)
 		}
-		r.broker.PushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
+		r.pushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
 
 		// If no errors occurred, return nil
 		return nil
@@ -74,7 +74,7 @@ func (r *repo) GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, 
 		return folder, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
-	r.broker.PushToQueue(ctx, constants.FetchedFolderKey, folder)
+	r.pushToQueue(ctx, constants.FetchedFolderKey, folder)
 
 	// If the folder is found, return the folder and a nil error
 	return folder, nil
@@ -107,7 +107,7 @@ func (r *repo) DeleteFolder(ctx context.Context, id uuid.UUID) error {
 			// If an error occurs while deleting associations, return the error
 			return err
 		}
-		r.broker.PushToQueue(ctx, constants.DeletedFolderKey, folder)
+		r.pushToQueue(ctx, constants.DeletedFolderKey, folder)
 
 		// If no errors occurred, return nil
 		return nil
@@ -138,8 +138,8 @@ func (r *repo) DeleteModuleFromFolder(payload FolderModuleAssociation) error {
 		}
 
 		// Push to queue after successful deletion
-		r.broker.PushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
-		r.broker.PushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
+		r.pushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
+		r.pushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
 
 		return nil
 	})

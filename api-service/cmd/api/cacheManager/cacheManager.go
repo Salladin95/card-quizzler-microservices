@@ -86,7 +86,11 @@ func (cm *cacheManager) Exp() time.Duration {
 
 // ClearUserRelatedCache drops user related cache
 func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
-	return cm.redisClient.Del(cm.UserHashKey(uid)).Err()
+	if err := cm.redisClient.Del(cm.UserHashKey(uid)).Err(); err != nil {
+		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKeys")
+		return goErrorHandler.OperationFailure("delete cache", err)
+	}
+	return nil
 }
 
 // ClearCacheByKeys drops specified cache
@@ -119,13 +123,15 @@ func (cm *cacheManager) ReadCacheByKeys(readTo interface{}, key, hashKey string)
 	// Retrieve the value from the Redis hash
 	val, err := cm.redisClient.HGet(key, hashKey).Result()
 	if err != nil {
-		return fmt.Errorf("read cache - %v", err)
+		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKeys")
+		return goErrorHandler.OperationFailure("ReadCacheByKey", err)
 	}
 
 	// Unmarshal the Redis value into the provided readTo
 	err = lib.UnmarshalData([]byte(val), readTo)
 
 	if err != nil {
+		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKeys")
 		return err
 	}
 
@@ -138,12 +144,14 @@ func (cm *cacheManager) ReadCacheByKey(readTo interface{}, key string) error {
 	// Retrieve the value from the Redis hash
 	val, err := cm.redisClient.Get(key).Result()
 	if err != nil {
+		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKey")
 		return goErrorHandler.OperationFailure("read cache", err)
 	}
 
 	// Unmarshal the Redis value into the provided readTo
 	err = lib.UnmarshalData([]byte(val), readTo)
 	if err != nil {
+		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKey")
 		return err
 	}
 
@@ -158,6 +166,7 @@ func (cm *cacheManager) SetCacheByKey(key string, data []byte) error {
 	// Set the marshalled data in the Redis cache with the specified expiration time
 	err := cm.redisClient.Set(key, data, cm.exp).Err()
 	if err != nil {
+		cm.log(context.Background(), err.Error(), "error", "SetCacheByKey")
 		return goErrorHandler.OperationFailure(fmt.Sprintf("set cache by key - %s", key), err)
 	}
 	return nil
@@ -180,6 +189,7 @@ func (cm *cacheManager) SetCacheByKeys(key string, hash string, data []byte, exp
 	// Execute the pipeline to perform multiple operations in a single round trip
 	_, err := pipe.Exec()
 	if err != nil {
+		cm.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return goErrorHandler.OperationFailure("set cache", err)
 	}
 

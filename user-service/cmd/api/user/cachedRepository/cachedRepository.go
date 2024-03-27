@@ -2,6 +2,7 @@ package cachedRepository
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	appEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
@@ -74,7 +75,7 @@ func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) 
 	}
 
 	// Publish an event to RabbitMQ indicating that users were fetched
-	cr.broker.PushToQueue(ctx, constants.FetchedUsersKey, users)
+	cr.pushToQueue(ctx, constants.FetchedUsersKey, users)
 	return users, nil // Return the fetched users
 }
 
@@ -111,7 +112,7 @@ func (cr *cachedRepository) GetById(ctx context.Context, uid string) (*user.User
 	}
 
 	// Publish an event to RabbitMQ indicating that the user was fetched
-	cr.broker.PushToQueue(ctx, constants.FetchedUserKey, user)
+	cr.pushToQueue(ctx, constants.FetchedUserKey, user)
 
 	return user, nil
 }
@@ -140,7 +141,7 @@ func (cr *cachedRepository) GetByEmail(ctx context.Context, email string) (*user
 		)
 	}
 
-	cr.broker.PushToQueue(ctx, constants.FetchedUserKey, user)
+	cr.pushToQueue(ctx, constants.FetchedUserKey, user)
 	return user, nil
 }
 
@@ -168,7 +169,7 @@ func (cr *cachedRepository) CreateUser(
 	cr.clearCacheByKeys(userRootKey, usersKey)
 
 	// Publish an event to RabbitMQ indicating that the user was created
-	cr.broker.PushToQueue(ctx, constants.CreatedUserKey, createdUser)
+	cr.pushToQueue(ctx, constants.CreatedUserKey, createdUser)
 
 	// Log message indicating a new user creation. User data has been cached using both ID and EMAIL keys. Additionally, the cache for the USERS key has been reset, and an event has been generated.
 	cr.log(
@@ -202,7 +203,7 @@ func (cr *cachedRepository) UpdateUser(
 	cr.clearCacheByKey(userRootKey)
 
 	// Publish an event to RabbitMQ indicating that the user was updated
-	cr.broker.PushToQueue(ctx, constants.UpdatedUserKey, updatedUser)
+	cr.pushToQueue(ctx, constants.UpdatedUserKey, updatedUser)
 
 	// Log message indicating a new user creation. User data has been cached using both ID and EMAIL keys. Additionally, the cache for the USERS key has been reset, and an event has been generated.
 	cr.log(
@@ -235,7 +236,7 @@ func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 	cr.clearCacheByKey(userRootKey)
 
 	// Publish an event to RabbitMQ indicating that the user was deleted
-	cr.broker.PushToQueue(ctx, constants.DeletedUserKey, u)
+	cr.pushToQueue(ctx, constants.DeletedUserKey, u)
 
 	// Log message indicating a new user creation. User data has been cached using both ID and EMAIL keys. Additionally, the cache for the USERS key has been reset, and an event has been generated.
 	cr.log(
@@ -322,10 +323,12 @@ func (cr *cachedRepository) GetEmailVerificationCode(ctx context.Context, email 
 func (cr *cachedRepository) log(ctx context.Context, message, level, method string) {
 	var log appEntities.LogMessage // Create a new LogMessage struct
 	// Push log message to the message broker
-	cr.broker.PushToQueue(
+	if err := cr.broker.PushToQueue(
 		ctx,
 		constants.LogCommand, // Specify the log command constant
 		// Generate log message with provided details
 		log.GenerateLog(message, level, method, "cached repository"),
-	)
+	); err != nil {
+		fmt.Printf("[cachedRepository] Falied to push log - %v\n", err)
+	}
 }

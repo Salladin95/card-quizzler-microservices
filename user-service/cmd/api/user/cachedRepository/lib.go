@@ -1,6 +1,7 @@
 package cachedRepository
 
 import (
+	"context"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
@@ -13,14 +14,17 @@ func (cr *cachedRepository) readCacheByHashedKey(readTo interface{}, key, hashKe
 	// Retrieve the value from the Redis hash
 	val, err := cr.redisClient.HGet(key, hashKey).Result()
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return goErrorHandler.OperationFailure("read cache", err)
 	}
 
 	// Unmarshal the Redis value into the provided readTo
 	err = lib.UnmarshalData([]byte(val), readTo)
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return err
 	}
+
 	return nil
 }
 
@@ -30,12 +34,14 @@ func (cr *cachedRepository) readCacheByKey(readTo interface{}, key string) error
 	// Retrieve the value from the Redis hash
 	val, err := cr.redisClient.Get(key).Result()
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return goErrorHandler.OperationFailure("read cache", err)
 	}
 
 	// Unmarshal the Redis value into the provided readTo
 	err = lib.UnmarshalData([]byte(val), readTo)
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return err
 	}
 	return nil
@@ -49,12 +55,14 @@ func (cr *cachedRepository) setCacheByKey(key string, data interface{}) error {
 	// Marshal the data into JSON format
 	marshalledData, err := lib.MarshalData(data)
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return err
 	}
 
 	// Set the marshalled data in the Redis cache with the specified expiration time
 	err = cr.redisClient.Set(key, marshalledData, cr.exp).Err()
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return goErrorHandler.OperationFailure(fmt.Sprintf("set cache by key - %s", key), err)
 	}
 	return nil
@@ -72,6 +80,7 @@ func (cr *cachedRepository) setCacheInPipeline(key string, hash string, data int
 	// Marshal the data into JSON format
 	marshalledData, err := lib.MarshalData(data)
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return err
 	}
 
@@ -84,6 +93,7 @@ func (cr *cachedRepository) setCacheInPipeline(key string, hash string, data int
 	// Execute the pipeline to perform multiple operations in a single round trip
 	_, err = pipe.Exec()
 	if err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
 		return goErrorHandler.OperationFailure("set cache", err)
 	}
 
@@ -101,11 +111,23 @@ func (cr *cachedRepository) codeKey(email string) string {
 // clearCacheByKey drops the cache associated with the given key.
 func (cr *cachedRepository) clearCacheByKey(key string) error {
 	// Delete the cache entry using the Redis client
-	return cr.redisClient.Del(key).Err()
+	if err := cr.redisClient.Del(key).Err(); err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
+	}
+	return nil
 }
 
 // clearCacheByKey drops the cache associated with the given key.
 func (cr *cachedRepository) clearCacheByKeys(key1, key2 string) error {
 	// Delete the cache entry using the Redis client
-	return cr.redisClient.HDel(key1, key2).Err()
+	if err := cr.redisClient.HDel(key1, key2).Err(); err != nil {
+		cr.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
+	}
+	return nil
+}
+
+func (cr *cachedRepository) pushToQueue(ctx context.Context, routingKey string, data interface{}) {
+	if err := cr.broker.PushToQueue(ctx, routingKey, data); err != nil {
+		cr.log(ctx, err.Error(), "error", "pushToQueue")
+	}
 }

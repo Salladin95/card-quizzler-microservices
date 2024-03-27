@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
@@ -97,4 +99,18 @@ func (r *repo) withTransaction(fn func(tx *gorm.DB) error) error {
 		goErrorHandler.OperationFailure("commit transaction", err)
 	}
 	return nil
+}
+
+// log sends a log message to the message broker.
+func (r *repo) log(ctx context.Context, message, level, method string) {
+	var log entities.LogMessage // Create a new LogMessage struct
+	// Push log message to the message broker
+	if err := r.broker.PushToQueue(
+		ctx,
+		constants.LogCommand, // Specify the log command constant
+		// Generate log message with provided details
+		log.GenerateLog(message, level, method, "broker message subscribers"),
+	); err != nil {
+		fmt.Printf("[repo] failed to push log; Message - %s; Error - %v\n", message, err)
+	}
 }

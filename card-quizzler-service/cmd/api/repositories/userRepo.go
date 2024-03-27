@@ -45,7 +45,7 @@ func (r *repo) GetFoldersByUID(payload UidSortPayload) ([]models.Folder, error) 
 		Data:   userFolders,
 	}
 
-	r.broker.PushToQueue(payload.Ctx, constants.FetchedUserFoldersKey, data)
+	r.pushToQueue(payload.Ctx, constants.FetchedUserFoldersKey, data)
 	return userFolders, nil
 }
 
@@ -68,7 +68,7 @@ func (r *repo) GetModulesByUID(payload UidSortPayload) ([]models.Module, error) 
 		Data:   userModules,
 	}
 
-	r.broker.PushToQueue(payload.Ctx, constants.FetchedUserModulesKey, data)
+	r.pushToQueue(payload.Ctx, constants.FetchedUserModulesKey, data)
 	return userModules, nil
 }
 
@@ -105,7 +105,7 @@ func (r *repo) GetDifficultModulesByUID(ctx context.Context, uid string) ([]mode
 		newModules = append(newModules, newModule)
 	}
 
-	r.broker.PushToQueue(ctx, constants.FetchedDifficultModulesKey, newModules)
+	r.pushToQueue(ctx, constants.FetchedDifficultModulesKey, newModules)
 	return newModules, nil
 }
 

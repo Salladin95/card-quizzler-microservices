@@ -45,7 +45,7 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 		return module, goErrorHandler.OperationFailure("create module", err)
 	}
 
-	r.broker.PushToQueue(ctx, constants.CreatedModuleKey, module)
+	r.pushToQueue(ctx, constants.CreatedModuleKey, module)
 
 	// Return the created module
 	return module, nil
@@ -110,7 +110,7 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 		return module, err
 	}
 
-	r.broker.PushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
+	r.pushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
 	// Execute the update function within a transaction
 	return module, nil
 }
@@ -140,7 +140,7 @@ func (r *repo) UpdateTerms(ctx context.Context, terms []models.Term) error {
 		}
 
 		for _, module := range modules {
-			r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+			r.pushToQueue(ctx, constants.MutatedModuleKey, module)
 		}
 
 		return nil
@@ -173,7 +173,7 @@ func (r *repo) UpdateTerm(ctx context.Context, updateTermDTO entities.UpdateTerm
 		if err := tx.Find(&module, term.ModuleID).Error; err != nil {
 			return goErrorHandler.OperationFailure("get module", err)
 		}
-		r.broker.PushToQueue(ctx, constants.MutatedModuleKey, module)
+		r.pushToQueue(ctx, constants.MutatedModuleKey, module)
 		return nil
 	})
 }
@@ -205,7 +205,7 @@ func (r *repo) GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, 
 		return module, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
-	r.broker.PushToQueue(ctx, constants.FetchedModuleKey, module)
+	r.pushToQueue(ctx, constants.FetchedModuleKey, module)
 	// If no error occurred, return the retrieved module
 	return module, nil
 }
@@ -239,8 +239,8 @@ func (r *repo) AddModuleToFolder(payload FolderModuleAssociation) error {
 	}); err != nil {
 		return err
 	}
-	r.broker.PushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
-	r.broker.PushToQueue(payload.Ctx, constants.MutatedFolderKey, models.Folder{ID: payload.FolderID, UserID: module.UserID})
+	r.pushToQueue(payload.Ctx, constants.MutatedModuleKey, module)
+	r.pushToQueue(payload.Ctx, constants.MutatedFolderKey, models.Folder{ID: payload.FolderID, UserID: module.UserID})
 	return nil
 }
 
@@ -271,6 +271,6 @@ func (r *repo) DeleteModule(ctx context.Context, id uuid.UUID) error {
 	}); err != nil {
 		return err
 	}
-	r.broker.PushToQueue(ctx, constants.DeletedModuleKey, module)
+	r.pushToQueue(ctx, constants.DeletedModuleKey, module)
 	return nil
 }
