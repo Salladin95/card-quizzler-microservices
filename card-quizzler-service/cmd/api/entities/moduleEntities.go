@@ -9,6 +9,7 @@ import (
 type CreateModuleDto struct {
 	Title  string          `json:"title" validate:"required"`
 	UserID string          `json:"userID" validate:"required"`
+	IsOpen bool            `json:"isOpen" validate:"omitempty"`
 	Terms  []CreateTermDto `json:"terms" validate:"required"`
 }
 
@@ -30,6 +31,7 @@ func (dto *CreateModuleDto) ToModel() (models.Module, error) {
 		ID:      id,
 		Title:   dto.Title,
 		UserID:  dto.UserID,
+		IsOpen:  dto.IsOpen,
 		Folders: []models.Folder{},
 	}
 
@@ -68,38 +70,33 @@ func (dto *CreateTermDto) ToModel(moduleID uuid.UUID) (models.Term, error) {
 
 type UpdateModuleDto struct {
 	Title        string          `json:"title" validate:"omitempty"`
+	IsOpen       bool            `json:"isOpen" validate:"omitempty"`
 	NewTerms     []CreateTermDto `json:"newTerms" validate:"omitempty"`
 	UpdatedTerms []models.Term   `json:"updatedTerms" validate:"omitempty"`
-}
-
-type parsedUpdateModuleDto struct {
-	Title    string `json:"title" validate:"omitempty"`
-	NewTerms []models.Term
 }
 
 func (dto *UpdateModuleDto) Verify() error {
 	return lib.Verify(dto)
 }
 
-func (dto *UpdateModuleDto) ToModels(moduleID uuid.UUID) (parsedUpdateModuleDto, error) {
-	var models parsedUpdateModuleDto
+// JoinTerms parses newTerms and joins them with updatedTerms
+func (dto *UpdateModuleDto) JoinTerms(moduleID uuid.UUID) ([]models.Term, error) {
+	var newTerms []models.Term
 	if err := dto.Verify(); err != nil {
-		return models, err
+		return newTerms, err
 	}
-
-	models.Title = dto.Title
 
 	for _, v := range dto.NewTerms {
 		model, err := v.ToModel(moduleID)
 		if err != nil {
-			return models, err
+			return newTerms, err
 		}
-		models.NewTerms = append(models.NewTerms, model)
+		newTerms = append(newTerms, model)
 	}
 
-	models.NewTerms = append(models.NewTerms, dto.UpdatedTerms...)
+	newTerms = append(newTerms, dto.UpdatedTerms...)
 
-	return models, nil
+	return newTerms, nil
 }
 
 type UpdateTermDto struct {

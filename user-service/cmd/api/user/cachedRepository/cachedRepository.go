@@ -2,7 +2,6 @@ package cachedRepository
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	appEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
@@ -65,13 +64,6 @@ func (cr *cachedRepository) GetUsers(ctx context.Context) ([]*user.User, error) 
 
 		// Cache the fetched users
 		cr.setCacheInPipeline(userRootKey, usersKey, users)
-		// Log message indicating users were retrieved from the repository and cached
-		cr.log(
-			ctx,
-			"users retrieved from repository and cached",
-			"info",
-			"GetUsers",
-		)
 	}
 
 	// Publish an event to RabbitMQ indicating that users were fetched
@@ -102,13 +94,6 @@ func (cr *cachedRepository) GetById(ctx context.Context, uid string) (*user.User
 		cr.setCacheInPipeline(userRootKey, cr.userHashKey(uid), user)
 		cr.setCacheInPipeline(userRootKey, cr.userHashKey(user.Email), user)
 
-		// Log message indicating user was retrieved from the repository and cached
-		cr.log(
-			ctx,
-			"user retrieved from repository and cached",
-			"info",
-			"GetById",
-		)
 	}
 
 	// Publish an event to RabbitMQ indicating that the user was fetched
@@ -132,13 +117,6 @@ func (cr *cachedRepository) GetByEmail(ctx context.Context, email string) (*user
 		cr.setCacheInPipeline(userRootKey, cr.userHashKey(user.ID.String()), user)
 		cr.setCacheInPipeline(userRootKey, cr.userHashKey(user.Email), user)
 
-		// Log message indicating user was retrieved from the repository and cached
-		cr.log(
-			ctx,
-			"user retrieved from repository and cached",
-			"info",
-			"GetByEmail",
-		)
 	}
 
 	cr.pushToQueue(ctx, constants.FetchedUserKey, user)
@@ -171,14 +149,6 @@ func (cr *cachedRepository) CreateUser(
 	// Publish an event to RabbitMQ indicating that the user was created
 	cr.pushToQueue(ctx, constants.CreatedUserKey, createdUser)
 
-	// Log message indicating a new user creation. User data has been cached using both ID and EMAIL keys. Additionally, the cache for the USERS key has been reset, and an event has been generated.
-	cr.log(
-		ctx,
-		"New user created. User data cached by ID & EMAIL. Cache reset for USERS key. Event generated.",
-		"info",
-		"CreateUser",
-	)
-
 	return createdUser, nil // Return the newly created user
 }
 
@@ -205,14 +175,6 @@ func (cr *cachedRepository) UpdateUser(
 	// Publish an event to RabbitMQ indicating that the user was updated
 	cr.pushToQueue(ctx, constants.UpdatedUserKey, updatedUser)
 
-	// Log message indicating a new user creation. User data has been cached using both ID and EMAIL keys. Additionally, the cache for the USERS key has been reset, and an event has been generated.
-	cr.log(
-		ctx,
-		"User updated. User cache updated for keys ID & EMAIL. Cache reset for USERS key. Event generated.",
-		"info",
-		"UpdateEmail",
-	)
-
 	return updatedUser, nil
 }
 
@@ -238,13 +200,6 @@ func (cr *cachedRepository) DeleteUser(ctx context.Context, uid string) error {
 	// Publish an event to RabbitMQ indicating that the user was deleted
 	cr.pushToQueue(ctx, constants.DeletedUserKey, u)
 
-	// Log message indicating a new user creation. User data has been cached using both ID and EMAIL keys. Additionally, the cache for the USERS key has been reset, and an event has been generated.
-	cr.log(
-		ctx,
-		"User deleted. User cache reset for keys ID, EMAIL, USERS. Event generated.",
-		"info",
-		"DeleteUser",
-	)
 	return nil
 }
 
@@ -263,7 +218,6 @@ func (cr *cachedRepository) SetEmailVerificationCode(ctx context.Context, payloa
 	// Verify email code
 	err = emailCode.Verify()
 	if err != nil {
-		cr.log(ctx, err.Error(), "error", "SetEmailVerificationCode")
 		return err
 	}
 
@@ -271,17 +225,8 @@ func (cr *cachedRepository) SetEmailVerificationCode(ctx context.Context, payloa
 	err = cr.redisClient.Set(cr.codeKey(emailCode.Email), payload, 2*time.Minute).Err()
 
 	if err != nil {
-		cr.log(ctx, err.Error(), "error", "SetEmailVerificationCode")
 		return goErrorHandler.OperationFailure("set cache", err)
 	}
-
-	// Log action
-	cr.log(
-		ctx,
-		"Email verification code is saved to cache",
-		"info",
-		"SetEmailVerificationCode",
-	)
 
 	return nil
 }
@@ -297,38 +242,14 @@ func (cr *cachedRepository) GetEmailVerificationCode(ctx context.Context, email 
 	// Read email code from cache
 	err := cr.readCacheByKey(&emailCode, cr.codeKey(email))
 	if err != nil {
-		cr.log(ctx, err.Error(), "error", "GetEmailVerificationCode")
 		return nil, err
 	}
 
 	// Verify email code
 	err = emailCode.Verify()
 	if err != nil {
-		cr.log(ctx, err.Error(), "error", "GetEmailVerificationCode")
 		return nil, err
 	}
 
-	// Log action
-	cr.log(
-		ctx,
-		"Email verification code has been extracted from cache",
-		"info",
-		"SetEmailVerificationCode",
-	)
-
 	return &emailCode, nil
-}
-
-// log sends a log message to the message broker.
-func (cr *cachedRepository) log(ctx context.Context, message, level, method string) {
-	var log appEntities.LogMessage // Create a new LogMessage struct
-	// Push log message to the message broker
-	if err := cr.broker.PushToQueue(
-		ctx,
-		constants.LogCommand, // Specify the log command constant
-		// Generate log message with provided details
-		log.GenerateLog(message, level, method, "cached repository"),
-	); err != nil {
-		fmt.Printf("[cachedRepository] Falied to push log - %v\n", err)
-	}
 }

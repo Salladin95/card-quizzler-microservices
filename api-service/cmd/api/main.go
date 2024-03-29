@@ -6,16 +6,21 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/server"
 	"github.com/Salladin95/rmqtools"
-	"log"
+	"log/slog"
 	"os"
 )
+
+func init() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+}
 
 // main is the entry point of the application.
 func main() {
 	// Load application configuration.
 	cfg, err := config.NewConfig()
 	if err != nil {
-		log.Println(err)
+		lib.LogError(err)
 		os.Exit(1)
 	}
 

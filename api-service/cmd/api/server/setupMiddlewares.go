@@ -2,13 +2,12 @@ package server
 
 import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/middlewares"
-	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 // setupMiddlewares configures and adds middlewares to the Echo server.
-func (app *App) setupMiddlewares(broker rmqtools.MessageBroker) {
+func (app *App) setupMiddlewares() {
 	// Configure CORS middleware to control cross-origin resource sharing.
 	app.server.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		// TODO: FIX IN PRODUCTION - AllowOrigins should be limited to specific domains.
@@ -26,5 +25,5 @@ func (app *App) setupMiddlewares(broker rmqtools.MessageBroker) {
 	}))
 	app.server.Use(middlewares.MetricsMiddleware)
 	// Use the custom HTTP error handler middleware.
-	app.server.Use(middlewares.HttpErrorHandler(broker))
+	app.server.Use(middlewares.HttpErrorHandler())
 }

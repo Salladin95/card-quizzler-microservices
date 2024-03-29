@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS folders (
     title VARCHAR(255) UNIQUE NOT NULL,
     user_id VARCHAR(255) REFERENCES users(id),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_open BOOLEAN DEFAULT FALSE
 );
 
 -- Create the modules table
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS modules (
     title VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) REFERENCES users(id),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_open BOOLEAN DEFAULT FALSE
 );
 
 -- Create the module_folders junction table

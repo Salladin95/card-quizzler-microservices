@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
@@ -87,7 +86,7 @@ func (cm *cacheManager) Exp() time.Duration {
 // ClearUserRelatedCache drops user related cache
 func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
 	if err := cm.redisClient.Del(cm.UserHashKey(uid)).Err(); err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKeys")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure("delete cache", err)
 	}
 	return nil
@@ -96,7 +95,7 @@ func (cm *cacheManager) ClearUserRelatedCache(uid string) error {
 // ClearCacheByKeys drops specified cache
 func (cm *cacheManager) ClearCacheByKeys(key string, key2 string) error {
 	if err := cm.redisClient.HDel(key, key2).Err(); err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ClearCacheByKeys")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure("clear cache", err)
 	}
 	return nil
@@ -105,7 +104,7 @@ func (cm *cacheManager) ClearCacheByKeys(key string, key2 string) error {
 // ClearCacheByKey drops specified cache
 func (cm *cacheManager) ClearCacheByKey(key string) error {
 	if err := cm.redisClient.Del(key).Err(); err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ClearCacheByKeys")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure("clear cache", err)
 	}
 	return nil
@@ -123,7 +122,7 @@ func (cm *cacheManager) ReadCacheByKeys(readTo interface{}, key, hashKey string)
 	// Retrieve the value from the Redis hash
 	val, err := cm.redisClient.HGet(key, hashKey).Result()
 	if err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKeys")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure("ReadCacheByKey", err)
 	}
 
@@ -131,7 +130,7 @@ func (cm *cacheManager) ReadCacheByKeys(readTo interface{}, key, hashKey string)
 	err = lib.UnmarshalData([]byte(val), readTo)
 
 	if err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKeys")
+		lib.LogError(err)
 		return err
 	}
 
@@ -144,14 +143,14 @@ func (cm *cacheManager) ReadCacheByKey(readTo interface{}, key string) error {
 	// Retrieve the value from the Redis hash
 	val, err := cm.redisClient.Get(key).Result()
 	if err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKey")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure("read cache", err)
 	}
 
 	// Unmarshal the Redis value into the provided readTo
 	err = lib.UnmarshalData([]byte(val), readTo)
 	if err != nil {
-		cm.log(context.Background(), err.Error(), "error", "ReadCacheByKey")
+		lib.LogError(err)
 		return err
 	}
 
@@ -166,7 +165,7 @@ func (cm *cacheManager) SetCacheByKey(key string, data []byte) error {
 	// Set the marshalled data in the Redis cache with the specified expiration time
 	err := cm.redisClient.Set(key, data, cm.exp).Err()
 	if err != nil {
-		cm.log(context.Background(), err.Error(), "error", "SetCacheByKey")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure(fmt.Sprintf("set cache by key - %s", key), err)
 	}
 	return nil
@@ -189,22 +188,9 @@ func (cm *cacheManager) SetCacheByKeys(key string, hash string, data []byte, exp
 	// Execute the pipeline to perform multiple operations in a single round trip
 	_, err := pipe.Exec()
 	if err != nil {
-		cm.log(context.Background(), err.Error(), "error", "SetCacheByKeys")
+		lib.LogError(err)
 		return goErrorHandler.OperationFailure("set cache", err)
 	}
 
 	return nil
-}
-
-// log sends a log message to the message broker.
-func (cm *cacheManager) log(ctx context.Context, message, level, method string) {
-	var log entities.LogMessage
-
-	// Push log message to the message broker
-	cm.broker.PushToQueue(
-		ctx,
-		constants.LogCommand, // Specify the log command constant
-		// Generate log message with provided details
-		log.GenerateLog(message, level, method, "cache manager"),
-	)
 }

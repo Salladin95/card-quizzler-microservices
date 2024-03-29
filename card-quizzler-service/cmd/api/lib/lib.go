@@ -5,6 +5,7 @@ import (
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"log/slog"
 )
 
 // DataWithVerify is an interface that requires a Verify method.
@@ -59,4 +60,12 @@ func MarshalData(data interface{}) ([]byte, error) {
 		return nil, goErrorHandler.OperationFailure("marshal data", err)
 	}
 	return marshalledData, nil
+}
+
+func LogError(msg string, args ...any) {
+	slog.Error(msg, args...)
+}
+
+func LogInfo(msg string, args ...any) {
+	slog.Info(msg, args...)
 }

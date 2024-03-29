@@ -14,7 +14,7 @@ import (
 
 func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetUserFolders")
+	logRequest(c)
 
 	limit := ParseInt(c.QueryParam("limit"), foldersDefaultLimit)
 	page := ParseInt(c.QueryParam("page"), 1)
@@ -43,7 +43,6 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	)
 
 	if err == nil {
-		ah.log(ctx, "retrieved from cache", "info", "GetUserFolders")
 		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested folders", Data: folders})
 	}
 
@@ -72,9 +71,46 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	return handleGRPCResponse(c, response, unmarshalTo)
 }
 
+func (ah *apiHandlers) GetOpenFolders(c echo.Context) error {
+	ctx := c.Request().Context()
+	logRequest(c)
+
+	limit := ParseInt(c.QueryParam("limit"), foldersDefaultLimit)
+	page := ParseInt(c.QueryParam("page"), 1)
+	sortBy := ParseSortBy(
+		c.QueryParam("sortBy"),
+		"asc",
+		"created_at",
+		FolderKeysMap,
+	)
+
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	// Make a gRPC call to the SignIn method of the Auth service
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		GetOpenFolders(ctx, &quizService.GetOpenFoldersRequest{
+			Payload: &quizService.SortOptions{
+				Limit:  limit,
+				Page:   page,
+				SortBy: sortBy,
+			},
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("GetOpenFolders", err)
+	}
+	var unmarshalTo []entities.Folder
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
 func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetFolderByID")
+	logRequest(c)
 
 	id := c.Param("id")
 
@@ -95,7 +131,6 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 	)
 
 	if err == nil {
-		ah.log(ctx, "retrieved from cache", "info", "GetFolderByID")
 		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested folder", Data: folder})
 	}
 
@@ -118,7 +153,7 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 
 func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetUserModules")
+	logRequest(c)
 
 	limit := ParseInt(c.QueryParam("limit"), modulesDefaultLimit)
 	page := ParseInt(c.QueryParam("page"), 1)
@@ -173,9 +208,45 @@ func (ah *apiHandlers) GetUserModules(c echo.Context) error {
 	return handleGRPCResponse(c, response, unmarshalTo)
 }
 
+func (ah *apiHandlers) GetOpenModules(c echo.Context) error {
+	ctx := c.Request().Context()
+	logRequest(c)
+
+	limit := ParseInt(c.QueryParam("limit"), foldersDefaultLimit)
+	page := ParseInt(c.QueryParam("page"), 1)
+	sortBy := ParseSortBy(
+		c.QueryParam("sortBy"),
+		"asc",
+		"created_at",
+		FolderKeysMap,
+	)
+
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	// Make a gRPC call to the SignIn method of the Auth service
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		GetOpenModules(ctx, &quizService.GetOpenModulesRequest{
+			Payload: &quizService.SortOptions{
+				Limit:  limit,
+				Page:   page,
+				SortBy: sortBy,
+			},
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("GetOpenModules", err)
+	}
+	var unmarshalTo []entities.Module
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
 func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetModuleByID")
 
 	id := c.Param("id")
 
@@ -219,7 +290,7 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 
 func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetDifficultModules")
+	logRequest(c)
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*lib.JwtUserClaims)
@@ -262,7 +333,7 @@ func (ah *apiHandlers) GetDifficultModules(c echo.Context) error {
 
 func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "ProcessQuizResult")
+	logRequest(c)
 
 	var dto entities.QuizResultDto
 	if err := lib.BindBody(c, &dto); err != nil {
@@ -296,7 +367,7 @@ func (ah *apiHandlers) ProcessQuizResult(c echo.Context) error {
 
 func (ah *apiHandlers) CreateFolder(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "CreateFolder")
+	logRequest(c)
 
 	var dto entities.CreateFolderDto
 	if err := lib.BindBody(c, &dto); err != nil {
@@ -326,6 +397,7 @@ func (ah *apiHandlers) CreateFolder(c echo.Context) error {
 			Payload: &quizService.CreateFolderPayload{
 				Title:  dto.Title,
 				UserID: uid,
+				IsOpen: dto.IsOpen,
 			},
 		})
 	if err != nil {
@@ -337,7 +409,7 @@ func (ah *apiHandlers) CreateFolder(c echo.Context) error {
 
 func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "UpdateFolder")
+	logRequest(c)
 
 	id := c.Param("id")
 
@@ -359,6 +431,7 @@ func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 			Payload: &quizService.UpdateFolderPayload{
 				Title:    dto.Title,
 				FolderID: id,
+				IsOpen:   dto.IsOpen,
 			},
 		})
 	if err != nil {
@@ -370,7 +443,7 @@ func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 
 func (ah *apiHandlers) AddFolderToUser(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "AddFolderToUser")
+	logRequest(c)
 
 	folderID := c.QueryParam("folderID")
 	userID := c.QueryParam("userID")
@@ -396,7 +469,7 @@ func (ah *apiHandlers) AddFolderToUser(c echo.Context) error {
 
 func (ah *apiHandlers) AddModuleToFolder(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "AddModuleToFolder")
+	logRequest(c)
 
 	folderID := c.QueryParam("folderID")
 	moduleID := c.QueryParam("moduleID")
@@ -422,7 +495,7 @@ func (ah *apiHandlers) AddModuleToFolder(c echo.Context) error {
 
 func (ah *apiHandlers) DeleteFolder(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "DeleteFolder")
+	logRequest(c)
 
 	id := c.Param("id")
 
@@ -445,7 +518,7 @@ func (ah *apiHandlers) DeleteFolder(c echo.Context) error {
 
 func (ah *apiHandlers) DeleteModuleFromFolder(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "DeleteModuleFromFolder")
+	logRequest(c)
 
 	// Retrieve the folderID and moduleID query parameters
 	folderID := c.QueryParam("folderID")
@@ -471,7 +544,7 @@ func (ah *apiHandlers) DeleteModuleFromFolder(c echo.Context) error {
 
 func (ah *apiHandlers) CreateModule(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "CreateModule")
+	logRequest(c)
 
 	var dto entities.CreateModuleDto
 	if err := lib.BindBody(c, &dto); err != nil {
@@ -507,6 +580,7 @@ func (ah *apiHandlers) CreateModule(c echo.Context) error {
 				Title:  dto.Title,
 				UserID: uid,
 				Terms:  terms,
+				IsOpen: dto.IsOpen,
 			},
 		})
 	if err != nil {
@@ -518,7 +592,7 @@ func (ah *apiHandlers) CreateModule(c echo.Context) error {
 
 func (ah *apiHandlers) CreateModuleInFolder(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "CreateModuleInFolder")
+	logRequest(c)
 
 	folderID := c.Param("id")
 
@@ -568,7 +642,7 @@ func (ah *apiHandlers) CreateModuleInFolder(c echo.Context) error {
 
 func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "UpdateModule")
+	logRequest(c)
 
 	var dto entities.UpdateModuleDto
 	if err := lib.BindBody(c, &dto); err != nil {
@@ -602,6 +676,7 @@ func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 				UpdatedTerms: updatedTerms,
 				NewTerms:     newTerms,
 				Id:           id,
+				IsOpen:       dto.IsOpen,
 			},
 		})
 	if err != nil {
@@ -613,7 +688,7 @@ func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 
 func (ah *apiHandlers) AddModuleToUser(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "AddModuleToUser")
+	logRequest(c)
 
 	moduleID := c.QueryParam("moduleID")
 	userID := c.QueryParam("userID")
@@ -638,7 +713,7 @@ func (ah *apiHandlers) AddModuleToUser(c echo.Context) error {
 
 func (ah *apiHandlers) DeleteModule(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "DeleteModule")
+	logRequest(c)
 
 	id := c.Param("id")
 
@@ -661,7 +736,7 @@ func (ah *apiHandlers) DeleteModule(c echo.Context) error {
 
 func (ah *apiHandlers) UpdateTerm(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "UpdateTerm")
+	logRequest(c)
 
 	id := c.Param("id")
 

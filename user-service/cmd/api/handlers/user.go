@@ -11,7 +11,7 @@ import (
 // GetUserById retrieves a user based on the provided user ID.
 func (us *UserServer) GetUserById(ctx context.Context, req *userService.RequestWithID) (*userService.Response, error) {
 	// Log a message indicating the start of processing the GetUserById request
-	us.log(ctx, "start processing GetUserById request", "info", "GetUserById")
+	lib.LogInfo("[GetUserById] start processing request")
 
 	// Extract the user ID from the request
 	id := req.GetId()
@@ -30,7 +30,7 @@ func (us *UserServer) GetUserById(ctx context.Context, req *userService.RequestW
 // GetUserByEmail retrieves a user based on the provided email.
 func (us *UserServer) GetUserByEmail(ctx context.Context, req *userService.RequestWithEmail) (*userService.Response, error) {
 	// Print a message indicating the start of processing the GetUserByEmail request
-	us.log(ctx, "start processing GetUserByEmail request", "info", "GetUserByEmail")
+	lib.LogInfo("[GetUserByEmail] start processing request")
 
 	// Extract the email from the request
 	email := req.GetEmail()
@@ -52,7 +52,7 @@ func (us *UserServer) UpdateEmail(
 	req *userService.UpdateEmailRequest,
 ) (*userService.Response, error) {
 	// Print a message indicating the start of processing the update user request
-	us.log(ctx, "start processing UpdateEmail request", "info", "UpdateEmail")
+	lib.LogInfo("[UpdateEmail] start processing request")
 
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
@@ -115,7 +115,7 @@ func (us *UserServer) UpdatePassword(
 	req *userService.UpdatePasswordRequest,
 ) (*userService.Response, error) {
 	// Print a message indicating the start of processing the update user request
-	us.log(ctx, "start processing UpdatePassword request", "info", "UpdatePassword")
+	lib.LogInfo("[UpdatePassword] start processing request")
 
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
@@ -173,7 +173,7 @@ func (us *UserServer) ResetPassword(
 	req *userService.ResetPasswordRequest,
 ) (*userService.Response, error) {
 	// Print a message indicating the start of processing the update user request
-	us.log(ctx, "start processing ResetPassword request", "info", "ResetPassword")
+	lib.LogInfo("[ResetPassword] start processing request")
 
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
@@ -235,7 +235,7 @@ func (us *UserServer) ResetPassword(
 // DeleteUser deletes a user based on the provided user ID.
 func (us *UserServer) DeleteUser(ctx context.Context, req *userService.RequestWithID) (*userService.Response, error) {
 	// Print a message indicating the start of processing the DeleteUser request.
-	us.log(ctx, "start processing DeleteUser request", "info", "DeleteUser")
+	lib.LogInfo("[DeleteUser] start processing request")
 
 	// Extract the user ID from the request.
 	id := req.GetId()

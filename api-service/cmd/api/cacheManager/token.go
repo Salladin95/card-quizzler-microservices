@@ -11,6 +11,7 @@ func (cm *cacheManager) AccessToken(uid string) (string, error) {
 	var tokenPair entities.TokenPair
 	err := cm.ReadCacheByKeys(&tokenPair, cm.UserHashKey(uid), TokensKey)
 	if err != nil {
+		lib.LogError(err)
 		return "", goErrorHandler.OperationFailure("get access token from cache", err)
 	}
 	return tokenPair.AccessToken, nil
@@ -21,6 +22,7 @@ func (cm *cacheManager) RefreshToken(uid string) (string, error) {
 	var tokenPair entities.TokenPair
 	err := cm.ReadCacheByKeys(&tokenPair, cm.UserHashKey(uid), TokensKey)
 	if err != nil {
+		lib.LogError(err)
 		return "", goErrorHandler.OperationFailure("get refresh token from cache", err)
 	}
 	return tokenPair.RefreshToken, nil
@@ -32,8 +34,12 @@ func (cm *cacheManager) SetTokenPair(uid string, tokenPair *entities.TokenPair) 
 	// set refresh token exp time, because it's lives longer than access token exp time
 	parsedData, err := lib.MarshalData(tokenPair)
 	if err != nil {
+		lib.LogError(err)
 		return err
 	}
-	err = cm.SetCacheByKeys(cm.UserHashKey(uid), TokensKey, parsedData, cm.cfg.JwtCfg.RefreshTokenExpTime)
-	return err
+	if err := cm.SetCacheByKeys(cm.UserHashKey(uid), TokensKey, parsedData, cm.cfg.JwtCfg.RefreshTokenExpTime); err != nil {
+		lib.LogError(err)
+		return err
+	}
+	return nil
 }

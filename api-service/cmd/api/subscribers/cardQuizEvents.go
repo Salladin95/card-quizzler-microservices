@@ -1,7 +1,6 @@
 package subscribers
 
 import (
-	"context"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
@@ -28,13 +27,11 @@ type modulesDto struct {
 // cardQuizEventHandler is a callback function to handle user-related events received from RabbitMQ.
 // It processes each event based on the Key and performs corresponding actions.
 func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
-	ctx := context.Background()
-
-	s.log(ctx, fmt.Sprintf("start processing Key - %s", key), "info", "cardQuizEventHandler")
+	lib.LogInfo(fmt.Sprintf("[cardQuizEventHandler] Start processing Key - %s", key))
 
 	var user userReference
 	if err := lib.UnmarshalData(payload, &user); err != nil {
-		s.log(ctx, "failed to unmarshall payload to extract userID", "error", "cardQuizEventHandler")
+		lib.LogError(fmt.Errorf("[cardQuizEventHandler] Failed to unmarshall payload to extract userID"))
 		return
 	}
 
@@ -42,12 +39,12 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 	case constants.FetchUserFoldersKey:
 		var dto foldersDto
 		if err := lib.UnmarshalData(payload, &dto); err != nil {
-			s.log(ctx, err.Error(), "error", "cardQuizEventHandler")
+			lib.LogError(err)
 			return
 		}
 		marshalledData, err := lib.MarshalData(dto.Data)
 		if err != nil {
-			s.log(ctx, err.Error(), "error", "cardQuizEventHandler")
+			lib.LogError(err)
 			return
 		}
 
@@ -58,20 +55,16 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 			marshalledData,
 			s.cacheManager.Exp(),
 		)
-		s.log(
-			ctx,
-			"fetched folders case",
-			"info",
-			"cardQuizEventHandler",
-		)
 
 	case constants.FetchedUserModulesKey:
 		var dto modulesDto
 		if err := lib.UnmarshalData(payload, &dto); err != nil {
+			lib.LogError(err)
 			return
 		}
 		marshalledData, err := lib.MarshalData(dto.Data)
 		if err != nil {
+			lib.LogError(err)
 			return
 		}
 		// Clear the cache for the folders
@@ -81,17 +74,7 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 			marshalledData,
 			s.cacheManager.Exp(),
 		)
-		s.log(
-			ctx,
-			"fetched modules case",
-			"info",
-			"cardQuizEventHandler",
-		)
 	case constants.FetchedDifficultModulesKey:
-		var modules []entities.Module
-		if err := lib.UnmarshalData(payload, &modules); err != nil {
-			return
-		}
 		// Clear the cache for the folders
 		s.cacheManager.SetCacheByKeys(
 			cacheManager.ModulesKey(user.UserID),
@@ -99,15 +82,10 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 			payload,
 			s.cacheManager.Exp(),
 		)
-		s.log(
-			ctx,
-			"fetched difficult modules case",
-			"info",
-			"cardQuizEventHandler",
-		)
 	case constants.FetchedFolderKey:
 		var folder entities.Folder
 		if err := lib.UnmarshalData(payload, &folder); err != nil {
+			lib.LogError(err)
 			return
 		}
 		// Clear the cache for the folder
@@ -117,16 +95,11 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 			payload,
 			s.cacheManager.Exp(),
 		)
-		s.log(
-			ctx,
-			"fetched folder case",
-			"info",
-			"cardQuizEventHandler",
-		)
 
 	case constants.FetchedModuleKey:
 		var module entities.Module
 		if err := lib.UnmarshalData(payload, &module); err != nil {
+			lib.LogError(err)
 			return
 		}
 		// Clear the cache for the folders
@@ -136,22 +109,10 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 			payload,
 			s.cacheManager.Exp(),
 		)
-		s.log(
-			ctx,
-			"fetched module case",
-			"info",
-			"cardQuizEventHandler",
-		)
 	case constants.CreatedFolderKey:
 		// Clear the cache for the folders
 		s.cacheManager.ClearCacheByKey(
 			cacheManager.FoldersKey(user.UserID),
-		)
-		s.log(
-			ctx,
-			"new folder case, clearing cache for folders",
-			"info",
-			"cardQuizEventHandler",
 		)
 
 	case constants.CreatedModuleKey:
@@ -159,43 +120,38 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 		s.cacheManager.ClearCacheByKey(
 			cacheManager.ModulesKey(user.UserID),
 		)
-		s.log(
-			ctx,
-			"new module case, clearing cache for modules",
-			"info",
-			"cardQuizEventHandler",
-		)
 
 	case constants.MutatedFolderKey, constants.DeletedFolderKey:
 		// Clear the cache for the folders
 		var folder entities.Folder
 		if err := lib.UnmarshalData(payload, &folder); err != nil {
+			lib.LogError(err)
 			return
 		}
-		if err := s.cacheManager.ClearCacheByKey(
+		s.cacheManager.ClearCacheByKey(
 			cacheManager.FoldersKey(user.UserID),
-		); err != nil {
-			return
-		}
-		if err := s.cacheManager.ClearCacheByKeys(
+		)
+		s.cacheManager.ClearCacheByKeys(
 			cacheManager.FolderKey(user.UserID),
 			cacheManager.FolderKey(folder.ID.String()),
-		); err != nil {
-			return
-		}
-		s.log(
-			ctx,
-			"[mutated, deleted] folder case, clearing cache for folders",
-			"info",
-			"cardQuizEventHandler",
 		)
 
 	case constants.MutatedModuleKey, constants.DeletedModuleKey:
 		// Clear the cache for the folders
 		var module entities.Module
 		if err := lib.UnmarshalData(payload, &module); err != nil {
+			lib.LogError(err)
 			return
 		}
+
+		s.cacheManager.ClearCacheByKey(
+			cacheManager.ModulesKey(user.UserID),
+		)
+
+		s.cacheManager.ClearCacheByKeys(
+			cacheManager.ModuleKey(user.UserID),
+			cacheManager.ModuleKey(module.ID.String()),
+		)
 
 		// if module has folders, clean there cache as well
 		var foldersIDS []string
@@ -204,46 +160,18 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 		}
 
 		if len(foldersIDS) > 0 {
-			if err := s.cacheManager.ClearCacheByKey(
+			s.cacheManager.ClearCacheByKey(
 				cacheManager.FoldersKey(user.UserID),
-			); err != nil {
-				return
-			}
+			)
 			for _, folderID := range foldersIDS {
-				if err := s.cacheManager.ClearCacheByKeys(
+				s.cacheManager.ClearCacheByKeys(
 					cacheManager.FolderKey(user.UserID),
 					cacheManager.FolderKey(folderID),
-				); err != nil {
-					return
-				}
+				)
 			}
 
 		}
-		if err := s.cacheManager.ClearCacheByKey(
-			cacheManager.ModulesKey(user.UserID),
-		); err != nil {
-			return
-		}
-
-		if err := s.cacheManager.ClearCacheByKeys(
-			cacheManager.ModuleKey(user.UserID),
-			cacheManager.ModuleKey(module.ID.String()),
-		); err != nil {
-			return
-		}
-
-		s.log(
-			ctx,
-			"[mutated, deleted] module case, clearing cache for modules",
-			"info",
-			"cardQuizEventHandler",
-		)
 	default:
-		s.log(
-			ctx,
-			"unknown case",
-			"error",
-			"cardQuizEventHandler",
-		)
+		lib.LogInfo("unknown case")
 	}
 }

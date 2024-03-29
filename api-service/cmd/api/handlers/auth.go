@@ -13,8 +13,7 @@ import (
 // SignIn handles the HTTP request for user sign-in.
 func (ah *apiHandlers) SignIn(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "signIn")
-
+	logRequest(c)
 	// Parse the request body into SignInDto
 	var signInDTO entities.SignInDto
 	if err := lib.BindBodyAndVerify(c, &signInDTO); err != nil {
@@ -79,7 +78,7 @@ func (ah *apiHandlers) SignIn(c echo.Context) error {
 // SignUp handles the HTTP request for user sign-up.
 func (ah *apiHandlers) SignUp(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "signUp")
+	logRequest(c)
 
 	// Parse the request body into SignUpDto
 	var signUpDTO entities.SignUpDto
@@ -123,8 +122,7 @@ func (ah *apiHandlers) SignUp(c echo.Context) error {
 
 // Refresh handles the HTTP request for token refresh.
 func (ah *apiHandlers) Refresh(c echo.Context) error {
-	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "refresh")
+	logRequest(c)
 
 	// Extract the refresh token from the request
 	refreshToken, err := lib.ExtractRefreshToken(c)
@@ -137,11 +135,8 @@ func (ah *apiHandlers) Refresh(c echo.Context) error {
 	if err != nil {
 		lib.ClearCookies(c)
 		ah.cacheManager.ClearUserRelatedCache(claims.Id)
-		ah.log(
-			ctx,
-			fmt.Sprintf("clearing cookies and session. Err - %s", err.Error()),
-			"error",
-			"refresh",
+		lib.LogError(
+			fmt.Errorf("clearing cookies and session. Err - %s", err.Error()),
 		)
 		return err
 	}
@@ -151,12 +146,8 @@ func (ah *apiHandlers) Refresh(c echo.Context) error {
 
 	// Compare tokens
 	if err != nil || cachedRefreshToken != refreshToken {
-		ah.log(
-			ctx,
-
-			"Received token and token from cache don't match. Clearing cache & session",
-			"error",
-			"refresh",
+		lib.LogError(
+			fmt.Errorf("received token and token from cache don't match. Clearing cache & session"),
 		)
 		lib.ClearCookies(c)
 		ah.cacheManager.ClearUserRelatedCache(claims.Id)

@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/handlers"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/subscribers"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
@@ -51,13 +50,12 @@ func (app *App) Start() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	app.log(
-		ctx,
+	lib.LogInfo(
 		fmt.Sprintf("start the server on the port - %s", app.config.AppCfg.ApiServicePort),
-		"info",
 	)
+
 	// Setup middlewares for the Echo server.
-	app.setupMiddlewares(app.broker)
+	app.setupMiddlewares()
 	// Setup routes for the Echo server.
 	app.setupRoutes(app.broker, handlers, cacheManager)
 
@@ -65,7 +63,7 @@ func (app *App) Start() {
 	go func() {
 		serverAddr := fmt.Sprintf(":%s", app.config.AppCfg.ApiServicePort)
 		if err := app.server.Start(serverAddr); err != nil && errors.Is(err, http.ErrServerClosed) {
-			app.log(ctx, "shutting down the server", "info")
+			lib.LogInfo("shutting down the server")
 		}
 	}()
 
@@ -79,19 +77,7 @@ func (app *App) Start() {
 
 	// Gracefully shut down the Echo server.
 	if err := app.server.Shutdown(ctx); err != nil {
-		app.log(ctx, err.Error(), "error")
+		lib.LogError(err)
 		app.server.Logger.Fatal(err)
 	}
-}
-
-// log sends a log message to the message broker.
-func (app *App) log(ctx context.Context, message string, level string) {
-	var log entities.LogMessage
-	// Push log message to the message broker
-	app.broker.PushToQueue(
-		ctx,
-		constants.LogCommand, // Specify the log command constant
-		// Generate log message with provided details
-		log.GenerateLog(message, level, "start", "setting up server"),
-	)
 }

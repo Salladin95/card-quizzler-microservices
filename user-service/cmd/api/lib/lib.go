@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 )
@@ -118,4 +119,12 @@ func connectToMongo(mongoCfg config.MongoCfg, ctx context.Context) *mongo.Client
 	log.Println("Connected to mongo!") // Log successful connection
 
 	return c // Return MongoDB client
+}
+
+func LogError(msg string, args ...any) {
+	slog.Error(msg, args)
+}
+
+func LogInfo(msg string, args ...any) {
+	slog.Info(msg, args)
 }

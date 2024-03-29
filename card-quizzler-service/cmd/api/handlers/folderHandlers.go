@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/google/uuid"
@@ -10,9 +11,9 @@ import (
 )
 
 func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService.CreateFolderRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "CreateFolderRequest")
+	lib.LogInfo("[CreateFolder] Start processing grpc request")
 	payload := req.GetPayload()
-	createFolderDto := entities.CreateFolderDto{Title: payload.Title, UserID: payload.UserID}
+	createFolderDto := entities.CreateFolderDto{IsOpen: payload.IsOpen, Title: payload.Title, UserID: payload.UserID}
 	if err := createFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
@@ -25,13 +26,13 @@ func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService
 }
 
 func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService.UpdateFolderRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "UpdateFolder")
+	lib.LogInfo("[UpdateFolder] Start processing grpc request")
 	payload := req.GetPayload()
 	folderID, err := uuid.Parse(payload.FolderID)
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
-	updateFolderDto := entities.UpdateFolderDto{Title: payload.Title}
+	updateFolderDto := entities.UpdateFolderDto{Title: payload.Title, IsOpen: payload.IsOpen}
 	if err := updateFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
@@ -47,7 +48,7 @@ func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService
 }
 
 func (cq *CardQuizzlerServer) AddFolderToUser(ctx context.Context, req *quizService.AddFolderToUserRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "AddFolderToUser")
+	lib.LogInfo("[AddFolderToUser] Start processing grpc request")
 	fID := req.GetFolderID()
 	userID := req.GetUserID()
 	folderID, err := uuid.Parse(fID)
@@ -64,7 +65,7 @@ func (cq *CardQuizzlerServer) AddFolderToUser(ctx context.Context, req *quizServ
 }
 
 func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "DeleteFolder")
+	lib.LogInfo("[DeleteFolder] Start processing grpc request")
 	id := req.GetId()
 	folderID, err := uuid.Parse(id)
 	if err != nil {
@@ -77,7 +78,7 @@ func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService
 }
 
 func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *quizService.DeleteModuleFromFolderRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "DeleteModuleFromFolder")
+	lib.LogInfo("[DeleteModuleFromFolder] Start processing grpc request")
 	fID := req.GetFolderID()
 	mID := req.GetModuleID()
 	folderID, err := uuid.Parse(fID)
@@ -99,7 +100,7 @@ func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *q
 }
 
 func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizService.GetUserFoldersRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "GetUserFolders")
+	lib.LogInfo("[GetUserFolders] Start processing grpc request")
 	uid := req.GetId()
 	if uid == "" {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
@@ -120,8 +121,25 @@ func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizServi
 	return buildSuccessfulResponse(folders, http.StatusOK, "requested folders")
 }
 
+func (cq *CardQuizzlerServer) GetOpenFolders(ctx context.Context, req *quizService.GetOpenFoldersRequest) (*quizService.Response, error) {
+	lib.LogInfo("[GetOpenFolders] Start processing grpc request")
+	payload := req.GetPayload()
+
+	folders, err := cq.Repo.GetOpenFolders(repositories.UidSortPayload{
+		Ctx:    ctx,
+		Limit:  payload.Limit,
+		Page:   payload.Page,
+		SortBy: payload.SortBy,
+	})
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(folders, http.StatusOK, "requested folders")
+}
+
 func (cq *CardQuizzlerServer) GetFolderByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "GetUserFolderByID")
+	lib.LogInfo("[GetFolderByID] Start processing grpc request")
 	id := req.GetId()
 	parsedID, err := uuid.Parse(id)
 	if err != nil {

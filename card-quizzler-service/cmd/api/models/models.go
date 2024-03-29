@@ -29,6 +29,7 @@ type Module struct {
 	Terms     []Term    `gorm:"foreignKey:ModuleID;" json:"terms"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+	IsOpen    bool      `json:"isOpen" gorm:"default:false;column:is_open"`
 }
 
 type Folder struct {
@@ -38,4 +39,5 @@ type Folder struct {
 	Modules   []Module  `gorm:"many2many:module_folders;" json:"modules"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+	IsOpen    bool      `json:"isOpen" gorm:"default:false;column:is_open"`
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizService.ProcessQuizRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "ProcessQuizResult")
+	lib.LogInfo("[ProcessQuizResult] Start processing grpc request", "info", "ProcessQuizResult")
 	payload := req.GetTerms()
 	id := req.GetModuleID()
 
@@ -75,7 +75,7 @@ func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizSe
 
 func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizService.AddModuleToUserRequest) (*quizService.Response, error) {
 	// Log the start of processing the gRPC request
-	cq.log(ctx, "start processing grpc request", "info", "AddModuleToUser")
+	lib.LogInfo("[AddModuleToUser] Start processing grpc request", "info", "AddModuleToUser")
 
 	// Extract module and user IDs from the request
 	mID := req.GetModuleID()
@@ -100,7 +100,7 @@ func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizServ
 
 func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizService.AddModuleToFolderRequest) (*quizService.Response, error) {
 	// Log the start of processing the gRPC request
-	cq.log(ctx, "start processing grpc request", "info", "AddModuleToUser")
+	lib.LogInfo("[AddModuleToFolder] Start processing grpc request", "info", "AddModuleToUser")
 
 	// Extract module and user IDs from the request
 	mID := req.GetModuleID()
@@ -129,7 +129,7 @@ func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizSe
 }
 
 func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService.CreateModuleRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "CreateModule")
+	lib.LogInfo("[CreateModule] Start processing grpc request", "info", "CreateModule")
 	payload := req.GetPayload()
 
 	// Unmarshal new terms from the payload
@@ -139,7 +139,12 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 	}
 
 	// Create a CreateModuleDto with extracted data
-	createModuleDto := entities.CreateModuleDto{Title: payload.Title, UserID: payload.UserID, Terms: newTerms}
+	createModuleDto := entities.CreateModuleDto{
+		Title:  payload.Title,
+		IsOpen: payload.IsOpen,
+		UserID: payload.UserID,
+		Terms:  newTerms,
+	}
 
 	if err := createModuleDto.Verify(); err != nil {
 		return buildFailedResponse(err)
@@ -155,7 +160,7 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 }
 
 func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *quizService.CreateModuleInFolderRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "CreateModuleInFolder")
+	lib.LogInfo("[CreateModuleInFolder] Start processing grpc request", "info", "CreateModuleInFolder")
 	payload := req.GetPayload()
 
 	fID := req.GetFolderID()
@@ -198,7 +203,7 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 }
 
 func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService.UpdateModuleRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "UpdateModule")
+	lib.LogInfo("[UpdateModule] Start processing grpc request", "info", "UpdateModule")
 
 	payload := req.GetPayload()
 
@@ -221,7 +226,12 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	}
 
 	// Create an UpdateModuleDto with extracted data
-	updateModuleDTO := entities.UpdateModuleDto{Title: payload.Title, NewTerms: newTerms, UpdatedTerms: updatedTerms}
+	updateModuleDTO := entities.UpdateModuleDto{
+		Title:        payload.Title,
+		NewTerms:     newTerms,
+		UpdatedTerms: updatedTerms,
+		IsOpen:       payload.IsOpen,
+	}
 
 	if err := updateModuleDTO.Verify(); err != nil {
 		return buildFailedResponse(err)
@@ -241,7 +251,7 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 }
 
 func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "DeleteModule")
+	lib.LogInfo("[DeleteModule] Start processing grpc request", "info", "DeleteModule")
 
 	id := req.GetId()
 	moduleID, err := uuid.Parse(id)
@@ -257,7 +267,7 @@ func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService
 }
 
 func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizService.GetUserModulesRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "GetUserModules")
+	lib.LogInfo("[GetUserModules] Start processing grpc request", "info", "GetUserModules")
 
 	uid := req.GetId()
 	if uid == "" {
@@ -281,8 +291,27 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
 }
 
+func (cq *CardQuizzlerServer) GetOpenModules(ctx context.Context, req *quizService.GetOpenModulesRequest) (*quizService.Response, error) {
+	lib.LogInfo("[GetUserModules] Start processing grpc request", "info", "GetOpenModules")
+
+	payload := req.GetPayload()
+
+	// Retrieve modules associated with the user from the repository
+	modules, err := cq.Repo.GetOpenModules(repositories.UidSortPayload{
+		Ctx:    ctx,
+		Limit:  payload.Limit,
+		Page:   payload.Page,
+		SortBy: payload.SortBy,
+	})
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
+}
+
 func (cq *CardQuizzlerServer) GetDifficultModulesByUID(ctx context.Context, req *quizService.GetDifficultModulesRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "GetDifficultUserModules")
+	lib.LogInfo("[GetDifficultModulesByUID] Start processing grpc request", "info", "GetDifficultUserModules")
 
 	uid := req.GetId()
 	if uid == "" {
@@ -299,7 +328,7 @@ func (cq *CardQuizzlerServer) GetDifficultModulesByUID(ctx context.Context, req 
 }
 
 func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "GetModuleByID")
+	lib.LogInfo("[GetModuleByID] Start processing grpc request", "info", "GetModuleByID")
 
 	id := req.GetId()
 	parsedID, err := uuid.Parse(id)
@@ -317,7 +346,7 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 }
 
 func (cq *CardQuizzlerServer) UpdateTerm(ctx context.Context, req *quizService.UpdaterTermRequest) (*quizService.Response, error) {
-	cq.log(ctx, "start processing grpc request", "info", "UpdateTerm")
+	lib.LogInfo("[UpdateTerm] Start processing grpc request", "info", "UpdateTerm")
 	termID, err := uuid.Parse(req.GetId())
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil

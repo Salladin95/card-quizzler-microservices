@@ -1,11 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
@@ -42,6 +39,8 @@ type ApiHandlersInterface interface {
 	AddModuleToFolder(c echo.Context) error
 	DeleteModule(c echo.Context) error
 	UpdateTerm(c echo.Context) error
+	GetOpenFolders(c echo.Context) error
+	GetOpenModules(c echo.Context) error
 }
 
 // apiHandlers implements the ApiHandlersInterface.
@@ -78,17 +77,4 @@ func (ah *apiHandlers) GetGRPCClientConn(url string) (*grpc.ClientConn, error) {
 	}
 
 	return conn, nil
-}
-
-// log sends a log Message to the Message broker.
-func (ah *apiHandlers) log(ctx context.Context, message, level, method string) {
-	var log entities.LogMessage
-
-	// Push log Message to the Message broker
-	ah.broker.PushToQueue(
-		ctx,
-		constants.LogCommand, // Specify the log command constant
-		// Generate log Message with provided details
-		log.GenerateLog(message, level, method, "http handlers"),
-	)
 }

@@ -67,28 +67,6 @@ services:
       logging: "promtail"
       logging_jobname: "user_service_logs"
 
-  logging-service:
-    container_name: logging-service-container
-    image: logging-service-image
-    build:
-      context: ./logging-service
-      dockerfile: Dockerfile
-    depends_on:
-      - rabbitmq
-      - mongo
-    networks:
-      - myapp-network
-    labels:
-      logging: "promtail"
-      logging_jobname: "user_service_logs"
-
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 3s
-        max_attempts: 5
-        window: 60s
-
   mail-service:
     container_name: mail-service-container
     image: mail-service-image

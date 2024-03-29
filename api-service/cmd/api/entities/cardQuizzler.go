@@ -50,22 +50,26 @@ type CreateTermDto struct {
 }
 
 type CreateModuleDto struct {
-	Title string          `json:"title" validate:"required"`
-	Terms []CreateTermDto `json:"terms" validate:"required"`
+	Title  string          `json:"title" validate:"required"`
+	Terms  []CreateTermDto `json:"terms" validate:"required"`
+	IsOpen bool            `json:"isOpen" validate:"omitempty"`
 }
 
 type UpdateModuleDto struct {
 	Title        string          `json:"title" validate:"omitempty"`
 	NewTerms     []CreateTermDto `json:"newTerms" validate:"omitempty"`
 	UpdatedTerms []Term          `json:"updatedTerms" validate:"omitempty"`
+	IsOpen       bool            `json:"isOpen" validate:"omitempty"`
 }
 
 type CreateFolderDto struct {
-	Title string `json:"title" validate:"required"`
+	Title  string `json:"title" validate:"required"`
+	IsOpen bool   `json:"isOpen" validate:"omitempty"`
 }
 
 type UpdateFolderDto struct {
-	Title string `json:"title" validate:"omitempty"`
+	Title  string `json:"title" validate:"omitempty"`
+	IsOpen bool   `json:"isOpen" validate:"omitempty"`
 }
 
 type UpdateTermDto struct {

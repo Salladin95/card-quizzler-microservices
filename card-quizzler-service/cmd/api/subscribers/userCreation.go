@@ -9,50 +9,28 @@ import (
 )
 
 func (s *subscribers) subscribeToUserCreation(ctx context.Context) {
-	s.log(
-		ctx,
-		"subscribing to events",
-		"info",
-		"Listen",
-	)
-
 	s.broker.ListenForUpdates(
 		[]string{constants.CreatedUserKey},
 		func(_ string, payload []byte) {
 			var createUserDto entities.CreateUserDto
 			if err := lib.UnmarshalData(payload, &createUserDto); err != nil {
-				s.log(
-					ctx,
+				lib.LogError(
 					fmt.Sprintf("unmarshall payload - %v", err),
-					"error",
-					"subscribeToUserCreation",
 				)
 				return
 			}
 			if err := createUserDto.Verify(); err != nil {
-				s.log(
-					ctx,
+				lib.LogError(
 					fmt.Sprintf("invalid payload - %v", err),
-					"error",
-					"subscribeToUserCreation",
 				)
 				return
 			}
 			if err := s.repo.CreateUser(createUserDto.ID); err != nil {
-				s.log(
-					ctx,
+				lib.LogError(
 					fmt.Sprintf("failed to create user record - %v", err),
-					"error",
-					"subscribeToUserCreation",
 				)
 				return
 			}
-			s.log(
-				ctx,
-				"user record is created",
-				"info",
-				"subscribeToUserCreation",
-			)
 		},
 	)
 }

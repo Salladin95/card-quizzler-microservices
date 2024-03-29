@@ -13,6 +13,29 @@ import (
 	"time"
 )
 
+// GetOpenModules retrieves modules where isOpen=true
+func (r *repo) GetOpenModules(payload UidSortPayload) ([]models.Module, error) {
+	var modules []models.Module
+	if err := r.db.
+		Preload("Terms").
+		Where("is_open = ?", true).
+		Order(payload.SortBy).
+		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
+		Find(&modules).
+		Error; err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
+	}
+
+	data := fetchedData{
+		UserID: payload.Uid,
+		Key:    fmt.Sprintf("%d:%d:%s", payload.Limit, payload.Page, payload.SortBy),
+		Data:   modules,
+	}
+
+	r.pushToQueue(payload.Ctx, constants.FetchedUserFoldersKey, data)
+	return modules, nil
+}
+
 // CreateModule creates a new module in the database using the provided DTO.
 func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error) {
 	// Convert DTO to model
@@ -56,8 +79,7 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 // If newTerms are provided, the module will contain only these terms, the same applies to updatedTerms.
 func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) {
 	var module models.Module
-	// Parse DTO to models
-	parsedDto, err := payload.Dto.ToModels(payload.ModuleID)
+	joinedTerms, err := payload.Dto.JoinTerms(payload.ModuleID)
 	if err != nil {
 		return module, err
 	}
@@ -79,14 +101,19 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 			module.Title = payload.Dto.Title
 		}
 
+		// Update module's isOpen if provided in the DTO
+		if payload.Dto.IsOpen != module.IsOpen {
+			module.IsOpen = payload.Dto.IsOpen
+		}
+
 		var termsToDelete []models.Term
 		// Update module's terms if new terms are provided
-		if len(parsedDto.NewTerms) > 0 {
+		if len(joinedTerms) > 0 {
 			// Determine terms to delete
-			termsToDelete = getTermsToDelete(module, parsedDto.NewTerms)
+			termsToDelete = getTermsToDelete(module, joinedTerms)
 
 			// replace module's terms
-			module.Terms = parsedDto.NewTerms
+			module.Terms = joinedTerms
 		}
 
 		if err := tx.Save(&module).Error; err != nil {

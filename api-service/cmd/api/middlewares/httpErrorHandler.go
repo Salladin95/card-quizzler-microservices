@@ -1,29 +1,17 @@
 package middlewares
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/goErrorHandler"
-	"github.com/Salladin95/rmqtools"
 	"github.com/labstack/echo/v4"
 )
 
 // errorHandler maps a service-specific error to an API error and sends the appropriate response.
-func errorHandler(err error, c echo.Context, broker rmqtools.MessageBroker) {
+func errorHandler(err error, c echo.Context) {
 	// Map the service-specific error to an API error.
 	apiError := goErrorHandler.MapServiceErrorToAPIError(err)
 
-	var logMessage entities.LogMessage
-	broker.PushToQueue(
-		c.Request().Context(),
-		constants.LogCommand,
-		logMessage.GenerateLog(
-			apiError.Message,
-			"error",
-			"errorHandler",
-			"http error handler",
-		),
-	)
+	lib.LogRequestError(c, apiError.Message)
 
 	// Send the API error response with the corresponding HTTP status code and message.
 	c.String(apiError.Status, apiError.Message)
@@ -31,13 +19,13 @@ func errorHandler(err error, c echo.Context, broker rmqtools.MessageBroker) {
 
 // HttpErrorHandler is a middleware that catches errors from subsequent middleware or handlers
 // and uses the errorHandler function to send an appropriate API error response.
-func HttpErrorHandler(broker rmqtools.MessageBroker) echo.MiddlewareFunc {
+func HttpErrorHandler() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// Call the next middleware or handler and catch any errors that occur.
 			if err := next(c); err != nil {
 				// If an error occurs, handle it using the errorHandler function.
-				errorHandler(err, c, broker)
+				errorHandler(err, c)
 			}
 			return nil
 		}

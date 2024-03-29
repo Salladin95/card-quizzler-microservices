@@ -2,8 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
@@ -45,6 +43,7 @@ type UpdateFolderPayload struct {
 
 type Repository interface {
 	GetFoldersByUID(req UidSortPayload) ([]models.Folder, error)
+	GetOpenFolders(req UidSortPayload) ([]models.Folder, error)
 	GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, error)
 	CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (models.Folder, error)
 	UpdateFolder(req UpdateFolderPayload) (models.Folder, error)
@@ -53,6 +52,7 @@ type Repository interface {
 	AddFolderToUser(uid string, folderID uuid.UUID) error
 	AddModuleToFolder(FolderModuleAssociation) error
 	GetModulesByUID(req UidSortPayload) ([]models.Module, error)
+	GetOpenModules(req UidSortPayload) ([]models.Module, error)
 	GetDifficultModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
 	GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, error)
 	CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error)
@@ -99,18 +99,4 @@ func (r *repo) withTransaction(fn func(tx *gorm.DB) error) error {
 		goErrorHandler.OperationFailure("commit transaction", err)
 	}
 	return nil
-}
-
-// log sends a log message to the message broker.
-func (r *repo) log(ctx context.Context, message, level, method string) {
-	var log entities.LogMessage // Create a new LogMessage struct
-	// Push log message to the message broker
-	if err := r.broker.PushToQueue(
-		ctx,
-		constants.LogCommand, // Specify the log command constant
-		// Generate log message with provided details
-		log.GenerateLog(message, level, method, "broker message subscribers"),
-	); err != nil {
-		fmt.Printf("[repo] failed to push log; Message - %s; Error - %v\n", message, err)
-	}
 }

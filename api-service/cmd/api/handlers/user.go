@@ -13,7 +13,7 @@ import (
 
 func (ah *apiHandlers) GetUserById(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "getUserById")
+	logRequest(c)
 
 	uid := c.Param("id")
 
@@ -44,7 +44,7 @@ func (ah *apiHandlers) GetUserById(c echo.Context) error {
 
 func (ah *apiHandlers) GetProfile(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "GetProfile")
+	logRequest(c)
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*lib.JwtUserClaims)
@@ -82,7 +82,7 @@ func (ah *apiHandlers) GetProfile(c echo.Context) error {
 
 func (ah *apiHandlers) UpdateEmail(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "UpdateEmail")
+	logRequest(c)
 
 	uid := c.Param("id")
 
@@ -113,7 +113,7 @@ func (ah *apiHandlers) UpdateEmail(c echo.Context) error {
 
 func (ah *apiHandlers) UpdatePassword(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "UpdatePassword")
+	logRequest(c)
 
 	uid := c.Param("id")
 
@@ -144,7 +144,7 @@ func (ah *apiHandlers) UpdatePassword(c echo.Context) error {
 
 func (ah *apiHandlers) ResetPassword(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "ResetPassword")
+	logRequest(c)
 
 	var dto entities.ResetPasswordDto
 	err := lib.BindBodyAndVerify(c, &dto)
@@ -173,7 +173,7 @@ func (ah *apiHandlers) ResetPassword(c echo.Context) error {
 
 func (ah *apiHandlers) RequestEmailVerification(c echo.Context) error {
 	ctx := c.Request().Context()
-	ah.log(ctx, "start processing request", "info", "RequestEmailVerification")
+	logRequest(c)
 	var dto entities.RequestEmailVerificationDto
 	err := lib.BindBodyAndVerify(c, &dto)
 	if err != nil {
@@ -185,6 +185,5 @@ func (ah *apiHandlers) RequestEmailVerification(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ah.log(ctx, "generated event for email verification", "info", "RequestEmailVerification")
 	return c.String(http.StatusNoContent, "Verification Code is sent.")
 }

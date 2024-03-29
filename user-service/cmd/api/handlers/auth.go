@@ -14,7 +14,7 @@ import (
 // The response includes a status code and a message.
 func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the sign-in request
-	us.log(ctx, "start processing signIn request", "info", "signIn")
+	lib.LogInfo("[SignIn] start processing request")
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
 	// Create a SignInDto from the request payload
@@ -51,7 +51,7 @@ func (us *UserServer) SignIn(ctx context.Context, req *userService.SignInRequest
 // The response includes a status code and a message.
 func (us *UserServer) SignUp(ctx context.Context, req *userService.SignUpRequest) (*userService.Response, error) {
 	// Print a message indicating the start of processing the sign-up request
-	us.log(ctx, "start processing signUp request", "info", "signIn")
+	lib.LogInfo("[SignUp] start processing request")
 	// Extract payload from the gRPC request
 	reqPayload := req.GetPayload()
 	// Create a SignUpDto from the request payload

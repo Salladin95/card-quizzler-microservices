@@ -15,6 +15,7 @@ message Response {
 message CreateFolderPayload {
   string title = 1;
   string userID = 2;
+  bool isOpen = 3;
 }
 
 message CreateFolderRequest {
@@ -24,6 +25,7 @@ message CreateFolderRequest {
 message UpdateFolderPayload {
   string title = 1;
   string folderID = 2;
+  bool isOpen = 3;
 }
 
 message UpdateFolderRequest {
@@ -40,7 +42,6 @@ message AddFolderToUserRequest {
   string folderID = 2;
 }
 
-
 message AddModuleToUserRequest {
   string userID = 1;
   string moduleID = 2;
@@ -55,6 +56,7 @@ message CreateModulePayload {
   string title = 1;
   string userID = 2;
   bytes terms = 3;
+  bool isOpen = 4;
 }
 
 message CreateModuleRequest {
@@ -71,6 +73,7 @@ message UpdateModulePayload {
   bytes newTerms = 2;
   bytes updatedTerms = 3;
   string id = 4;
+  bool isOpen = 5;
 }
 
 message UpdateModuleRequest {
@@ -98,6 +101,14 @@ message GetUserModulesRequest {
   SortOptions payload = 2;
 }
 
+message GetOpenFoldersRequest {
+  SortOptions payload = 1;
+}
+
+message GetOpenModulesRequest {
+  SortOptions payload = 1;
+}
+
 message GetDifficultModulesRequest {
   string id = 1;
 }
@@ -111,6 +122,8 @@ message UpdaterTermRequest {
 
 service CardQuizzlerService {
   rpc ProcessQuizResult(ProcessQuizRequest) returns (Response);
+  rpc GetOpenFolders(GetOpenFoldersRequest) returns (Response);
+  rpc GetOpenModules(GetOpenModulesRequest) returns (Response);
   rpc GetUserFolders(GetUserFoldersRequest) returns (Response);
   rpc GetFolderByID(RequestWithID) returns (Response);
   rpc CreateFolder(CreateFolderRequest) returns (Response);

@@ -23,6 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CardQuizzlerServiceClient interface {
 	ProcessQuizResult(ctx context.Context, in *ProcessQuizRequest, opts ...grpc.CallOption) (*Response, error)
+	GetOpenFolders(ctx context.Context, in *GetOpenFoldersRequest, opts ...grpc.CallOption) (*Response, error)
+	GetOpenModules(ctx context.Context, in *GetOpenModulesRequest, opts ...grpc.CallOption) (*Response, error)
 	GetUserFolders(ctx context.Context, in *GetUserFoldersRequest, opts ...grpc.CallOption) (*Response, error)
 	GetFolderByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	CreateFolder(ctx context.Context, in *CreateFolderRequest, opts ...grpc.CallOption) (*Response, error)
@@ -53,6 +55,24 @@ func NewCardQuizzlerServiceClient(cc grpc.ClientConnInterface) CardQuizzlerServi
 func (c *cardQuizzlerServiceClient) ProcessQuizResult(ctx context.Context, in *ProcessQuizRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/ProcessQuizResult", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cardQuizzlerServiceClient) GetOpenFolders(ctx context.Context, in *GetOpenFoldersRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetOpenFolders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cardQuizzlerServiceClient) GetOpenModules(ctx context.Context, in *GetOpenModulesRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/GetOpenModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -217,6 +237,8 @@ func (c *cardQuizzlerServiceClient) UpdateTerm(ctx context.Context, in *UpdaterT
 // for forward compatibility
 type CardQuizzlerServiceServer interface {
 	ProcessQuizResult(context.Context, *ProcessQuizRequest) (*Response, error)
+	GetOpenFolders(context.Context, *GetOpenFoldersRequest) (*Response, error)
+	GetOpenModules(context.Context, *GetOpenModulesRequest) (*Response, error)
 	GetUserFolders(context.Context, *GetUserFoldersRequest) (*Response, error)
 	GetFolderByID(context.Context, *RequestWithID) (*Response, error)
 	CreateFolder(context.Context, *CreateFolderRequest) (*Response, error)
@@ -243,6 +265,12 @@ type UnimplementedCardQuizzlerServiceServer struct {
 
 func (UnimplementedCardQuizzlerServiceServer) ProcessQuizResult(context.Context, *ProcessQuizRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessQuizResult not implemented")
+}
+func (UnimplementedCardQuizzlerServiceServer) GetOpenFolders(context.Context, *GetOpenFoldersRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOpenFolders not implemented")
+}
+func (UnimplementedCardQuizzlerServiceServer) GetOpenModules(context.Context, *GetOpenModulesRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOpenModules not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) GetUserFolders(context.Context, *GetUserFoldersRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserFolders not implemented")
@@ -322,6 +350,42 @@ func _CardQuizzlerService_ProcessQuizResult_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CardQuizzlerServiceServer).ProcessQuizResult(ctx, req.(*ProcessQuizRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CardQuizzlerService_GetOpenFolders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOpenFoldersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardQuizzlerServiceServer).GetOpenFolders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/card_quizzler_service.CardQuizzlerService/GetOpenFolders",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardQuizzlerServiceServer).GetOpenFolders(ctx, req.(*GetOpenFoldersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CardQuizzlerService_GetOpenModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOpenModulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardQuizzlerServiceServer).GetOpenModules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/card_quizzler_service.CardQuizzlerService/GetOpenModules",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardQuizzlerServiceServer).GetOpenModules(ctx, req.(*GetOpenModulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -642,6 +706,14 @@ var CardQuizzlerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessQuizResult",
 			Handler:    _CardQuizzlerService_ProcessQuizResult_Handler,
+		},
+		{
+			MethodName: "GetOpenFolders",
+			Handler:    _CardQuizzlerService_GetOpenFolders_Handler,
+		},
+		{
+			MethodName: "GetOpenModules",
+			Handler:    _CardQuizzlerService_GetOpenModules_Handler,
 		},
 		{
 			MethodName: "GetUserFolders",

@@ -1,7 +1,6 @@
 package subscribers
 
 import (
-	"context"
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
@@ -13,15 +12,13 @@ import (
 // userEventHandler is a callback function to handle user-related events received from RabbitMQ.
 // It processes each event based on the Key and performs corresponding actions.
 func (s *subscribers) userEventHandler(key string, payload []byte) {
-	ctx := context.Background()
-
-	s.log(ctx, fmt.Sprintf("start processing Key - %s", key), "info", "userEventHandler")
+	lib.LogInfo(fmt.Sprintf("[userEventHandler] Start processing Key - %s", key))
 
 	var user entities.UserResponse
 	err := lib.UnmarshalData(payload, &user)
 	if err != nil {
 		msg := fmt.Sprintf("user event handler failed to unmarshall user - %v", err)
-		s.log(ctx, msg, "error", "userEventHandler")
+		lib.LogError(err)
 		log.Panic(msg)
 		return
 	}
@@ -37,33 +34,15 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 		// Clear the cache for the user list
 		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UsersKey)
 
-		s.log(
-			ctx,
-			"new user case, clearing cache for [s.Key, email, id]",
-			"info",
-			"userEventHandler",
-		)
 	case constants.UpdatedUserKey:
 		// Clear the cache
 		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UsersKey)
 		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UserKey)
 
-		s.log(
-			ctx,
-			"user updated case, clearing cache for [s.Key, email, id]",
-			"info",
-			"userEventHandler",
-		)
 	case constants.DeletedUserKey:
 		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UsersKey)
 		s.cacheManager.ClearCacheByKeys(s.cacheManager.UserHashKey(user.ID), cacheManager.UserKey)
 
-		s.log(
-			ctx,
-			"user updated case, clearing cache for [s.Key, email, id]",
-			"info",
-			"userEventHandler",
-		)
 	case constants.FetchedUserKey:
 		s.cacheManager.SetCacheByKeys(
 			s.cacheManager.UserHashKey(user.ID),
@@ -72,18 +51,7 @@ func (s *subscribers) userEventHandler(key string, payload []byte) {
 			s.cacheManager.Exp(),
 		)
 
-		s.log(
-			ctx,
-			"fetched user case, setting cache",
-			"info",
-			"userEventHandler",
-		)
 	default:
-		s.log(
-			ctx,
-			"unknown case",
-			"error",
-			"userEventHandler",
-		)
+		lib.LogInfo("unknown case")
 	}
 }

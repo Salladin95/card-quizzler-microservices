@@ -38,7 +38,7 @@ func (app *App) setupRoutes(
 	// ***************** PROTECTED ROUTES ************
 	protectedRoutes := routes.Group("")
 	protectedRoutes.Use(
-		middlewares.AccessTokenValidator(broker, cacheManager, app.config.JwtCfg.JWTAccessSecret),
+		middlewares.AccessTokenValidator(cacheManager, app.config.JwtCfg.JWTAccessSecret),
 	)
 	// ****************** PROTECTED >> USER *********************
 	protectedRoutes.GET("/user/profile", handlers.GetProfile)
@@ -56,6 +56,8 @@ func (app *App) setupRoutes(
 	protectedRoutes.PATCH("/folder/:id", handlers.UpdateFolder)
 	// gets folders by userID
 	protectedRoutes.GET("/folder", handlers.GetUserFolders)
+	// get open folders
+	protectedRoutes.GET("/open-folder", handlers.GetOpenFolders)
 	// gets folder by folderID
 	protectedRoutes.GET("/folder/:id", handlers.GetFolderByID)
 	// deletes folder by folderID
@@ -72,6 +74,8 @@ func (app *App) setupRoutes(
 	protectedRoutes.PATCH("/module/:id", handlers.UpdateModule)
 	// get modules by userID
 	protectedRoutes.GET("/module", handlers.GetUserModules)
+	// get open modules
+	protectedRoutes.GET("/open-module", handlers.GetOpenModules)
 	// get difficult modules by userID
 	protectedRoutes.GET("/difficult-modules", handlers.GetDifficultModules)
 	// gets module by moduleID

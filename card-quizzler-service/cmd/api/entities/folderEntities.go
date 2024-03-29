@@ -13,6 +13,7 @@ func (dto *CreateUserDto) Verify() error {
 type CreateFolderDto struct {
 	Title  string `json:"title" validate:"required"`
 	UserID string `json:"userID" validate:"required"`
+	IsOpen bool   `json:"isOpen" validate:"omitempty"`
 }
 
 func (dto *CreateFolderDto) Verify() error {
@@ -34,11 +35,13 @@ func (dto *CreateFolderDto) ToModel() (models.Folder, error) {
 		UserID:  dto.UserID,
 		Title:   dto.Title,
 		Modules: []models.Module{},
+		IsOpen:  dto.IsOpen,
 	}, nil
 }
 
 type UpdateFolderDto struct {
-	Title string `json:"title" validate:"omitempty"`
+	Title  string `json:"title" validate:"omitempty"`
+	IsOpen bool   `json:"isOpen" validate:"omitempty"`
 }
 
 func (dto *UpdateFolderDto) Verify() error {

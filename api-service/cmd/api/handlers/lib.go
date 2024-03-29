@@ -109,10 +109,13 @@ func handleGRPCResponseNoContent(c echo.Context, res GrpcResponse) error {
 }
 
 func handleCacheResponse(c echo.Context, data any) error {
-	return c.JSON(http.StatusOK, entities.JsonResponse{
-		Message: "success",
-		Data:    data,
-	})
+	return c.JSON(
+		http.StatusOK,
+		entities.JsonResponse{
+			Message: "success",
+			Data:    data,
+		},
+	)
 }
 
 // ParseInt parses the provided int string into an integer.
@@ -168,4 +171,11 @@ func ParseSortBy(
 	}
 
 	return fmt.Sprintf("%s %s", sortByField, sortDirection)
+}
+
+func logRequest(c echo.Context) {
+	lib.LogRequestInfo(
+		c,
+		"start processing request",
+	)
 }

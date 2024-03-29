@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -56,6 +57,6 @@ func getTermsToDelete(module models.Module, termsToReplace []models.Term) []mode
 
 func (r *repo) pushToQueue(ctx context.Context, routingKey string, data interface{}) {
 	if err := r.broker.PushToQueue(ctx, routingKey, data); err != nil {
-		r.log(ctx, err.Error(), "error", "pushToQueue")
+		lib.LogError(err.Error())
 	}
 }

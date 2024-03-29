@@ -12,6 +12,22 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// GetOpenFolders retrieves folders where isOpen=true
+func (r *repo) GetOpenFolders(payload UidSortPayload) ([]models.Folder, error) {
+	var folders []models.Folder
+	if err := r.db.
+		Preload("Modules.Terms").
+		Where("is_open = ?", true).
+		Order(payload.SortBy).
+		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
+		Find(&folders).
+		Error; err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
+	}
+
+	return folders, nil
+}
+
 // CreateFolder creates a new folder in the database using the provided DTO.
 func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (models.Folder, error) {
 	// Convert the DTO to a model
@@ -45,8 +61,13 @@ func (r *repo) UpdateFolder(payload UpdateFolderPayload) (models.Folder, error) 
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
-		// Update the folder's title with the data from the DTO
-		folder.Title = payload.Dto.Title
+		if payload.Dto.Title != "" {
+			folder.Title = payload.Dto.Title
+		}
+
+		if payload.Dto.IsOpen != folder.IsOpen {
+			folder.IsOpen = payload.Dto.IsOpen
+		}
 
 		// Save the updated folder in the database
 		if err := tx.Save(&folder).Error; err != nil {

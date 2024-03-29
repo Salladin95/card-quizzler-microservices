@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/mail-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/mail-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/mail-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/mail-service/cmd/api/mail"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
@@ -35,7 +36,6 @@ func (mh *mailHandlers) HandleEvent(_ string, payload []byte) {
 }
 
 func (mh *mailHandlers) sendEmailVerification(payload []byte) error {
-	mh.log("processing 'RequestEmailVerification' event", "info", "sendEmailVerification")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	var dto entities.SendEmailVerificationDto
@@ -63,10 +63,10 @@ func (mh *mailHandlers) sendEmailVerification(payload []byte) error {
 		constants.EmailVerificationCodeCommand,
 		entities.EmailCode{Email: dto.Email, Code: secretCode},
 	)
-	mh.log(
-		fmt.Sprintf("verification code is sent to email - %s, code - %d", dto.Email, secretCode),
-		"info",
-		"sendEmailVerification",
+	lib.LogInfo(
+		fmt.Sprintf(
+			"verification code is sent to email - %s, code - %d", dto.Email, secretCode,
+		),
 	)
 	return nil
 }
@@ -81,19 +81,4 @@ func GenerateEmailVerificationRequestMessage(code int) string {
 func generateRandomSixDigitNumber() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(900000) + 100000
-}
-
-// log sends a log message to the message broker.
-func (mh *mailHandlers) log(message, level, method string) {
-	var log entities.LogMessage // Create a new LogMessage struct
-	// Create a context with a timeout of 1 second
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel() // Ensure cancellation of the context
-	// Push log message to the message broker
-	mh.broker.PushToQueue(
-		ctx,
-		constants.LogCommand, // Specify the log command constant
-		// Generate log message with provided details
-		log.GenerateLog(message, level, method, "setting up subscribers"),
-	)
 }
