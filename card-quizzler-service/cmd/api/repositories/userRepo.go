@@ -124,6 +124,7 @@ func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 			Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
+
 		// Create a copy of the module
 		newModule := copyModule(module)
 		newModule.UserID = uid // Set the user ID for the new module
@@ -131,6 +132,13 @@ func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 		// Create the new module within the transaction
 		if err := tx.Create(&newModule).Error; err != nil {
 			return goErrorHandler.OperationFailure("add module to user", err)
+		}
+
+		module.CopiesCount = module.CopiesCount + 1
+
+		// Create the new module within the transaction
+		if err := tx.Save(&module).Error; err != nil {
+			return goErrorHandler.OperationFailure("increment copies_count", err)
 		}
 		return nil
 	})
@@ -150,6 +158,7 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 			Where("id = ?", folderID).Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
+
 		// Create a copy of the folder
 		newFolder := copyFolder(folder)
 		newFolder.UserID = uid // Set the user ID for the new folder
@@ -157,6 +166,13 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 		// Create the new folder within the transaction
 		if err := tx.Create(&newFolder).Error; err != nil {
 			return goErrorHandler.OperationFailure("add folder to user", err)
+		}
+
+		folder.CopiesCount = folder.CopiesCount + 1
+
+		// Create the new folder within the transaction
+		if err := tx.Save(&folder).Error; err != nil {
+			return goErrorHandler.OperationFailure("increment copies_count", err)
 		}
 		return nil
 	})

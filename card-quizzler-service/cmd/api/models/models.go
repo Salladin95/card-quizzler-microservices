@@ -22,22 +22,24 @@ type Term struct {
 }
 
 type Module struct {
-	ID        uuid.UUID `gorm:"primary_key;unique;" json:"id"`
-	Title     string    `json:"title"`
-	UserID    string    `json:"userID"`
-	Folders   []Folder  `gorm:"many2many:module_folders;" json:"folders,omitempty"`
-	Terms     []Term    `gorm:"foreignKey:ModuleID;" json:"terms"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	IsOpen    bool      `json:"isOpen" gorm:"default:false;column:is_open"`
+	ID          uuid.UUID `gorm:"primary_key;unique;" json:"id"`
+	Title       string    `json:"title"`
+	UserID      string    `json:"userID"`
+	Folders     []Folder  `gorm:"many2many:module_folders;" json:"folders,omitempty"`
+	Terms       []Term    `gorm:"foreignKey:ModuleID;" json:"terms"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
+	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
 }
 
 type Folder struct {
-	ID        uuid.UUID `gorm:"primary_key;unique;" json:"id"`
-	Title     string    `gorm:"unique;" json:"title"`
-	UserID    string    `json:"userID"`
-	Modules   []Module  `gorm:"many2many:module_folders;" json:"modules"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	IsOpen    bool      `json:"isOpen" gorm:"default:false;column:is_open"`
+	ID          uuid.UUID `gorm:"primary_key;unique;" json:"id"`
+	Title       string    `gorm:"unique;" json:"title"`
+	UserID      string    `json:"userID"`
+	Modules     []Module  `gorm:"many2many:module_folders;" json:"modules"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
+	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
 }
