@@ -16,22 +16,26 @@ type Term struct {
 }
 
 type Module struct {
-	ID        uuid.UUID `json:"id"`
-	Title     string    `json:"title"`
-	UserID    string    `json:"userID"`
-	Folders   []Folder  `json:"folders,omitempty"`
-	Terms     []Term    `json:"terms"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	UserID      string    `json:"userID"`
+	Folders     []Folder  `json:"folders,omitempty"`
+	Terms       []Term    `json:"terms"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
+	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
 }
 
 type Folder struct {
-	ID        uuid.UUID `json:"id"`
-	Title     string    `json:"title"`
-	UserID    string    `json:"userID"`
-	Modules   []Module  `json:"modules"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	UserID      string    `json:"userID"`
+	Modules     []Module  `json:"modules"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
+	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
 }
 
 type resultTerm struct {

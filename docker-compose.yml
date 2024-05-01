@@ -21,7 +21,7 @@ services:
         window: 60s
     labels:
       logging: "promtail"
-      logging_jobname: "api_logs"
+      logging_jobname: "app_logs"
 
   user-service:
     container_name: user-service-container
@@ -43,7 +43,7 @@ services:
         window: 60s
     labels:
       logging: "promtail"
-      logging_jobname: "user_service_logs"
+      logging_jobname: "app_logs"
 
   card-quiz-service:
     container_name: card-quizzler-service-container
@@ -65,7 +65,7 @@ services:
         window: 60s
     labels:
       logging: "promtail"
-      logging_jobname: "user_service_logs"
+      logging_jobname: "app_logs"
 
   mail-service:
     container_name: mail-service-container
@@ -85,7 +85,7 @@ services:
         window: 60s
     labels:
       logging: "promtail"
-      logging_jobname: "user_service_logs"
+      logging_jobname: "app_logs"
 
   prometheus:
     image: prom/prometheus:latest
