@@ -395,9 +395,9 @@ func (ah *apiHandlers) CreateFolder(c echo.Context) error {
 		NewCardQuizzlerServiceClient(clientConn).
 		CreateFolder(ctx, &quizService.CreateFolderRequest{
 			Payload: &quizService.CreateFolderPayload{
-				Title:  dto.Title,
-				UserID: uid,
-				IsOpen: dto.IsOpen,
+				Title:        dto.Title,
+				UserID:       uid,
+				SecureAccess: &quizService.SecureAccess{Access: dto.Access, Password: dto.Password},
 			},
 		})
 	if err != nil {
@@ -429,9 +429,9 @@ func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 		NewCardQuizzlerServiceClient(clientConn).
 		UpdateFolder(ctx, &quizService.UpdateFolderRequest{
 			Payload: &quizService.UpdateFolderPayload{
-				Title:    dto.Title,
-				FolderID: id,
-				IsOpen:   dto.IsOpen,
+				Title:        dto.Title,
+				FolderID:     id,
+				SecureAccess: &quizService.SecureAccess{Access: dto.Access, Password: dto.Password},
 			},
 		})
 	if err != nil {
@@ -577,10 +577,10 @@ func (ah *apiHandlers) CreateModule(c echo.Context) error {
 		NewCardQuizzlerServiceClient(clientConn).
 		CreateModule(ctx, &quizService.CreateModuleRequest{
 			Payload: &quizService.CreateModulePayload{
-				Title:  dto.Title,
-				UserID: uid,
-				Terms:  terms,
-				IsOpen: dto.IsOpen,
+				Title:        dto.Title,
+				UserID:       uid,
+				Terms:        terms,
+				SecureAccess: &quizService.SecureAccess{Access: dto.Access, Password: dto.Password},
 			},
 		})
 	if err != nil {
@@ -676,7 +676,7 @@ func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 				UpdatedTerms: updatedTerms,
 				NewTerms:     newTerms,
 				Id:           id,
-				IsOpen:       dto.IsOpen,
+				SecureAccess: &quizService.SecureAccess{Access: dto.Access, Password: dto.Password},
 			},
 		})
 	if err != nil {

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log/slog"
 )
 
 // GetOpenFolders retrieves folders where isOpen=true
@@ -36,12 +38,28 @@ func (r *repo) CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (
 		// If an error occurs during conversion, return the folder and the error
 		return folder, err
 	}
+
+	lib.LogInfo(
+		"Before mutations",
+		slog.String("service", "FolderRepo"),
+		slog.String("method", "CreateFolder"),
+		slog.Any("dto", dto),
+		slog.Any("module", folder),
+	)
+
 	// Attempt to create the folder in the database
 	if err := r.db.Create(&folder).Error; err != nil {
 		// If an error occurs during creation, return the folder and an operation failure error
 		return folder, goErrorHandler.OperationFailure("create folder", err)
 	}
 	r.pushToQueue(ctx, constants.CreatedFolderKey, folder)
+	lib.LogInfo(
+		"After mutations",
+		slog.String("service", "FolderRepo"),
+		slog.String("method", "CreateFolder"),
+		slog.Any("dto", dto),
+		slog.Any("module", folder),
+	)
 	// If creation is successful, return the created folder and a nil error
 	return folder, nil
 }
@@ -61,12 +79,34 @@ func (r *repo) UpdateFolder(payload UpdateFolderPayload) (models.Folder, error) 
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
+		lib.LogInfo(
+			"Before mutations",
+			slog.String("service", "FolderRepo"),
+			slog.String("method", "UpdateFolder"),
+			slog.Any("payload", payload),
+			slog.Any("folder", folder),
+		)
+
 		if payload.Dto.Title != "" {
 			folder.Title = payload.Dto.Title
 		}
 
-		if payload.Dto.IsOpen != folder.IsOpen {
-			folder.IsOpen = payload.Dto.IsOpen
+		switch payload.Dto.Access {
+		case models.AccessOnlyMe, models.AccessOpen:
+			folder.Password = ""
+			folder.Access = payload.Dto.Access
+			break
+		case models.AccessPassword:
+			folder.Access = payload.Dto.Access
+			break
+		}
+
+		if folder.Access == models.AccessPassword && payload.Dto.Password != "" {
+			psd, err := lib.HashPassword(payload.Dto.Password)
+			if err != nil {
+				return err
+			}
+			folder.Password = psd
 		}
 
 		// Save the updated folder in the database
@@ -75,6 +115,14 @@ func (r *repo) UpdateFolder(payload UpdateFolderPayload) (models.Folder, error) 
 			return goErrorHandler.OperationFailure("update folder", err)
 		}
 		r.pushToQueue(payload.Ctx, constants.MutatedFolderKey, folder)
+
+		lib.LogInfo(
+			"After mutations",
+			slog.String("service", "FolderRepo"),
+			slog.String("method", "UpdateFolder"),
+			slog.Any("payload", payload),
+			slog.Any("folder", folder),
+		)
 
 		// If no errors occurred, return nil
 		return nil

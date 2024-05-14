@@ -10,6 +10,7 @@ import (
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"net/http"
+	"strings"
 )
 
 func (cq *CardQuizzlerServer) ProcessQuizResult(ctx context.Context, req *quizService.ProcessQuizRequest) (*quizService.Response, error) {
@@ -131,6 +132,7 @@ func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizSe
 func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService.CreateModuleRequest) (*quizService.Response, error) {
 	lib.LogInfo("[CreateModule] Start processing grpc request", "info", "CreateModule")
 	payload := req.GetPayload()
+	secureAccess := payload.SecureAccess
 
 	// Unmarshal new terms from the payload
 	var newTerms []entities.CreateTermDto
@@ -140,8 +142,11 @@ func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService
 
 	// Create a CreateModuleDto with extracted data
 	createModuleDto := entities.CreateModuleDto{
-		Title:  payload.Title,
-		IsOpen: payload.IsOpen,
+		Title: payload.Title,
+		SecureAccess: entities.SecureAccess{
+			Password: secureAccess.Password,
+			Access:   models.AccessType(strings.ToLower(secureAccess.Access)),
+		},
 		UserID: payload.UserID,
 		Terms:  newTerms,
 	}
@@ -206,6 +211,7 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	lib.LogInfo("[UpdateModule] Start processing grpc request", "info", "UpdateModule")
 
 	payload := req.GetPayload()
+	secureAccess := payload.SecureAccess
 
 	// Parse module ID from the payload
 	moduleID, err := uuid.Parse(payload.Id)
@@ -230,7 +236,8 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 		Title:        payload.Title,
 		NewTerms:     newTerms,
 		UpdatedTerms: updatedTerms,
-		IsOpen:       payload.IsOpen,
+		Password:     secureAccess.Password,
+		Access:       models.AccessType(strings.ToLower(secureAccess.Access)),
 	}
 
 	if err := updateModuleDTO.Verify(); err != nil {
@@ -339,7 +346,7 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 	// Retrieve the module by its ID from the repository
 	module, err := cq.Repo.GetModuleByID(ctx, parsedID)
 	if err != nil {
-		// Return a failed response if retrieving the module fails
+		return buildFailedResponse(err)
 	}
 
 	return buildSuccessfulResponse(module, http.StatusOK, "requested module")

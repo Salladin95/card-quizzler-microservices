@@ -14,9 +14,13 @@ type CreateFolderDto struct {
 	Title  string `json:"title" validate:"required"`
 	UserID string `json:"userID" validate:"required"`
 	IsOpen bool   `json:"isOpen" validate:"omitempty"`
+	SecureAccess
 }
 
 func (dto *CreateFolderDto) Verify() error {
+	if err := lib.Verify(dto); err == nil {
+		return dto.SecureAccess.Verify()
+	}
 	return lib.Verify(dto)
 }
 
@@ -30,20 +34,43 @@ func (dto *CreateFolderDto) ToModel() (models.Folder, error) {
 	// Generate UUID for the module
 	id := uuid.New()
 
+	var psd string
+
+	if dto.Access == models.AccessPassword {
+		psd, err = lib.HashPassword(dto.Password)
+		if err != nil {
+			return createFolderParams, err
+		}
+	}
+
 	return models.Folder{
-		ID:      id,
-		UserID:  dto.UserID,
-		Title:   dto.Title,
-		Modules: []models.Module{},
-		IsOpen:  dto.IsOpen,
+		ID:       id,
+		UserID:   dto.UserID,
+		Title:    dto.Title,
+		Modules:  []models.Module{},
+		AuthorID: dto.UserID,
+		Access:   dto.Access,
+		Password: psd,
 	}, nil
 }
 
 type UpdateFolderDto struct {
-	Title  string `json:"title" validate:"omitempty"`
-	IsOpen bool   `json:"isOpen" validate:"omitempty"`
+	Title    string            `json:"title" validate:"omitempty"`
+	Access   models.AccessType `json:"access" validate:"omitempty"`
+	Password string            `json:"password" validate:"omitempty,min=4"`
 }
 
 func (dto *UpdateFolderDto) Verify() error {
+	if dto.Access != "" {
+		if err := ValidateSecureAccess(
+			&SecureAccess{
+				Access:   dto.Access,
+				Password: dto.Password,
+			},
+		); err != nil {
+			return err
+		}
+		return lib.Verify(dto)
+	}
 	return lib.Verify(dto)
 }

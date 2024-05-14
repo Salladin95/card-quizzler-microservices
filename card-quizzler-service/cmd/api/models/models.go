@@ -21,25 +21,39 @@ type Term struct {
 	IsDifficult          bool      `json:"isDifficult"`
 }
 
+// AccessType represents the type of access for the Module.
+type AccessType string
+
+// Constants representing the available access types.
+const (
+	AccessOpen     AccessType = "open"
+	AccessOnlyMe   AccessType = "only me"
+	AccessPassword AccessType = "password"
+)
+
 type Module struct {
-	ID          uuid.UUID `gorm:"primary_key;unique;" json:"id"`
-	Title       string    `json:"title"`
-	UserID      string    `json:"userID"`
-	Folders     []Folder  `gorm:"many2many:module_folders;" json:"folders,omitempty"`
-	Terms       []Term    `gorm:"foreignKey:ModuleID;" json:"terms"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
-	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
+	ID          uuid.UUID  `gorm:"primary_key;unique;" json:"id"`
+	Title       string     `json:"title"`
+	UserID      string     `json:"userID"`   // user that owns this module
+	AuthorID    string     `json:"authorID"` // user that has created this module in the first place
+	Folders     []Folder   `gorm:"many2many:module_folders;" json:"folders,omitempty"`
+	Terms       []Term     `gorm:"foreignKey:ModuleID;" json:"terms"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	Access      AccessType `json:"access" gorm:"default:open;"`
+	CopiesCount int        `json:"copiesCount" gorm:"default:0;column:copies_count"`
+	Password    string     `json:"password"`
 }
 
 type Folder struct {
-	ID          uuid.UUID `gorm:"primary_key;unique;" json:"id"`
-	Title       string    `gorm:"unique;" json:"title"`
-	UserID      string    `json:"userID"`
-	Modules     []Module  `gorm:"many2many:module_folders;" json:"modules"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
-	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
+	ID          uuid.UUID  `gorm:"primary_key;unique;" json:"id"`
+	Title       string     `json:"title"`
+	UserID      string     `json:"userID"`   // user that owns this folder
+	AuthorID    string     `json:"authorID"` // user that has created this folder in the first place
+	Modules     []Module   `gorm:"many2many:module_folders;" json:"modules"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	Access      AccessType `json:"access" gorm:"default:open;"`
+	CopiesCount int        `json:"copiesCount" gorm:"default:0;column:copies_count"`
+	Password    string     `json:"password"`
 }

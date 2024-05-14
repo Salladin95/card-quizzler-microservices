@@ -15,27 +15,36 @@ type Term struct {
 	IsDifficult          bool      `json:"isDifficult"`
 }
 
+type SecureAccess struct {
+	Access   string `json:"access" validate:"required"`
+	Password string `json:"password" validate:"omitempty,min=4"`
+}
+
 type Module struct {
 	ID          uuid.UUID `json:"id"`
 	Title       string    `json:"title"`
-	UserID      string    `json:"userID"`
 	Folders     []Folder  `json:"folders,omitempty"`
 	Terms       []Term    `json:"terms"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
 	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
+	Access      string    `json:"access" gorm:"default:open;"`
+	Password    *string   `json:"password"`
+	AuthorID    string    `json:"authorID"` // user that has created this module in the first place
+	UserID      string    `json:"userID"`   // user that owns this module
 }
 
 type Folder struct {
 	ID          uuid.UUID `json:"id"`
 	Title       string    `json:"title"`
-	UserID      string    `json:"userID"`
 	Modules     []Module  `json:"modules"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-	IsOpen      bool      `json:"isOpen" gorm:"default:false;column:is_open"`
 	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
+	Access      string    `json:"access" gorm:"default:open;"`
+	Password    *string   `json:"password"`
+	AuthorID    string    `json:"authorID"` // user that has created this folder in the first place
+	UserID      string    `json:"userID"`   // user that owns this folder
 }
 
 type resultTerm struct {
@@ -54,26 +63,26 @@ type CreateTermDto struct {
 }
 
 type CreateModuleDto struct {
-	Title  string          `json:"title" validate:"required"`
-	Terms  []CreateTermDto `json:"terms" validate:"required"`
-	IsOpen bool            `json:"isOpen" validate:"omitempty"`
+	Title string          `json:"title" validate:"required"`
+	Terms []CreateTermDto `json:"terms" validate:"required"`
+	SecureAccess
 }
 
 type UpdateModuleDto struct {
 	Title        string          `json:"title" validate:"omitempty"`
 	NewTerms     []CreateTermDto `json:"newTerms" validate:"omitempty"`
 	UpdatedTerms []Term          `json:"updatedTerms" validate:"omitempty"`
-	IsOpen       bool            `json:"isOpen" validate:"omitempty"`
+	SecureAccess
 }
 
 type CreateFolderDto struct {
-	Title  string `json:"title" validate:"required"`
-	IsOpen bool   `json:"isOpen" validate:"omitempty"`
+	Title string `json:"title" validate:"required"`
+	SecureAccess
 }
 
 type UpdateFolderDto struct {
-	Title  string `json:"title" validate:"omitempty"`
-	IsOpen bool   `json:"isOpen" validate:"omitempty"`
+	Title string `json:"title" validate:"omitempty"`
+	SecureAccess
 }
 
 type UpdateTermDto struct {

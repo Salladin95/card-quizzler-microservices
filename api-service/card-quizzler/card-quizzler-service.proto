@@ -12,10 +12,15 @@ message Response {
   string message = 3;
 }
 
+message SecureAccess {
+  string access = 1;
+  string password = 2;
+}
+
 message CreateFolderPayload {
   string title = 1;
   string userID = 2;
-  bool isOpen = 3;
+  SecureAccess secureAccess = 3;
 }
 
 message CreateFolderRequest {
@@ -25,7 +30,7 @@ message CreateFolderRequest {
 message UpdateFolderPayload {
   string title = 1;
   string folderID = 2;
-  bool isOpen = 3;
+  SecureAccess secureAccess = 3;
 }
 
 message UpdateFolderRequest {
@@ -56,7 +61,7 @@ message CreateModulePayload {
   string title = 1;
   string userID = 2;
   bytes terms = 3;
-  bool isOpen = 4;
+  SecureAccess secureAccess = 4;
 }
 
 message CreateModuleRequest {
@@ -73,7 +78,8 @@ message UpdateModulePayload {
   bytes newTerms = 2;
   bytes updatedTerms = 3;
   string id = 4;
-  bool isOpen = 5;
+  SecureAccess secureAccess = 5;
+
 }
 
 message UpdateModuleRequest {

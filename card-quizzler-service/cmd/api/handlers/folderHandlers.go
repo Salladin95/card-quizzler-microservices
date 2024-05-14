@@ -4,16 +4,28 @@ import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/google/uuid"
 	"net/http"
+	"strings"
 )
 
 func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService.CreateFolderRequest) (*quizService.Response, error) {
 	lib.LogInfo("[CreateFolder] Start processing grpc request")
 	payload := req.GetPayload()
-	createFolderDto := entities.CreateFolderDto{IsOpen: payload.IsOpen, Title: payload.Title, UserID: payload.UserID}
+	secureAccess := payload.SecureAccess
+
+	createFolderDto := entities.CreateFolderDto{
+		SecureAccess: entities.SecureAccess{
+			Password: secureAccess.Password,
+			Access:   models.AccessType(strings.ToLower(secureAccess.Access)),
+		},
+		Title:  payload.Title,
+		UserID: payload.UserID,
+	}
+
 	if err := createFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
@@ -28,11 +40,18 @@ func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService
 func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService.UpdateFolderRequest) (*quizService.Response, error) {
 	lib.LogInfo("[UpdateFolder] Start processing grpc request")
 	payload := req.GetPayload()
+	secureAccess := payload.SecureAccess
 	folderID, err := uuid.Parse(payload.FolderID)
+
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
-	updateFolderDto := entities.UpdateFolderDto{Title: payload.Title, IsOpen: payload.IsOpen}
+	updateFolderDto := entities.UpdateFolderDto{
+		Title:    payload.Title,
+		Password: secureAccess.Password,
+		Access:   models.AccessType(strings.ToLower(secureAccess.Access)),
+	}
+
 	if err := updateFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}

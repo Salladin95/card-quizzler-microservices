@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log/slog"
 	"time"
 )
 
@@ -48,6 +50,14 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 		)
 	}
 
+	lib.LogInfo(
+		"Before mutations",
+		slog.String("service", "ModuleRepo"),
+		slog.String("method", "CreateModule"),
+		slog.Any("dto", dto),
+		slog.Any("module", module),
+	)
+
 	// Parse terms payload from DTO
 	terms, err := parseCreateTermsPayload(dto.Terms, module.ID)
 	if err != nil {
@@ -70,6 +80,14 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 
 	r.pushToQueue(ctx, constants.CreatedModuleKey, module)
 
+	lib.LogInfo(
+		"After mutations",
+		slog.String("service", "ModuleRepo"),
+		slog.String("method", "CreateModule"),
+		slog.Any("dto", dto),
+		slog.Any("module", module),
+	)
+
 	// Return the created module
 	return module, nil
 }
@@ -79,6 +97,7 @@ func (r *repo) CreateModule(ctx context.Context, dto entities.CreateModuleDto) (
 // If newTerms are provided, the module will contain only these terms, the same applies to updatedTerms.
 func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) {
 	var module models.Module
+	// joinedTerms contains terms which are need to be created also terms which are needs to be updated in the DB
 	joinedTerms, err := payload.Dto.JoinTerms(payload.ModuleID)
 	if err != nil {
 		return module, err
@@ -94,6 +113,14 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 		}
 
+		lib.LogInfo(
+			"Before mutations",
+			slog.String("service", "ModuleRepo"),
+			slog.String("method", "UpdateModule"),
+			slog.Any("payload", payload),
+			slog.Any("module", module),
+		)
+
 		module.UpdatedAt = time.Now()
 
 		// Update module's title if provided in the DTO
@@ -101,13 +128,25 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 			module.Title = payload.Dto.Title
 		}
 
-		// Update module's isOpen if provided in the DTO
-		if payload.Dto.IsOpen != module.IsOpen {
-			module.IsOpen = payload.Dto.IsOpen
+		switch payload.Dto.Access {
+		case models.AccessOnlyMe, models.AccessOpen:
+			module.Password = ""
+			module.Access = payload.Dto.Access
+			break
+		case models.AccessPassword:
+			module.Access = payload.Dto.Access
+			break
+		}
+
+		if module.Access == models.AccessPassword && payload.Dto.Password != "" {
+			psd, err := lib.HashPassword(payload.Dto.Password)
+			if err != nil {
+				return err
+			}
+			module.Password = psd
 		}
 
 		var termsToDelete []models.Term
-		// Update module's terms if new terms are provided
 		if len(joinedTerms) > 0 {
 			// Determine terms to delete
 			termsToDelete = getTermsToDelete(module, joinedTerms)
@@ -120,9 +159,11 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 			return goErrorHandler.OperationFailure("update module", err)
 		}
 
-		// Save the updated terms
-		if err := tx.Save(&module.Terms).Error; err != nil {
-			return goErrorHandler.OperationFailure("update terms", err)
+		if len(joinedTerms) > 0 {
+			// Save the updated terms
+			if err := tx.Save(&module.Terms).Error; err != nil {
+				return goErrorHandler.OperationFailure("update terms", err)
+			}
 		}
 
 		// Delete terms
@@ -131,6 +172,14 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 				return goErrorHandler.OperationFailure("delete terms", err)
 			}
 		}
+
+		lib.LogInfo(
+			"After mutations",
+			slog.String("service", "ModuleRepo"),
+			slog.String("method", "UpdateModule"),
+			slog.Any("payload", payload),
+			slog.Any("module", module),
+		)
 
 		return nil
 	}); err != nil {
