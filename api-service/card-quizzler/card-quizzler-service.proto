@@ -6,6 +6,11 @@ message RequestWithID {
   string id = 1;
 }
 
+message RequestWithIdAndUID {
+  string id = 1;
+  string uid = 2;
+}
+
 message Response {
   bytes data = 1;
   int64 code = 2;
@@ -31,6 +36,7 @@ message UpdateFolderPayload {
   string title = 1;
   string folderID = 2;
   SecureAccess secureAccess = 3;
+  string uid = 4;
 }
 
 message UpdateFolderRequest {
@@ -40,6 +46,7 @@ message UpdateFolderRequest {
 message DeleteModuleFromFolderRequest {
   string moduleID = 1;
   string folderID = 2;
+  string uid = 3;
 }
 
 message AddFolderToUserRequest {
@@ -55,6 +62,7 @@ message AddModuleToUserRequest {
 message AddModuleToFolderRequest {
   string folderID = 1;
   string moduleID = 2;
+  string uid = 3;
 }
 
 message CreateModulePayload {
@@ -79,7 +87,7 @@ message UpdateModulePayload {
   bytes updatedTerms = 3;
   string id = 4;
   SecureAccess secureAccess = 5;
-
+  string uid = 6;
 }
 
 message UpdateModuleRequest {
@@ -134,7 +142,7 @@ service CardQuizzlerService {
   rpc GetFolderByID(RequestWithID) returns (Response);
   rpc CreateFolder(CreateFolderRequest) returns (Response);
   rpc UpdateFolder(UpdateFolderRequest) returns (Response);
-  rpc DeleteFolder(RequestWithID) returns (Response);
+  rpc DeleteFolder(RequestWithIdAndUID) returns (Response);
   rpc DeleteModuleFromFolder(DeleteModuleFromFolderRequest) returns (Response);
   rpc AddFolderToUser(AddFolderToUserRequest) returns (Response);
   rpc GetUserModules(GetUserModulesRequest) returns (Response);
@@ -143,7 +151,7 @@ service CardQuizzlerService {
   rpc CreateModule(CreateModuleRequest) returns (Response);
   rpc CreateModuleInFolder(CreateModuleInFolderRequest) returns (Response);
   rpc UpdateModule(UpdateModuleRequest) returns (Response);
-  rpc DeleteModule(RequestWithID) returns (Response);
+  rpc DeleteModule(RequestWithIdAndUID) returns (Response);
   rpc AddModuleToUser(AddModuleToUserRequest) returns (Response);
   rpc AddModuleToFolder(AddModuleToFolderRequest) returns (Response);
   rpc UpdateTerm(UpdaterTermRequest) returns (Response);

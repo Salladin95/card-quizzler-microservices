@@ -29,7 +29,7 @@ type CardQuizzlerServiceClient interface {
 	GetFolderByID(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
 	CreateFolder(ctx context.Context, in *CreateFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	UpdateFolder(ctx context.Context, in *UpdateFolderRequest, opts ...grpc.CallOption) (*Response, error)
-	DeleteFolder(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
+	DeleteFolder(ctx context.Context, in *RequestWithIdAndUID, opts ...grpc.CallOption) (*Response, error)
 	DeleteModuleFromFolder(ctx context.Context, in *DeleteModuleFromFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	AddFolderToUser(ctx context.Context, in *AddFolderToUserRequest, opts ...grpc.CallOption) (*Response, error)
 	GetUserModules(ctx context.Context, in *GetUserModulesRequest, opts ...grpc.CallOption) (*Response, error)
@@ -38,7 +38,7 @@ type CardQuizzlerServiceClient interface {
 	CreateModule(ctx context.Context, in *CreateModuleRequest, opts ...grpc.CallOption) (*Response, error)
 	CreateModuleInFolder(ctx context.Context, in *CreateModuleInFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	UpdateModule(ctx context.Context, in *UpdateModuleRequest, opts ...grpc.CallOption) (*Response, error)
-	DeleteModule(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error)
+	DeleteModule(ctx context.Context, in *RequestWithIdAndUID, opts ...grpc.CallOption) (*Response, error)
 	AddModuleToUser(ctx context.Context, in *AddModuleToUserRequest, opts ...grpc.CallOption) (*Response, error)
 	AddModuleToFolder(ctx context.Context, in *AddModuleToFolderRequest, opts ...grpc.CallOption) (*Response, error)
 	UpdateTerm(ctx context.Context, in *UpdaterTermRequest, opts ...grpc.CallOption) (*Response, error)
@@ -115,7 +115,7 @@ func (c *cardQuizzlerServiceClient) UpdateFolder(ctx context.Context, in *Update
 	return out, nil
 }
 
-func (c *cardQuizzlerServiceClient) DeleteFolder(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
+func (c *cardQuizzlerServiceClient) DeleteFolder(ctx context.Context, in *RequestWithIdAndUID, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/DeleteFolder", in, out, opts...)
 	if err != nil {
@@ -196,7 +196,7 @@ func (c *cardQuizzlerServiceClient) UpdateModule(ctx context.Context, in *Update
 	return out, nil
 }
 
-func (c *cardQuizzlerServiceClient) DeleteModule(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*Response, error) {
+func (c *cardQuizzlerServiceClient) DeleteModule(ctx context.Context, in *RequestWithIdAndUID, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := c.cc.Invoke(ctx, "/card_quizzler_service.CardQuizzlerService/DeleteModule", in, out, opts...)
 	if err != nil {
@@ -243,7 +243,7 @@ type CardQuizzlerServiceServer interface {
 	GetFolderByID(context.Context, *RequestWithID) (*Response, error)
 	CreateFolder(context.Context, *CreateFolderRequest) (*Response, error)
 	UpdateFolder(context.Context, *UpdateFolderRequest) (*Response, error)
-	DeleteFolder(context.Context, *RequestWithID) (*Response, error)
+	DeleteFolder(context.Context, *RequestWithIdAndUID) (*Response, error)
 	DeleteModuleFromFolder(context.Context, *DeleteModuleFromFolderRequest) (*Response, error)
 	AddFolderToUser(context.Context, *AddFolderToUserRequest) (*Response, error)
 	GetUserModules(context.Context, *GetUserModulesRequest) (*Response, error)
@@ -252,7 +252,7 @@ type CardQuizzlerServiceServer interface {
 	CreateModule(context.Context, *CreateModuleRequest) (*Response, error)
 	CreateModuleInFolder(context.Context, *CreateModuleInFolderRequest) (*Response, error)
 	UpdateModule(context.Context, *UpdateModuleRequest) (*Response, error)
-	DeleteModule(context.Context, *RequestWithID) (*Response, error)
+	DeleteModule(context.Context, *RequestWithIdAndUID) (*Response, error)
 	AddModuleToUser(context.Context, *AddModuleToUserRequest) (*Response, error)
 	AddModuleToFolder(context.Context, *AddModuleToFolderRequest) (*Response, error)
 	UpdateTerm(context.Context, *UpdaterTermRequest) (*Response, error)
@@ -284,7 +284,7 @@ func (UnimplementedCardQuizzlerServiceServer) CreateFolder(context.Context, *Cre
 func (UnimplementedCardQuizzlerServiceServer) UpdateFolder(context.Context, *UpdateFolderRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateFolder not implemented")
 }
-func (UnimplementedCardQuizzlerServiceServer) DeleteFolder(context.Context, *RequestWithID) (*Response, error) {
+func (UnimplementedCardQuizzlerServiceServer) DeleteFolder(context.Context, *RequestWithIdAndUID) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFolder not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) DeleteModuleFromFolder(context.Context, *DeleteModuleFromFolderRequest) (*Response, error) {
@@ -311,7 +311,7 @@ func (UnimplementedCardQuizzlerServiceServer) CreateModuleInFolder(context.Conte
 func (UnimplementedCardQuizzlerServiceServer) UpdateModule(context.Context, *UpdateModuleRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateModule not implemented")
 }
-func (UnimplementedCardQuizzlerServiceServer) DeleteModule(context.Context, *RequestWithID) (*Response, error) {
+func (UnimplementedCardQuizzlerServiceServer) DeleteModule(context.Context, *RequestWithIdAndUID) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteModule not implemented")
 }
 func (UnimplementedCardQuizzlerServiceServer) AddModuleToUser(context.Context, *AddModuleToUserRequest) (*Response, error) {
@@ -463,7 +463,7 @@ func _CardQuizzlerService_UpdateFolder_Handler(srv interface{}, ctx context.Cont
 }
 
 func _CardQuizzlerService_DeleteFolder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestWithID)
+	in := new(RequestWithIdAndUID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -475,7 +475,7 @@ func _CardQuizzlerService_DeleteFolder_Handler(srv interface{}, ctx context.Cont
 		FullMethod: "/card_quizzler_service.CardQuizzlerService/DeleteFolder",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardQuizzlerServiceServer).DeleteFolder(ctx, req.(*RequestWithID))
+		return srv.(CardQuizzlerServiceServer).DeleteFolder(ctx, req.(*RequestWithIdAndUID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -625,7 +625,7 @@ func _CardQuizzlerService_UpdateModule_Handler(srv interface{}, ctx context.Cont
 }
 
 func _CardQuizzlerService_DeleteModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestWithID)
+	in := new(RequestWithIdAndUID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -637,7 +637,7 @@ func _CardQuizzlerService_DeleteModule_Handler(srv interface{}, ctx context.Cont
 		FullMethod: "/card_quizzler_service.CardQuizzlerService/DeleteModule",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardQuizzlerServiceServer).DeleteModule(ctx, req.(*RequestWithID))
+		return srv.(CardQuizzlerServiceServer).DeleteModule(ctx, req.(*RequestWithIdAndUID))
 	}
 	return interceptor(ctx, in, info, handler)
 }

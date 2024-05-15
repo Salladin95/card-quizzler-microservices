@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/Salladin95/goErrorHandler"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -37,4 +39,27 @@ func buildSuccessfulResponse(data interface{}, successCode int64, message string
 func buildFailedResponse(err error) (*quizService.Response, error) {
 	// Extract status code and message from the error
 	return &quizService.Response{Code: getErrorStatus(err), Message: getErrorMessage(err)}, nil
+}
+
+func checkOwnership(uid string, ownerID string) error {
+	if ownerID != uid {
+		return goErrorHandler.ForbiddenError()
+	}
+	return nil
+}
+
+func (cq *CardQuizzlerServer) checkFolderOwnership(ctx context.Context, uid string, folderID uuid.UUID) error {
+	folder, err := cq.Repo.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return err
+	}
+	return checkOwnership(uid, folder.UserID)
+}
+
+func (cq *CardQuizzlerServer) checkModuleOwnership(ctx context.Context, uid string, moduleID uuid.UUID) error {
+	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
+	if err != nil {
+		return err
+	}
+	return checkOwnership(uid, module.UserID)
 }

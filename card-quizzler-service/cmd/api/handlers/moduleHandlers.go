@@ -106,6 +106,7 @@ func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizSe
 	// Extract module and user IDs from the request
 	mID := req.GetModuleID()
 	fID := req.GetFolderID()
+	uid := req.GetUid()
 
 	folderID, err := uuid.Parse(fID)
 	if err != nil {
@@ -115,6 +116,14 @@ func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizSe
 	moduleID, err := uuid.Parse(mID)
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	if err := cq.checkFolderOwnership(ctx, uid, folderID); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if err := cq.checkModuleOwnership(ctx, uid, moduleID); err != nil {
+		return buildFailedResponse(err)
 	}
 
 	// Add module to user in the repository
@@ -169,11 +178,16 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 	payload := req.GetPayload()
 
 	fID := req.GetFolderID()
+	uid := payload.UserID
 
 	folderID, err := uuid.Parse(fID)
 
 	if err != nil {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrBadRequest, err)
+	}
+
+	if err := cq.checkFolderOwnership(ctx, uid, folderID); err != nil {
+		return buildFailedResponse(err)
 	}
 
 	// Unmarshal new terms from the payload
@@ -183,7 +197,7 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 	}
 
 	// Create a CreateModuleDto with extracted data
-	createModuleDto := entities.CreateModuleDto{Title: payload.Title, UserID: payload.UserID, Terms: newTerms}
+	createModuleDto := entities.CreateModuleDto{Title: payload.Title, UserID: uid, Terms: newTerms}
 
 	if err := createModuleDto.Verify(); err != nil {
 		return buildFailedResponse(err)
@@ -212,11 +226,16 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 
 	payload := req.GetPayload()
 	secureAccess := payload.SecureAccess
+	uid := payload.Uid
 
 	// Parse module ID from the payload
 	moduleID, err := uuid.Parse(payload.Id)
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	if err := cq.checkModuleOwnership(ctx, uid, moduleID); err != nil {
+		return buildFailedResponse(err)
 	}
 
 	// Unmarshal new terms from the payload
@@ -257,13 +276,19 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	return buildSuccessfulResponse(updatedModule, http.StatusOK, "module is updated")
 }
 
-func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) DeleteModule(ctx context.Context, req *quizService.RequestWithIdAndUID) (*quizService.Response, error) {
 	lib.LogInfo("[DeleteModule] Start processing grpc request", "info", "DeleteModule")
 
 	id := req.GetId()
+	uid := req.GetUid()
 	moduleID, err := uuid.Parse(id)
+
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+	}
+
+	if err := cq.checkModuleOwnership(ctx, uid, moduleID); err != nil {
+		return buildFailedResponse(err)
 	}
 
 	// Delete the module from the repository

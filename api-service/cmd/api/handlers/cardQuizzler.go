@@ -425,6 +425,16 @@ func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		UpdateFolder(ctx, &quizService.UpdateFolderRequest{
@@ -432,6 +442,7 @@ func (ah *apiHandlers) UpdateFolder(c echo.Context) error {
 				Title:        dto.Title,
 				FolderID:     id,
 				SecureAccess: &quizService.SecureAccess{Access: dto.Access, Password: dto.Password},
+				Uid:          uid,
 			},
 		})
 	if err != nil {
@@ -480,11 +491,22 @@ func (ah *apiHandlers) AddModuleToFolder(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		AddModuleToFolder(ctx, &quizService.AddModuleToFolderRequest{
 			ModuleID: moduleID,
 			FolderID: folderID,
+			Uid:      uid,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("AddModuleToFolder", err)
@@ -505,10 +527,21 @@ func (ah *apiHandlers) DeleteFolder(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		DeleteFolder(ctx, &quizService.RequestWithID{
-			Id: id,
+		DeleteFolder(ctx, &quizService.RequestWithIdAndUID{
+			Id:  id,
+			Uid: uid,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("DeleteFolder", err)
@@ -530,11 +563,22 @@ func (ah *apiHandlers) DeleteModuleFromFolder(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		DeleteModuleFromFolder(ctx, &quizService.DeleteModuleFromFolderRequest{
 			ModuleID: moduleID,
 			FolderID: folderID,
+			Uid:      uid,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("DeleteModuleFromFolder", err)
@@ -668,6 +712,16 @@ func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		UpdateModule(ctx, &quizService.UpdateModuleRequest{
@@ -677,6 +731,7 @@ func (ah *apiHandlers) UpdateModule(c echo.Context) error {
 				NewTerms:     newTerms,
 				Id:           id,
 				SecureAccess: &quizService.SecureAccess{Access: dto.Access, Password: dto.Password},
+				Uid:          uid,
 			},
 		})
 	if err != nil {
@@ -723,10 +778,21 @@ func (ah *apiHandlers) DeleteModule(c echo.Context) error {
 		return err // Return an error if obtaining the client connection fails.
 	}
 
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		DeleteModule(ctx, &quizService.RequestWithID{
-			Id: id,
+		DeleteModule(ctx, &quizService.RequestWithIdAndUID{
+			Id:  id,
+			Uid: uid,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("DeleteModule", err)

@@ -40,12 +40,18 @@ func (cq *CardQuizzlerServer) CreateFolder(ctx context.Context, req *quizService
 func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService.UpdateFolderRequest) (*quizService.Response, error) {
 	lib.LogInfo("[UpdateFolder] Start processing grpc request")
 	payload := req.GetPayload()
+	uid := payload.GetUid()
 	secureAccess := payload.SecureAccess
 	folderID, err := uuid.Parse(payload.FolderID)
 
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
+
+	if err := cq.checkFolderOwnership(ctx, uid, folderID); err != nil {
+		return buildFailedResponse(err)
+	}
+
 	updateFolderDto := entities.UpdateFolderDto{
 		Title:    payload.Title,
 		Password: secureAccess.Password,
@@ -83,16 +89,24 @@ func (cq *CardQuizzlerServer) AddFolderToUser(ctx context.Context, req *quizServ
 	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "folder is added to user")
 }
 
-func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService.RequestWithIdAndUID) (*quizService.Response, error) {
 	lib.LogInfo("[DeleteFolder] Start processing grpc request")
 	id := req.GetId()
+	uid := req.GetUid()
 	folderID, err := uuid.Parse(id)
+
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
+
+	if err := cq.checkFolderOwnership(ctx, uid, folderID); err != nil {
+		return buildFailedResponse(err)
+	}
+
 	if err := cq.Repo.DeleteFolder(ctx, folderID); err != nil {
 		return buildFailedResponse(err)
 	}
+
 	return buildSuccessfulResponse(nil, http.StatusNoContent, "Folder is deleted")
 }
 
@@ -100,14 +114,28 @@ func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *q
 	lib.LogInfo("[DeleteModuleFromFolder] Start processing grpc request")
 	fID := req.GetFolderID()
 	mID := req.GetModuleID()
+	uid := req.GetUid()
+
 	folderID, err := uuid.Parse(fID)
+
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
+
 	moduleID, err := uuid.Parse(mID)
+
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
+
+	if err := cq.checkFolderOwnership(ctx, uid, folderID); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if err := cq.checkModuleOwnership(ctx, uid, moduleID); err != nil {
+		return buildFailedResponse(err)
+	}
+
 	if err := cq.Repo.DeleteModuleFromFolder(repositories.FolderModuleAssociation{
 		Ctx:      ctx,
 		FolderID: folderID,
