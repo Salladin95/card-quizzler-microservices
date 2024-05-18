@@ -71,6 +71,136 @@ func (ah *apiHandlers) GetUserFolders(c echo.Context) error {
 	return handleGRPCResponse(c, response, unmarshalTo)
 }
 
+func (ah *apiHandlers) GetFoldersByTitle(c echo.Context) error {
+	ctx := c.Request().Context()
+	logRequest(c)
+
+	limit := ParseInt(c.QueryParam("limit"), foldersDefaultLimit)
+	page := ParseInt(c.QueryParam("page"), 1)
+	sortBy := ParseSortBy(
+		c.QueryParam("sortBy"),
+		"asc",
+		"created_at",
+		FolderKeysMap,
+	)
+
+	title := c.Param("title")
+	if title == "" {
+		return goErrorHandler.NewError(goErrorHandler.ErrBadRequest, errors.New("title is required"))
+	}
+
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
+	var folders []entities.Folder
+	err := ah.cacheManager.ReadCacheByKeys(
+		&folders,
+		cacheManager.FoldersKey(uid),
+		fmt.Sprintf("%d:%d:%s:%s", limit, page, sortBy, title),
+	)
+
+	if err == nil {
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested folders", Data: folders})
+	}
+
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	// Make a gRPC call to the SignIn method of the Auth service
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		GetFoldersByTitle(ctx, &quizService.GetByTitleRequest{
+			Title: title,
+			Uid:   uid,
+			SortOptions: &quizService.SortOptions{
+				Limit:  limit,
+				Page:   page,
+				SortBy: sortBy,
+			},
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("GetFoldersByTitle", err)
+	}
+	var unmarshalTo []entities.Folder
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
+func (ah *apiHandlers) GetModulesByTitle(c echo.Context) error {
+	ctx := c.Request().Context()
+	logRequest(c)
+
+	limit := ParseInt(c.QueryParam("limit"), modulesDefaultLimit)
+	page := ParseInt(c.QueryParam("page"), 1)
+	sortBy := ParseSortBy(
+		c.QueryParam("sortBy"),
+		"asc",
+		"created_at",
+		ModuleKeysMap,
+	)
+
+	title := c.Param("title")
+	if title == "" {
+		return goErrorHandler.NewError(goErrorHandler.ErrBadRequest, errors.New("title is required"))
+	}
+
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
+
+	var modules []entities.Module
+	err := ah.cacheManager.ReadCacheByKeys(
+		&modules,
+		cacheManager.FoldersKey(uid),
+		fmt.Sprintf("%d:%d:%s:%s", limit, page, sortBy, title),
+	)
+
+	if err == nil {
+		return c.JSON(http.StatusOK, entities.JsonResponse{Message: "Requested modules", Data: modules})
+	}
+
+	// Obtain a gRPC client connection using the GetGRPCClientConn method from apiHandlers.
+	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
+	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
+	if err != nil {
+		return err // Return an error if obtaining the client connection fails.
+	}
+
+	// Make a gRPC call to the SignIn method of the Auth service
+	response, err := quizService.
+		NewCardQuizzlerServiceClient(clientConn).
+		GetModulesByTitle(ctx, &quizService.GetByTitleRequest{
+			Title: title,
+			Uid:   uid,
+			SortOptions: &quizService.SortOptions{
+				Limit:  limit,
+				Page:   page,
+				SortBy: sortBy,
+			},
+		})
+	if err != nil {
+		return goErrorHandler.OperationFailure("GetModulesByTitle", err)
+	}
+	var unmarshalTo []entities.Module
+	return handleGRPCResponse(c, response, unmarshalTo)
+}
+
 func (ah *apiHandlers) GetOpenFolders(c echo.Context) error {
 	ctx := c.Request().Context()
 	logRequest(c)
@@ -113,6 +243,7 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 	logRequest(c)
 
 	id := c.Param("id")
+	password := c.QueryParam("password")
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*lib.JwtUserClaims)
@@ -122,11 +253,12 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 			errors.New("failed to cast claims"),
 		)
 	}
+	uid := claims.Id
 
 	var folder entities.Folder
 	err := ah.cacheManager.ReadCacheByKeys(
 		&folder,
-		cacheManager.FolderKey(claims.Id),
+		cacheManager.FolderKey(uid),
 		cacheManager.FolderKey(id),
 	)
 
@@ -142,8 +274,10 @@ func (ah *apiHandlers) GetFolderByID(c echo.Context) error {
 
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		GetFolderByID(ctx, &quizService.RequestWithID{
-			Id: id,
+		GetFolderByID(ctx, &quizService.GetByIDRequest{
+			Id:       id,
+			Uid:      uid,
+			Password: password,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetFolderByID", err)
@@ -249,6 +383,7 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	id := c.Param("id")
+	password := c.QueryParam("password")
 
 	// Retrieve user claims from the context
 	claims, ok := c.Get("user").(*lib.JwtUserClaims)
@@ -258,11 +393,12 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 			errors.New("failed to cast claims"),
 		)
 	}
+	uid := claims.Id
 
 	var module entities.Module
 	err := ah.cacheManager.ReadCacheByKeys(
 		&module,
-		cacheManager.ModuleKey(claims.Id),
+		cacheManager.ModuleKey(uid),
 		cacheManager.ModuleKey(id),
 	)
 
@@ -278,8 +414,10 @@ func (ah *apiHandlers) GetModuleByID(c echo.Context) error {
 
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
-		GetModuleByID(ctx, &quizService.RequestWithID{
-			Id: id,
+		GetModuleByID(ctx, &quizService.GetByIDRequest{
+			Id:       id,
+			Uid:      uid,
+			Password: password,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("GetModuleByID", err)
@@ -456,8 +594,18 @@ func (ah *apiHandlers) AddFolderToUser(c echo.Context) error {
 	ctx := c.Request().Context()
 	logRequest(c)
 
-	folderID := c.QueryParam("folderID")
-	userID := c.QueryParam("userID")
+	folderID := c.Param("id")
+	password := c.QueryParam("password")
+
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
 
 	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
@@ -468,8 +616,9 @@ func (ah *apiHandlers) AddFolderToUser(c echo.Context) error {
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		AddFolderToUser(ctx, &quizService.AddFolderToUserRequest{
-			UserID:   userID,
+			UserID:   uid,
 			FolderID: folderID,
+			Password: password,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("AddFolderToUser", err)
@@ -745,8 +894,18 @@ func (ah *apiHandlers) AddModuleToUser(c echo.Context) error {
 	ctx := c.Request().Context()
 	logRequest(c)
 
-	moduleID := c.QueryParam("moduleID")
-	userID := c.QueryParam("userID")
+	moduleID := c.Param("id")
+	password := c.QueryParam("password")
+
+	// Retrieve user claims from the context
+	claims, ok := c.Get("user").(*lib.JwtUserClaims)
+	if !ok {
+		return goErrorHandler.NewError(
+			goErrorHandler.ErrUnauthorized,
+			errors.New("failed to cast claims"),
+		)
+	}
+	uid := claims.Id
 
 	clientConn, err := ah.GetGRPCClientConn(ah.config.AppCfg.CardQuizServiceUrl)
 	defer clientConn.Close() // Ensure the gRPC client connection is closed when done.
@@ -757,8 +916,9 @@ func (ah *apiHandlers) AddModuleToUser(c echo.Context) error {
 	response, err := quizService.
 		NewCardQuizzlerServiceClient(clientConn).
 		AddModuleToUser(ctx, &quizService.AddModuleToUserRequest{
-			UserID:   userID,
+			UserID:   uid,
 			ModuleID: moduleID,
+			Password: password,
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("AddModuleToUser", err)

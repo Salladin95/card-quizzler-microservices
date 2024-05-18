@@ -29,7 +29,6 @@ type Module struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
 	Access      string    `json:"access" gorm:"default:open;"`
-	Password    *string   `json:"password"`
 	AuthorID    string    `json:"authorID"` // user that has created this module in the first place
 	UserID      string    `json:"userID"`   // user that owns this module
 }
@@ -42,7 +41,6 @@ type Folder struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 	CopiesCount int       `json:"copiesCount" gorm:"default:0;column:copies_count"`
 	Access      string    `json:"access" gorm:"default:open;"`
-	Password    *string   `json:"password"`
 	AuthorID    string    `json:"authorID"` // user that has created this folder in the first place
 	UserID      string    `json:"userID"`   // user that owns this folder
 }

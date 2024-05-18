@@ -3,6 +3,9 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
@@ -62,4 +65,30 @@ func (cq *CardQuizzlerServer) checkModuleOwnership(ctx context.Context, uid stri
 		return err
 	}
 	return checkOwnership(uid, module.UserID)
+}
+
+func checkPassword(entity models.AccessControlledEntity, password string) error {
+	if password == "" {
+		return goErrorHandler.NewError(goErrorHandler.ErrBadRequest, errors.New("password is required"))
+	}
+	if err := lib.CompareHashAndPassword(entity.GetPassword(), password); err != nil {
+		return goErrorHandler.ForbiddenError()
+	}
+	return nil
+}
+
+func handleAccessValidation(entity models.AccessControlledEntity, uid, password string) (*quizService.Response, error) {
+	switch entity.GetAccess() {
+	case models.AccessOnlyMe:
+		if entity.GetUserID() != uid {
+			return buildFailedResponse(goErrorHandler.ForbiddenError())
+		}
+	case models.AccessPassword:
+		if entity.GetUserID() != uid {
+			if err := checkPassword(entity, password); err != nil {
+				return buildFailedResponse(err)
+			}
+		}
+	}
+	return buildSuccessfulResponse(entity, http.StatusOK, "requested entity")
 }

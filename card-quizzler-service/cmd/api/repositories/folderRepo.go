@@ -14,12 +14,12 @@ import (
 	"log/slog"
 )
 
-// GetOpenFolders retrieves folders where isOpen=true
-func (r *repo) GetOpenFolders(payload UidSortPayload) ([]models.Folder, error) {
+// GetFoldersByTitle retrieves folders by title
+func (r *repo) GetFoldersByTitle(payload GetByTitlePayload) ([]models.Folder, error) {
 	var folders []models.Folder
 	if err := r.db.
-		Preload("Modules.Terms").
-		Where("is_open = ?", true).
+		Preload("Modules").
+		Where("title LIKE ?", "%"+payload.Title+"%").
 		Order(payload.SortBy).
 		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
 		Find(&folders).
@@ -27,6 +27,36 @@ func (r *repo) GetOpenFolders(payload UidSortPayload) ([]models.Folder, error) {
 		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
 	}
 
+	data := fetchedData{
+		UserID: payload.Uid,
+		Key:    fmt.Sprintf("%d:%d:%s:%s", payload.Limit, payload.Page, payload.SortBy, payload.Title),
+		Data:   folders,
+	}
+
+	r.pushToQueue(payload.Ctx, constants.FetchedByTitleFoldersKey, data)
+	return folders, nil
+}
+
+// GetOpenFolders retrieves folders where isOpen=true
+func (r *repo) GetOpenFolders(payload GetByUIDPayload) ([]models.Folder, error) {
+	var folders []models.Folder
+	if err := r.db.
+		Preload("Modules.Terms").
+		Where("access = ?", "open").
+		Order(payload.SortBy).
+		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
+		Find(&folders).
+		Error; err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
+	}
+
+	data := fetchedData{
+		UserID: payload.Uid,
+		Key:    fmt.Sprintf("%d:%d:%s", payload.Limit, payload.Page, payload.SortBy),
+		Data:   folders,
+	}
+
+	r.pushToQueue(payload.Ctx, constants.FetchedFoldersKey, data)
 	return folders, nil
 }
 

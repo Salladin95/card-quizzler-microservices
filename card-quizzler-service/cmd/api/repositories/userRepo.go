@@ -7,7 +7,9 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
+	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
+	"log/slog"
 	"time"
 )
 
@@ -27,7 +29,7 @@ type fetchedData struct {
 }
 
 // GetFoldersByUID retrieves folders associated with a user by their UID from the database
-func (r *repo) GetFoldersByUID(payload UidSortPayload) ([]models.Folder, error) {
+func (r *repo) GetFoldersByUID(payload GetByUIDPayload) ([]models.Folder, error) {
 	var userFolders []models.Folder
 	if err := r.db.
 		Preload("Modules.Terms").
@@ -50,7 +52,7 @@ func (r *repo) GetFoldersByUID(payload UidSortPayload) ([]models.Folder, error) 
 }
 
 // GetModulesByUID retrieves modules associated with a user by their UID from the database.
-func (r *repo) GetModulesByUID(payload UidSortPayload) ([]models.Module, error) {
+func (r *repo) GetModulesByUID(payload GetByUIDPayload) ([]models.Module, error) {
 	var userModules []models.Module
 	if err := r.db.
 		Preload("Terms").
@@ -126,8 +128,9 @@ func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 		}
 
 		// Create a copy of the module
-		newModule := copyModule(module)
-		newModule.UserID = uid // Set the user ID for the new module
+		newModule := copyModule(module, uid)
+		log.Infof("source module", slog.Any("src module", module))
+		log.Infof("copied module", slog.Any("copied module", newModule))
 
 		// Create the new module within the transaction
 		if err := tx.Create(&newModule).Error; err != nil {
@@ -140,6 +143,7 @@ func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 		if err := tx.Save(&module).Error; err != nil {
 			return goErrorHandler.OperationFailure("increment copies_count", err)
 		}
+		r.pushToQueue(context.Background(), constants.CreatedModuleKey, newModule)
 		return nil
 	})
 }
@@ -160,8 +164,7 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 		}
 
 		// Create a copy of the folder
-		newFolder := copyFolder(folder)
-		newFolder.UserID = uid // Set the user ID for the new folder
+		newFolder := copyFolder(folder, uid)
 
 		// Create the new folder within the transaction
 		if err := tx.Create(&newFolder).Error; err != nil {
@@ -174,6 +177,7 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 		if err := tx.Save(&folder).Error; err != nil {
 			return goErrorHandler.OperationFailure("increment copies_count", err)
 		}
+		r.pushToQueue(context.Background(), constants.CreatedFolderKey, newFolder)
 		return nil
 	})
 }
@@ -181,44 +185,52 @@ func (r *repo) AddFolderToUser(uid string, folderID uuid.UUID) error {
 // copyModule creates a copy of the provided module.
 // It generates a new UUID for the module ID and sets the creation and update timestamps.
 // It also creates copies of the terms associated with the module, if any.
-func copyModule(src models.Module) models.Module {
+func copyModule(src models.Module, uid string) models.Module {
 	// Generate a new UUID for the module ID
 	moduleID := uuid.New()
 
 	// Create a new module with the copied attributes
 	return models.Module{
-		ID:        moduleID,
-		Title:     src.Title,
-		UserID:    src.UserID,
-		Terms:     copyTerms(src.Terms, moduleID), // Copy associated terms
-		CreatedAt: time.Now(),                     // Set creation timestamp
-		UpdatedAt: time.Now(),                     // Set update timestamp
+		ID:         moduleID,
+		Title:      src.Title,
+		UserID:     uid,
+		Terms:      copyTerms(src.Terms, moduleID), // Copy associated terms
+		CreatedAt:  time.Now(),                     // Set creation timestamp
+		UpdatedAt:  time.Now(),                     // Set update timestamp
+		AuthorID:   src.AuthorID,
+		Access:     src.Access,
+		Password:   src.Password,
+		OriginalID: src.OriginalID,
 	}
 }
 
 // copyFolder creates a copy of the provided folder.
 // It generates a new UUID for the folder ID and sets the creation and update timestamps.
 // It also creates copies of the modules associated with the folder, if any.
-func copyFolder(src models.Folder) models.Folder {
+func copyFolder(src models.Folder, uid string) models.Folder {
 	// Generate a new UUID for the folder ID
 	folderID := uuid.New()
 
 	// Create a new folder with the copied attributes
 	return models.Folder{
-		ID:        folderID,
-		Title:     src.Title,
-		UserID:    src.UserID,
-		Modules:   copyModules(src.Modules), // Copy associated modules
-		CreatedAt: time.Now(),               // Set creation timestamp
-		UpdatedAt: time.Now(),               // Set update timestamp
+		ID:         folderID,
+		Title:      src.Title,
+		UserID:     uid,
+		Modules:    copyModules(src.Modules, uid), // Copy associated modules
+		CreatedAt:  time.Now(),                    // Set creation timestamp
+		UpdatedAt:  time.Now(),                    // Set update timestamp
+		AuthorID:   src.AuthorID,
+		Access:     src.Access,
+		Password:   src.Password,
+		OriginalID: src.OriginalID,
 	}
 }
 
 // copyModules creates a copy of the provided array of modules.
-func copyModules(src []models.Module) []models.Module {
+func copyModules(src []models.Module, uid string) []models.Module {
 	var copies []models.Module
 	for _, module := range src {
-		copies = append(copies, copyModule(module))
+		copies = append(copies, copyModule(module, uid))
 	}
 	return copies
 }

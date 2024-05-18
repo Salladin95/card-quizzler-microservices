@@ -33,3 +33,33 @@ func UpdateStreaksAndUpdateDifficulty(term *Term, answer bool) {
 		}
 	}
 }
+
+type AccessControlledEntity interface {
+	GetUserID() string
+	GetPassword() string
+	GetAccess() AccessType
+}
+
+func (m *Module) GetUserID() string {
+	return m.UserID
+}
+
+func (m *Module) GetPassword() string {
+	return m.Password
+}
+
+func (m *Module) GetAccess() AccessType {
+	return m.Access
+}
+
+func (f *Folder) GetUserID() string {
+	return f.UserID
+}
+
+func (f *Folder) GetPassword() string {
+	return f.Password
+}
+
+func (f *Folder) GetAccess() AccessType {
+	return f.Access
+}

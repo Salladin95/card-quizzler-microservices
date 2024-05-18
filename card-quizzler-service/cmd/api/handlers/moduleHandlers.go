@@ -80,9 +80,10 @@ func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizServ
 
 	// Extract module and user IDs from the request
 	mID := req.GetModuleID()
-	userID := req.GetUserID()
+	uid := req.GetUserID()
+	password := req.GetPassword()
 
-	if userID == "" {
+	if uid == "" {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "User id is required"}, nil
 	}
 
@@ -91,8 +92,23 @@ func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizServ
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
 
+	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if module.Access == models.AccessOnlyMe {
+		return buildFailedResponse(goErrorHandler.ForbiddenError())
+	}
+
+	if module.Access == models.AccessPassword {
+		if err := checkPassword(&module, password); err != nil {
+			return buildFailedResponse(err)
+		}
+	}
+
 	// Add module to user in the repository
-	if err := cq.Repo.AddModuleToUser(userID, moduleID); err != nil {
+	if err := cq.Repo.AddModuleToUser(uid, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -309,12 +325,43 @@ func (cq *CardQuizzlerServer) GetUserModules(ctx context.Context, req *quizServi
 	payload := req.GetPayload()
 
 	// Retrieve modules associated with the user from the repository
-	modules, err := cq.Repo.GetModulesByUID(repositories.UidSortPayload{
-		Ctx:    ctx,
-		Uid:    uid,
-		Limit:  payload.Limit,
-		Page:   payload.Page,
-		SortBy: payload.SortBy,
+	modules, err := cq.Repo.GetModulesByUID(repositories.GetByUIDPayload{
+		SortPayload: repositories.SortPayload{
+			Ctx:    ctx,
+			Uid:    uid,
+			Limit:  payload.Limit,
+			Page:   payload.Page,
+			SortBy: payload.SortBy,
+		},
+	})
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
+}
+
+func (cq *CardQuizzlerServer) GetModulesByTitle(ctx context.Context, req *quizService.GetByTitleRequest) (*quizService.Response, error) {
+	lib.LogInfo("[GetModulesByTitle] Start processing grpc request")
+	title := req.GetTitle()
+	if title == "" {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: "title is missing"}, nil
+	}
+	uid := req.GetUid()
+	if uid == "" {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
+	}
+	sortOptions := req.GetSortOptions()
+
+	modules, err := cq.Repo.GetModulesByTitle(repositories.GetByTitlePayload{
+		Title: title,
+		SortPayload: repositories.SortPayload{
+			Ctx:    ctx,
+			Uid:    uid,
+			Limit:  sortOptions.Limit,
+			Page:   sortOptions.Page,
+			SortBy: sortOptions.SortBy,
+		},
 	})
 	if err != nil {
 		return buildFailedResponse(err)
@@ -329,11 +376,13 @@ func (cq *CardQuizzlerServer) GetOpenModules(ctx context.Context, req *quizServi
 	payload := req.GetPayload()
 
 	// Retrieve modules associated with the user from the repository
-	modules, err := cq.Repo.GetOpenModules(repositories.UidSortPayload{
-		Ctx:    ctx,
-		Limit:  payload.Limit,
-		Page:   payload.Page,
-		SortBy: payload.SortBy,
+	modules, err := cq.Repo.GetOpenModules(repositories.GetByUIDPayload{
+		SortPayload: repositories.SortPayload{
+			Ctx:    ctx,
+			Limit:  payload.Limit,
+			Page:   payload.Page,
+			SortBy: payload.SortBy,
+		},
 	})
 	if err != nil {
 		return buildFailedResponse(err)
@@ -359,8 +408,11 @@ func (cq *CardQuizzlerServer) GetDifficultModulesByUID(ctx context.Context, req 
 	return buildSuccessfulResponse(modules, http.StatusOK, "requested modules")
 }
 
-func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizService.GetByIDRequest) (*quizService.Response, error) {
 	lib.LogInfo("[GetModuleByID] Start processing grpc request", "info", "GetModuleByID")
+
+	uid := req.GetUid()
+	password := req.GetPassword()
 
 	id := req.GetId()
 	parsedID, err := uuid.Parse(id)
@@ -374,7 +426,7 @@ func (cq *CardQuizzlerServer) GetModuleByID(ctx context.Context, req *quizServic
 		return buildFailedResponse(err)
 	}
 
-	return buildSuccessfulResponse(module, http.StatusOK, "requested module")
+	return handleAccessValidation(&module, uid, password)
 }
 
 func (cq *CardQuizzlerServer) UpdateTerm(ctx context.Context, req *quizService.UpdaterTermRequest) (*quizService.Response, error) {

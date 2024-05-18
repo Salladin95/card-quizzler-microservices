@@ -52,11 +52,13 @@ message DeleteModuleFromFolderRequest {
 message AddFolderToUserRequest {
   string userID = 1;
   string folderID = 2;
+  string password = 3;
 }
 
 message AddModuleToUserRequest {
   string userID = 1;
   string moduleID = 2;
+  string password = 3;
 }
 
 message AddModuleToFolderRequest {
@@ -134,12 +136,25 @@ message UpdaterTermRequest {
   string moduleID = 4;
 }
 
+message GetByIDRequest {
+  string id = 1;
+  string uid = 2;
+  string password = 3;
+}
+
+message GetByTitleRequest {
+  string title = 1;
+  string uid = 2;
+  SortOptions sortOptions = 3;
+}
+
 service CardQuizzlerService {
   rpc ProcessQuizResult(ProcessQuizRequest) returns (Response);
   rpc GetOpenFolders(GetOpenFoldersRequest) returns (Response);
   rpc GetOpenModules(GetOpenModulesRequest) returns (Response);
   rpc GetUserFolders(GetUserFoldersRequest) returns (Response);
-  rpc GetFolderByID(RequestWithID) returns (Response);
+  rpc GetFolderByID(GetByIDRequest) returns (Response);
+  rpc GetFoldersByTitle(GetByTitleRequest) returns (Response);
   rpc CreateFolder(CreateFolderRequest) returns (Response);
   rpc UpdateFolder(UpdateFolderRequest) returns (Response);
   rpc DeleteFolder(RequestWithIdAndUID) returns (Response);
@@ -147,7 +162,8 @@ service CardQuizzlerService {
   rpc AddFolderToUser(AddFolderToUserRequest) returns (Response);
   rpc GetUserModules(GetUserModulesRequest) returns (Response);
   rpc GetDifficultModulesByUID(GetDifficultModulesRequest) returns (Response);
-  rpc GetModuleByID(RequestWithID) returns (Response);
+  rpc GetModuleByID(GetByIDRequest) returns (Response);
+  rpc GetModulesByTitle(GetByTitleRequest) returns (Response);
   rpc CreateModule(CreateModuleRequest) returns (Response);
   rpc CreateModuleInFolder(CreateModuleInFolderRequest) returns (Response);
   rpc UpdateModule(UpdateModuleRequest) returns (Response);

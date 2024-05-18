@@ -49,21 +49,26 @@ func (app *App) setupRoutes(
 	// updates user's progress
 	protectedRoutes.PATCH("/process-quiz-result", handlers.ProcessQuizResult)
 	// adds folder to user
-	protectedRoutes.PATCH("/add-folder-to-user", handlers.AddFolderToUser)
+	protectedRoutes.PATCH("/copy-folder/:id", handlers.AddFolderToUser)
 	// creates folder
 	protectedRoutes.POST("/folder", handlers.CreateFolder)
 	// updates folder
 	protectedRoutes.PATCH("/folder/:id", handlers.UpdateFolder)
 	// gets folders by userID
 	protectedRoutes.GET("/folder", handlers.GetUserFolders)
+	protectedRoutes.GET("/folders-by-title/:title", handlers.GetFoldersByTitle)
+	protectedRoutes.GET("/modules-by-title/:title", handlers.GetModulesByTitle)
+	protectedRoutes.GET("/open-module", handlers.GetOpenModules)
 	// get open folders
 	protectedRoutes.GET("/open-folder", handlers.GetOpenFolders)
+	// get open modules
+	protectedRoutes.GET("/open-module", handlers.GetOpenModules)
 	// gets folder by folderID
 	protectedRoutes.GET("/folder/:id", handlers.GetFolderByID)
 	// deletes folder by folderID
 	protectedRoutes.DELETE("/folder/:id", handlers.DeleteFolder)
 	// adds module to user
-	protectedRoutes.PATCH("/add-module-to-user", handlers.AddModuleToUser)
+	protectedRoutes.PATCH("/copy-module/:id", handlers.AddModuleToUser)
 	// adds module to user
 	protectedRoutes.PATCH("/add-module-to-folder", handlers.AddModuleToFolder)
 	// creates module and adds to the folder with passed folderID
@@ -74,8 +79,6 @@ func (app *App) setupRoutes(
 	protectedRoutes.PATCH("/module/:id", handlers.UpdateModule)
 	// get modules by userID
 	protectedRoutes.GET("/module", handlers.GetUserModules)
-	// get open modules
-	protectedRoutes.GET("/open-module", handlers.GetOpenModules)
 	// get difficult modules by userID
 	protectedRoutes.GET("/difficult-modules", handlers.GetDifficultModules)
 	// gets module by moduleID

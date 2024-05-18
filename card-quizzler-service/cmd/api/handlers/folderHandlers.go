@@ -7,6 +7,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
+	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"net/http"
 	"strings"
@@ -75,15 +76,34 @@ func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService
 func (cq *CardQuizzlerServer) AddFolderToUser(ctx context.Context, req *quizService.AddFolderToUserRequest) (*quizService.Response, error) {
 	lib.LogInfo("[AddFolderToUser] Start processing grpc request")
 	fID := req.GetFolderID()
-	userID := req.GetUserID()
+	password := req.GetPassword()
 	folderID, err := uuid.Parse(fID)
+
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
 	}
-	if userID == "" {
+
+	uid := req.GetUserID()
+	if uid == "" {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: "User id is required"}, nil
 	}
-	if err := cq.Repo.AddFolderToUser(userID, folderID); err != nil {
+
+	folder, err := cq.Repo.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if folder.Access == models.AccessOnlyMe {
+		return buildFailedResponse(goErrorHandler.ForbiddenError())
+	}
+
+	if folder.Access == models.AccessPassword {
+		if err := checkPassword(&folder, password); err != nil {
+			return buildFailedResponse(err)
+		}
+	}
+
+	if err := cq.Repo.AddFolderToUser(uid, folderID); err != nil {
 		return buildFailedResponse(err)
 	}
 	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "folder is added to user")
@@ -154,12 +174,43 @@ func (cq *CardQuizzlerServer) GetUserFolders(ctx context.Context, req *quizServi
 	}
 	payload := req.GetPayload()
 
-	folders, err := cq.Repo.GetFoldersByUID(repositories.UidSortPayload{
-		Ctx:    ctx,
-		Uid:    uid,
-		Limit:  payload.Limit,
-		Page:   payload.Page,
-		SortBy: payload.SortBy,
+	folders, err := cq.Repo.GetFoldersByUID(repositories.GetByUIDPayload{
+		SortPayload: repositories.SortPayload{
+			Ctx:    ctx,
+			Uid:    uid,
+			Limit:  payload.Limit,
+			Page:   payload.Page,
+			SortBy: payload.SortBy,
+		},
+	})
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	return buildSuccessfulResponse(folders, http.StatusOK, "requested folders")
+}
+
+func (cq *CardQuizzlerServer) GetFoldersByTitle(ctx context.Context, req *quizService.GetByTitleRequest) (*quizService.Response, error) {
+	lib.LogInfo("[GetFoldersByTitle] Start processing grpc request")
+	title := req.GetTitle()
+	if title == "" {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: "title is missing"}, nil
+	}
+	uid := req.GetUid()
+	if uid == "" {
+		return &quizService.Response{Code: http.StatusBadRequest, Message: "user id is missing"}, nil
+	}
+	sortOptions := req.GetSortOptions()
+
+	folders, err := cq.Repo.GetFoldersByTitle(repositories.GetByTitlePayload{
+		Title: title,
+		SortPayload: repositories.SortPayload{
+			Ctx:    ctx,
+			Uid:    uid,
+			Limit:  sortOptions.Limit,
+			Page:   sortOptions.Page,
+			SortBy: sortOptions.SortBy,
+		},
 	})
 	if err != nil {
 		return buildFailedResponse(err)
@@ -172,11 +223,13 @@ func (cq *CardQuizzlerServer) GetOpenFolders(ctx context.Context, req *quizServi
 	lib.LogInfo("[GetOpenFolders] Start processing grpc request")
 	payload := req.GetPayload()
 
-	folders, err := cq.Repo.GetOpenFolders(repositories.UidSortPayload{
-		Ctx:    ctx,
-		Limit:  payload.Limit,
-		Page:   payload.Page,
-		SortBy: payload.SortBy,
+	folders, err := cq.Repo.GetOpenFolders(repositories.GetByUIDPayload{
+		SortPayload: repositories.SortPayload{
+			Ctx:    ctx,
+			Limit:  payload.Limit,
+			Page:   payload.Page,
+			SortBy: payload.SortBy,
+		},
 	})
 	if err != nil {
 		return buildFailedResponse(err)
@@ -185,9 +238,12 @@ func (cq *CardQuizzlerServer) GetOpenFolders(ctx context.Context, req *quizServi
 	return buildSuccessfulResponse(folders, http.StatusOK, "requested folders")
 }
 
-func (cq *CardQuizzlerServer) GetFolderByID(ctx context.Context, req *quizService.RequestWithID) (*quizService.Response, error) {
+func (cq *CardQuizzlerServer) GetFolderByID(ctx context.Context, req *quizService.GetByIDRequest) (*quizService.Response, error) {
 	lib.LogInfo("[GetFolderByID] Start processing grpc request")
 	id := req.GetId()
+	uid := req.GetUid()
+	password := req.GetPassword()
+
 	parsedID, err := uuid.Parse(id)
 	if err != nil {
 		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
@@ -198,5 +254,5 @@ func (cq *CardQuizzlerServer) GetFolderByID(ctx context.Context, req *quizServic
 		return buildFailedResponse(err)
 	}
 
-	return buildSuccessfulResponse(folder, http.StatusOK, "requested folder")
+	return handleAccessValidation(&folder, uid, password)
 }

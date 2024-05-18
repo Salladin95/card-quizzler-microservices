@@ -74,6 +74,44 @@ func (s *subscribers) cardQuizEventHandler(key string, payload []byte) {
 			marshalledData,
 			s.cacheManager.Exp(),
 		)
+	case constants.FetchedByTitleFoldersKey:
+		var dto foldersDto
+		if err := lib.UnmarshalData(payload, &dto); err != nil {
+			lib.LogError(err)
+			return
+		}
+		marshalledData, err := lib.MarshalData(dto.Data)
+		if err != nil {
+			lib.LogError(err)
+			return
+		}
+
+		// Clear the cache for the folders
+		s.cacheManager.SetCacheByKeys(
+			cacheManager.FoldersKey(user.UserID),
+			dto.Key,
+			marshalledData,
+			s.cacheManager.Exp(),
+		)
+
+	case constants.FetchedByTitleModulesKey:
+		var dto modulesDto
+		if err := lib.UnmarshalData(payload, &dto); err != nil {
+			lib.LogError(err)
+			return
+		}
+		marshalledData, err := lib.MarshalData(dto.Data)
+		if err != nil {
+			lib.LogError(err)
+			return
+		}
+		// Clear the cache for the folders
+		s.cacheManager.SetCacheByKeys(
+			cacheManager.ModulesKey(user.UserID),
+			dto.Key,
+			marshalledData,
+			s.cacheManager.Exp(),
+		)
 	case constants.FetchedDifficultModulesKey:
 		// Clear the cache for the folders
 		s.cacheManager.SetCacheByKeys(

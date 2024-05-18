@@ -33,9 +33,10 @@ const (
 
 type Module struct {
 	ID          uuid.UUID  `gorm:"primary_key;unique;" json:"id"`
+	OriginalID  uuid.UUID  `gorm:"column:original_id"json:"originalID"`
 	Title       string     `json:"title"`
-	UserID      string     `json:"userID"`   // user that owns this module
-	AuthorID    string     `json:"authorID"` // user that has created this module in the first place
+	UserID      string     `json:"userID" gorm:"column:user_id"` // user that owns this folder
+	AuthorID    string     `json:"authorID"`                     // user that has created this module in the first place
 	Folders     []Folder   `gorm:"many2many:module_folders;" json:"folders,omitempty"`
 	Terms       []Term     `gorm:"foreignKey:ModuleID;" json:"terms"`
 	CreatedAt   time.Time  `json:"createdAt"`
@@ -47,9 +48,10 @@ type Module struct {
 
 type Folder struct {
 	ID          uuid.UUID  `gorm:"primary_key;unique;" json:"id"`
+	OriginalID  uuid.UUID  `gorm:"column:original_id"json:"originalID"`
 	Title       string     `json:"title"`
-	UserID      string     `json:"userID"`   // user that owns this folder
-	AuthorID    string     `json:"authorID"` // user that has created this folder in the first place
+	UserID      string     `json:"userID" gorm:"column:user_id"` // user that owns this folder
+	AuthorID    string     `json:"authorID"`                     // user that has created this folder in the first place
 	Modules     []Module   `gorm:"many2many:module_folders;" json:"modules"`
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt"`

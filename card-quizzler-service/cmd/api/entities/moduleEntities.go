@@ -40,13 +40,14 @@ func (dto *CreateModuleDto) ToModel() (models.Module, error) {
 	}
 
 	module = models.Module{
-		ID:       id,
-		Title:    dto.Title,
-		UserID:   dto.UserID,
-		AuthorID: dto.UserID,
-		Access:   dto.Access,
-		Password: psd,
-		Folders:  []models.Folder{},
+		ID:         id,
+		Title:      dto.Title,
+		UserID:     dto.UserID,
+		AuthorID:   dto.UserID,
+		Access:     dto.Access,
+		Password:   psd,
+		Folders:    []models.Folder{},
+		OriginalID: id,
 	}
 
 	return module, nil

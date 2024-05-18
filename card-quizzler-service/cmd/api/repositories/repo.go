@@ -15,12 +15,21 @@ type repo struct {
 	broker rmqtools.MessageBroker
 }
 
-type UidSortPayload struct {
+type SortPayload struct {
 	Ctx    context.Context
 	Uid    string
 	Limit  int64
 	Page   int64
 	SortBy string
+}
+
+type GetByUIDPayload struct {
+	SortPayload
+}
+
+type GetByTitlePayload struct {
+	SortPayload
+	Title string
 }
 
 type FolderModuleAssociation struct {
@@ -42,19 +51,21 @@ type UpdateFolderPayload struct {
 }
 
 type Repository interface {
-	GetFoldersByUID(req UidSortPayload) ([]models.Folder, error)
-	GetOpenFolders(req UidSortPayload) ([]models.Folder, error)
+	GetFoldersByUID(req GetByUIDPayload) ([]models.Folder, error)
+	GetOpenFolders(req GetByUIDPayload) ([]models.Folder, error)
 	GetFolderByID(ctx context.Context, id uuid.UUID) (models.Folder, error)
+	GetFoldersByTitle(req GetByTitlePayload) ([]models.Folder, error)
 	CreateFolder(ctx context.Context, dto entities.CreateFolderDto) (models.Folder, error)
 	UpdateFolder(req UpdateFolderPayload) (models.Folder, error)
 	DeleteFolder(ctx context.Context, id uuid.UUID) error
 	DeleteModuleFromFolder(FolderModuleAssociation) error
 	AddFolderToUser(uid string, folderID uuid.UUID) error
 	AddModuleToFolder(FolderModuleAssociation) error
-	GetModulesByUID(req UidSortPayload) ([]models.Module, error)
-	GetOpenModules(req UidSortPayload) ([]models.Module, error)
+	GetModulesByUID(req GetByUIDPayload) ([]models.Module, error)
+	GetOpenModules(req GetByUIDPayload) ([]models.Module, error)
 	GetDifficultModulesByUID(ctx context.Context, uid string) ([]models.Module, error)
 	GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, error)
+	GetModulesByTitle(req GetByTitlePayload) ([]models.Module, error)
 	CreateModule(ctx context.Context, dto entities.CreateModuleDto) (models.Module, error)
 	UpdateModule(req UpdateModulePayload) (models.Module, error)
 	DeleteModule(ctx context.Context, id uuid.UUID) error

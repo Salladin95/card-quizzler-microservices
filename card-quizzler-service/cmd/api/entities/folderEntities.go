@@ -44,13 +44,14 @@ func (dto *CreateFolderDto) ToModel() (models.Folder, error) {
 	}
 
 	return models.Folder{
-		ID:       id,
-		UserID:   dto.UserID,
-		Title:    dto.Title,
-		Modules:  []models.Module{},
-		AuthorID: dto.UserID,
-		Access:   dto.Access,
-		Password: psd,
+		ID:         id,
+		UserID:     dto.UserID,
+		Title:      dto.Title,
+		Modules:    []models.Module{},
+		AuthorID:   dto.UserID,
+		Access:     dto.Access,
+		Password:   psd,
+		OriginalID: id,
 	}, nil
 }
 

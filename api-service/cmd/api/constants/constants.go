@@ -9,6 +9,8 @@ const (
 	DeletedUserKey                  = "user-service.user.deleted"
 	LogCommand                      = "logging-service.log"
 	RequestEmailVerificationCommand = "mail-service.request-email-verification"
+	FetchedByTitleFoldersKey        = "card-quizzler-service.folders-by-title.fetched"
+	FetchedByTitleModulesKey        = "card-quizzler-service.modules-by-title.fetched"
 	FetchUserFoldersKey             = "card-quizzler-service.user-folders.fetched"
 	FetchedFolderKey                = "card-quizzler-service.folder.fetched"
 	FetchedUserModulesKey           = "card-quizzler-service.user-modules.fetched"

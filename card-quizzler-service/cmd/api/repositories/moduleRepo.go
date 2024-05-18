@@ -15,12 +15,34 @@ import (
 	"time"
 )
 
+// GetModulesByTitle retrieves folders by title
+func (r *repo) GetModulesByTitle(payload GetByTitlePayload) ([]models.Module, error) {
+	var modules []models.Module
+	if err := r.db.
+		Where("title LIKE ?", "%"+payload.Title+"%").
+		Order(payload.SortBy).
+		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
+		Find(&modules).
+		Error; err != nil {
+		return nil, goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
+	}
+
+	data := fetchedData{
+		UserID: payload.Uid,
+		Key:    fmt.Sprintf("%d:%d:%s:%s", payload.Limit, payload.Page, payload.SortBy, payload.Title),
+		Data:   modules,
+	}
+
+	r.pushToQueue(payload.Ctx, constants.FetchedByTitleModulesKey, data)
+	return modules, nil
+}
+
 // GetOpenModules retrieves modules where isOpen=true
-func (r *repo) GetOpenModules(payload UidSortPayload) ([]models.Module, error) {
+func (r *repo) GetOpenModules(payload GetByUIDPayload) ([]models.Module, error) {
 	var modules []models.Module
 	if err := r.db.
 		Preload("Terms").
-		Where("is_open = ?", true).
+		Where("access = ?", "open").
 		Order(payload.SortBy).
 		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
 		Find(&modules).
@@ -34,7 +56,7 @@ func (r *repo) GetOpenModules(payload UidSortPayload) ([]models.Module, error) {
 		Data:   modules,
 	}
 
-	r.pushToQueue(payload.Ctx, constants.FetchedUserFoldersKey, data)
+	r.pushToQueue(payload.Ctx, constants.FetchedModulesKey, data)
 	return modules, nil
 }
 

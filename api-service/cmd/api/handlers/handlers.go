@@ -41,6 +41,8 @@ type ApiHandlersInterface interface {
 	UpdateTerm(c echo.Context) error
 	GetOpenFolders(c echo.Context) error
 	GetOpenModules(c echo.Context) error
+	GetModulesByTitle(c echo.Context) error
+	GetFoldersByTitle(c echo.Context) error
 }
 
 // apiHandlers implements the ApiHandlersInterface.
