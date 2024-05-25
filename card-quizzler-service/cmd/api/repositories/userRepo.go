@@ -7,9 +7,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
-	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
-	"log/slog"
 	"time"
 )
 
@@ -129,8 +127,6 @@ func (r *repo) AddModuleToUser(uid string, moduleID uuid.UUID) error {
 
 		// Create a copy of the module
 		newModule := copyModule(module, uid)
-		log.Infof("source module", slog.Any("src module", module))
-		log.Infof("copied module", slog.Any("copied module", newModule))
 
 		// Create the new module within the transaction
 		if err := tx.Create(&newModule).Error; err != nil {
@@ -191,16 +187,17 @@ func copyModule(src models.Module, uid string) models.Module {
 
 	// Create a new module with the copied attributes
 	return models.Module{
-		ID:         moduleID,
-		Title:      src.Title,
-		UserID:     uid,
-		Terms:      copyTerms(src.Terms, moduleID), // Copy associated terms
-		CreatedAt:  time.Now(),                     // Set creation timestamp
-		UpdatedAt:  time.Now(),                     // Set update timestamp
-		AuthorID:   src.AuthorID,
-		Access:     src.Access,
-		Password:   src.Password,
-		OriginalID: src.OriginalID,
+		ID:          moduleID,
+		Title:       src.Title,
+		UserID:      uid,
+		Terms:       copyTerms(src.Terms, moduleID), // Copy associated terms
+		CreatedAt:   time.Now(),                     // Set creation timestamp
+		UpdatedAt:   time.Now(),                     // Set update timestamp
+		AuthorID:    src.AuthorID,
+		Access:      src.Access,
+		Password:    src.Password,
+		OriginalID:  src.OriginalID,
+		CopiesCount: 0,
 	}
 }
 
@@ -213,16 +210,17 @@ func copyFolder(src models.Folder, uid string) models.Folder {
 
 	// Create a new folder with the copied attributes
 	return models.Folder{
-		ID:         folderID,
-		Title:      src.Title,
-		UserID:     uid,
-		Modules:    copyModules(src.Modules, uid), // Copy associated modules
-		CreatedAt:  time.Now(),                    // Set creation timestamp
-		UpdatedAt:  time.Now(),                    // Set update timestamp
-		AuthorID:   src.AuthorID,
-		Access:     src.Access,
-		Password:   src.Password,
-		OriginalID: src.OriginalID,
+		ID:          folderID,
+		Title:       src.Title,
+		UserID:      uid,
+		Modules:     copyModules(src.Modules, uid), // Copy associated modules
+		CreatedAt:   time.Now(),                    // Set creation timestamp
+		UpdatedAt:   time.Now(),                    // Set update timestamp
+		AuthorID:    src.AuthorID,
+		Access:      src.Access,
+		Password:    src.Password,
+		OriginalID:  src.OriginalID,
+		CopiesCount: 0,
 	}
 }
 

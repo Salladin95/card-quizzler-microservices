@@ -34,8 +34,11 @@ func buildSuccessfulResponse(data interface{}, successCode int64, message string
 	if err != nil {
 		return &quizService.Response{Code: http.StatusInternalServerError, Message: err.Error()}, nil
 	}
-	// Return the authentication response with the success code, message, and marshalled user data
 	return &quizService.Response{Code: successCode, Message: message, Data: marshalledData}, nil
+}
+
+func buildNoContentResponse(successCode int64, message string) (*quizService.Response, error) {
+	return &quizService.Response{Code: successCode, Message: message, Data: nil}, nil
 }
 
 // buildFailedResponse extracts code and message from error and returns a quizService.Response.
@@ -69,7 +72,7 @@ func (cq *CardQuizzlerServer) checkModuleOwnership(ctx context.Context, uid stri
 
 func checkPassword(entity models.AccessControlledEntity, password string) error {
 	if password == "" {
-		return goErrorHandler.NewError(goErrorHandler.ErrBadRequest, errors.New("password is required"))
+		return goErrorHandler.NewError(goErrorHandler.ErrForbidden, errors.New("password is required"))
 	}
 	if err := lib.CompareHashAndPassword(entity.GetPassword(), password); err != nil {
 		return goErrorHandler.ForbiddenError()

@@ -623,8 +623,7 @@ func (ah *apiHandlers) AddFolderToUser(c echo.Context) error {
 	if err != nil {
 		return goErrorHandler.OperationFailure("AddFolderToUser", err)
 	}
-	var unmarshalTo entities.Folder
-	return handleGRPCResponse(c, response, unmarshalTo)
+	return handleGRPCResponseNoContent(c, response)
 }
 
 func (ah *apiHandlers) AddModuleToFolder(c echo.Context) error {

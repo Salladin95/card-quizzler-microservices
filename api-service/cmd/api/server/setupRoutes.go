@@ -49,7 +49,7 @@ func (app *App) setupRoutes(
 	// updates user's progress
 	protectedRoutes.PATCH("/process-quiz-result", handlers.ProcessQuizResult)
 	// adds folder to user
-	protectedRoutes.PATCH("/copy-folder/:id", handlers.AddFolderToUser)
+	protectedRoutes.POST("/copy-folder/:id", handlers.AddFolderToUser)
 	// creates folder
 	protectedRoutes.POST("/folder", handlers.CreateFolder)
 	// updates folder
@@ -68,7 +68,7 @@ func (app *App) setupRoutes(
 	// deletes folder by folderID
 	protectedRoutes.DELETE("/folder/:id", handlers.DeleteFolder)
 	// adds module to user
-	protectedRoutes.PATCH("/copy-module/:id", handlers.AddModuleToUser)
+	protectedRoutes.POST("/copy-module/:id", handlers.AddModuleToUser)
 	// adds module to user
 	protectedRoutes.PATCH("/add-module-to-folder", handlers.AddModuleToFolder)
 	// creates module and adds to the folder with passed folderID

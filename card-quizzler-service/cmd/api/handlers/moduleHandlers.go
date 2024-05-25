@@ -112,7 +112,7 @@ func (cq *CardQuizzlerServer) AddModuleToUser(ctx context.Context, req *quizServ
 		return buildFailedResponse(err)
 	}
 
-	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "Module is added to user")
+	return buildNoContentResponse(http.StatusNoContent, "Module is added to user")
 }
 
 func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizService.AddModuleToFolderRequest) (*quizService.Response, error) {
@@ -151,7 +151,7 @@ func (cq *CardQuizzlerServer) AddModuleToFolder(ctx context.Context, req *quizSe
 		return buildFailedResponse(err)
 	}
 
-	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "Module is added to folder")
+	return buildNoContentResponse(http.StatusNoContent, "Module is added to folder")
 }
 
 func (cq *CardQuizzlerServer) CreateModule(ctx context.Context, req *quizService.CreateModuleRequest) (*quizService.Response, error) {

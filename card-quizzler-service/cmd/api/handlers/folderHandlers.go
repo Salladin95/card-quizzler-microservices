@@ -106,7 +106,7 @@ func (cq *CardQuizzlerServer) AddFolderToUser(ctx context.Context, req *quizServ
 	if err := cq.Repo.AddFolderToUser(uid, folderID); err != nil {
 		return buildFailedResponse(err)
 	}
-	return buildSuccessfulResponse(http.StatusNoContent, http.StatusOK, "folder is added to user")
+	return buildNoContentResponse(http.StatusNoContent, "folder is added to user")
 }
 
 func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService.RequestWithIdAndUID) (*quizService.Response, error) {
@@ -127,7 +127,7 @@ func (cq *CardQuizzlerServer) DeleteFolder(ctx context.Context, req *quizService
 		return buildFailedResponse(err)
 	}
 
-	return buildSuccessfulResponse(nil, http.StatusNoContent, "Folder is deleted")
+	return buildNoContentResponse(http.StatusNoContent, "Folder is deleted")
 }
 
 func (cq *CardQuizzlerServer) DeleteModuleFromFolder(ctx context.Context, req *quizService.DeleteModuleFromFolderRequest) (*quizService.Response, error) {

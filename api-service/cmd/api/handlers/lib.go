@@ -105,7 +105,7 @@ func handleGRPCResponse(c echo.Context, res GrpcResponse, unmarshalTo interface{
 
 func handleGRPCResponseNoContent(c echo.Context, res GrpcResponse) error {
 	code := int(res.GetCode())
-	return c.String(code, res.GetMessage())
+	return c.JSON(code, entities.JsonResponse{Message: res.GetMessage(), Data: nil})
 }
 
 func handleCacheResponse(c echo.Context, data any) error {
