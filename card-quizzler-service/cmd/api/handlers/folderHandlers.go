@@ -42,26 +42,43 @@ func (cq *CardQuizzlerServer) UpdateFolder(ctx context.Context, req *quizService
 	lib.LogInfo("[UpdateFolder] Start processing grpc request")
 	payload := req.GetPayload()
 	uid := payload.GetUid()
-	secureAccess := payload.SecureAccess
-	folderID, err := uuid.Parse(payload.FolderID)
 
+	folderID, err := lib.ParseUUID(payload.FolderID)
 	if err != nil {
-		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
+		return buildFailedResponse(err)
 	}
 
-	if err := cq.checkFolderOwnership(ctx, uid, folderID); err != nil {
+	folder, err := cq.Repo.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if err := checkOwnership(uid, folder.UserID); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	secureAccess := entities.SecureAccess{
+		Access:   models.AccessType(strings.ToLower(payload.SecureAccess.Access)),
+		Password: payload.SecureAccess.Password,
+	}
+
+	if err := CheckPassword(
+		secureAccess,
+		folder.Access,
+	); err != nil {
 		return buildFailedResponse(err)
 	}
 
 	updateFolderDto := entities.UpdateFolderDto{
 		Title:    payload.Title,
+		Access:   secureAccess.Access,
 		Password: secureAccess.Password,
-		Access:   models.AccessType(strings.ToLower(secureAccess.Access)),
 	}
 
 	if err := updateFolderDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
+
 	updateFolder, err := cq.Repo.UpdateFolder(repositories.UpdateFolderPayload{
 		Ctx:      ctx,
 		FolderID: folderID,

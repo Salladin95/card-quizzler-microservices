@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
@@ -94,4 +95,16 @@ func handleAccessValidation(entity models.AccessControlledEntity, uid, password 
 		}
 	}
 	return buildSuccessfulResponse(entity, http.StatusOK, "requested entity")
+}
+
+// CheckPassword Helper function to validate and hash password based on access type
+// if user just setting access as models.AccessPassword he must also provide password
+func CheckPassword(secureAccess entities.SecureAccess, currentAccess models.AccessType) error {
+	psd := secureAccess.Password
+	newAccess := secureAccess.Access
+
+	if currentAccess != models.AccessPassword && newAccess == models.AccessPassword && psd == "" {
+		return goErrorHandler.NewError(goErrorHandler.ErrBadRequest, errors.New("password is required"))
+	}
+	return nil
 }

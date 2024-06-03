@@ -12,7 +12,7 @@
 #COPY .env ./
 #CMD ["./mailApp"]
 
-FROM alpine:latest
+FROM golang:alpine
 RUN mkdir /app
 COPY mailApp /app
 COPY .env ./

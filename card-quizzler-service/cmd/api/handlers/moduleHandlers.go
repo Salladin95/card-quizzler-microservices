@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -239,20 +240,38 @@ func (cq *CardQuizzlerServer) CreateModuleInFolder(ctx context.Context, req *qui
 
 func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService.UpdateModuleRequest) (*quizService.Response, error) {
 	lib.LogInfo("[UpdateModule] Start processing grpc request", "info", "UpdateModule")
-
 	payload := req.GetPayload()
-	secureAccess := payload.SecureAccess
-	uid := payload.Uid
+	uid := payload.GetUid()
 
-	// Parse module ID from the payload
-	moduleID, err := uuid.Parse(payload.Id)
+	moduleID, err := lib.ParseUUID(payload.Id)
 	if err != nil {
-		return &quizService.Response{Code: http.StatusBadRequest, Message: err.Error()}, nil
-	}
-
-	if err := cq.checkModuleOwnership(ctx, uid, moduleID); err != nil {
 		return buildFailedResponse(err)
 	}
+
+	module, err := cq.Repo.GetModuleByID(ctx, moduleID)
+	if err != nil {
+		return buildFailedResponse(err)
+	}
+
+	if err := checkOwnership(uid, module.UserID); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	secureAccess := entities.SecureAccess{
+		Access:   models.AccessType(strings.ToLower(payload.SecureAccess.Access)),
+		Password: payload.SecureAccess.Password,
+	}
+
+	fmt.Println("<<<<<<<<<<<<<<<<<")
+
+	if err := CheckPassword(
+		secureAccess,
+		module.Access,
+	); err != nil {
+		return buildFailedResponse(err)
+	}
+
+	fmt.Println(">>>>>>>>>>>>")
 
 	// Unmarshal new terms from the payload
 	var newTerms []entities.CreateTermDto
@@ -266,16 +285,15 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 		return buildFailedResponse(err)
 	}
 
-	// Create an UpdateModuleDto with extracted data
-	updateModuleDTO := entities.UpdateModuleDto{
+	updateModuleDto := entities.UpdateModuleDto{
 		Title:        payload.Title,
+		Access:       secureAccess.Access,
+		Password:     secureAccess.Password,
 		NewTerms:     newTerms,
 		UpdatedTerms: updatedTerms,
-		Password:     secureAccess.Password,
-		Access:       models.AccessType(strings.ToLower(secureAccess.Access)),
 	}
 
-	if err := updateModuleDTO.Verify(); err != nil {
+	if err := updateModuleDto.Verify(); err != nil {
 		return buildFailedResponse(err)
 	}
 
@@ -283,7 +301,7 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 	updatedModule, err := cq.Repo.UpdateModule(repositories.UpdateModulePayload{
 		Ctx:      ctx,
 		ModuleID: moduleID,
-		Dto:      updateModuleDTO,
+		Dto:      updateModuleDto,
 	})
 	if err != nil {
 		return buildFailedResponse(err)

@@ -92,17 +92,6 @@ type UpdateModuleDto struct {
 }
 
 func (dto *UpdateModuleDto) Verify() error {
-	if dto.Access != "" {
-		if err := ValidateSecureAccess(
-			&SecureAccess{
-				Access:   dto.Access,
-				Password: dto.Password,
-			},
-		); err != nil {
-			return err
-		}
-		return lib.Verify(dto)
-	}
 	return lib.Verify(dto)
 }
 

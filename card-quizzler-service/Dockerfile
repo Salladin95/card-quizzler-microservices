@@ -12,7 +12,7 @@
 #COPY .env ./
 #CMD ["./cardQuizApp"]
 
-FROM alpine:latest
+FROM golang:alpine
 RUN mkdir /app
 COPY cardQuizApp /app
 COPY .env ./

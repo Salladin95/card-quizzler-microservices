@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
@@ -91,4 +92,12 @@ func HashPassword(plaintextPassword string) (string, error) {
 		return "", goErrorHandler.OperationFailure("hash password", err)
 	}
 	return string(hashedPassword), nil
+}
+
+func ParseUUID(id string) (uuid.UUID, error) {
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return parsedID, goErrorHandler.ParseUUIDFailure()
+	}
+	return parsedID, nil
 }

@@ -13,7 +13,7 @@
 #EXPOSE 8080
 #CMD ["./apiApp"]
 
-FROM alpine:latest
+FROM golang:alpine
 RUN mkdir /app
 COPY apiApp /app
 COPY .env ./
