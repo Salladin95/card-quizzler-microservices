@@ -207,5 +207,34 @@ services:
     networks:
       - myapp-network
 
+  # MongoDB Backup Service
+  mongo-backup:
+    image: mongo:4.2.16-bionic
+    command: >
+      bash -c 'mongodump --host mongo-db --archive=/backup/mongo-backup-$(date +%F).gz --gzip && echo "Backup completed"'
+    volumes:
+      - ./volumes/backups/mongo:/backup
+    depends_on:
+      - mongo
+    networks:
+      - myapp-network
+    restart: "no"
+
+  # PostgreSQL Backup Service
+  postgres-backup:
+    image: postgres:15.1-alpine
+    command: >
+      bash -c 'pg_dump -h postgres-db -U ${POSTGRES_USER} ${POSTGRES_DB} | gzip > /backup/postgres-backup-$(date +%F).sql.gz && echo "Backup completed"'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    volumes:
+      - ./volumes/backups/postgres:/backup
+    depends_on:
+      - postgres
+    networks:
+      - myapp-network
+    restart: "no"
+
 networks:
   myapp-network:
