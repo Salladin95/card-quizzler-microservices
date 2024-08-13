@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
@@ -262,16 +261,12 @@ func (cq *CardQuizzlerServer) UpdateModule(ctx context.Context, req *quizService
 		Password: payload.SecureAccess.Password,
 	}
 
-	fmt.Println("<<<<<<<<<<<<<<<<<")
-
 	if err := CheckPassword(
 		secureAccess,
 		module.Access,
 	); err != nil {
 		return buildFailedResponse(err)
 	}
-
-	fmt.Println(">>>>>>>>>>>>")
 
 	// Unmarshal new terms from the payload
 	var newTerms []entities.CreateTermDto

@@ -20,6 +20,7 @@ func (r *repo) GetFoldersByTitle(payload GetByTitlePayload) ([]models.Folder, er
 	if err := r.db.
 		Preload("Modules").
 		Where("title LIKE ?", "%"+payload.Title+"%").
+		Where("access IN (?)", []models.AccessType{models.AccessPassword, models.AccessOpen}).
 		Order(payload.SortBy).
 		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
 		Find(&folders).

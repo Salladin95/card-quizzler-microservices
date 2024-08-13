@@ -20,6 +20,7 @@ func (r *repo) GetModulesByTitle(payload GetByTitlePayload) ([]models.Module, er
 	var modules []models.Module
 	if err := r.db.
 		Where("title LIKE ?", "%"+payload.Title+"%").
+		Where("access IN (?)", []models.AccessType{models.AccessPassword, models.AccessOpen}).
 		Order(payload.SortBy).
 		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
 		Find(&modules).

@@ -56,8 +56,11 @@ func (app *App) setupRoutes(
 	protectedRoutes.PATCH("/folder/:id", handlers.UpdateFolder)
 	// gets folders by userID
 	protectedRoutes.GET("/folder", handlers.GetUserFolders)
+	// gets by title
 	protectedRoutes.GET("/folders-by-title/:title", handlers.GetFoldersByTitle)
 	protectedRoutes.GET("/modules-by-title/:title", handlers.GetModulesByTitle)
+
+	// get open modules
 	protectedRoutes.GET("/open-module", handlers.GetOpenModules)
 	// get open folders
 	protectedRoutes.GET("/open-folder", handlers.GetOpenFolders)
