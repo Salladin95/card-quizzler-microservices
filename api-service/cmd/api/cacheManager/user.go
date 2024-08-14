@@ -3,7 +3,7 @@ package cacheManager
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 )
 
 func (cm *cacheManager) GetUserById(ctx context.Context, uid string) (*entities.UserResponse, error) {

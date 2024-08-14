@@ -5,7 +5,7 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 )
 
 type userReference struct {

@@ -6,7 +6,7 @@ import (
 	quizService "github.com/Salladin95/card-quizzler-microservices/api-service/card-quizzler"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/cacheManager"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
 	"net/http"

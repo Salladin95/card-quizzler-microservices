@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"

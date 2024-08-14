@@ -1,8 +1,8 @@
 package entities
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 )
 
 // SignInDto represents the data transfer object for user sign-in requests.

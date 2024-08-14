@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/constants"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/server"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/rmqtools"
 	"log/slog"
 	"os"

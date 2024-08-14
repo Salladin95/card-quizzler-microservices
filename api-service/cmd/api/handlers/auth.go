@@ -3,8 +3,8 @@ package handlers
 import (
 	"fmt"
 	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
 	userService "github.com/Salladin95/card-quizzler-microservices/api-service/user"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
 	"net/http"

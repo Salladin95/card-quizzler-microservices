@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/lib"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/labstack/echo/v4"
 )
