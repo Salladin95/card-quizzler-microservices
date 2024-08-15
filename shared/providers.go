@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-// connectToRedis establishes a connection to a Redis server and returns a Redis client.
+// ConnectToRedis establishes a connection to a Redis server and returns a Redis client.
 // It takes the address of the Redis server as a parameter.
-func connectToRedis(addr string) *redis.Client {
+func ConnectToRedis(addr string) *redis.Client {
 	// Create a new Redis client with specified options
 	return redis.NewClient(&redis.Options{
 		Addr:         addr,

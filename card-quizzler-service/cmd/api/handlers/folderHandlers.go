@@ -3,10 +3,10 @@ package handlers
 import (
 	"context"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/models"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	quizService "github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/proto"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/goErrorHandler"
 	"github.com/google/uuid"
 	"net/http"

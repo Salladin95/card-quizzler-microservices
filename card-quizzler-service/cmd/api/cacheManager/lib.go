@@ -2,7 +2,7 @@ package cacheManager
 
 import (
 	"fmt"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/goErrorHandler"
 )
 

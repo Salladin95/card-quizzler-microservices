@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	services := lib.InitializeServices(cfg.AppCfg)
+	services := lib.InitializeServices(cfg.ServicesCfg)
 	// Ensure the RabbitMQ connection is closed when the main function exits.
 	defer services.Rabbit.Close()
 	// Defer the closure of the Redis connection

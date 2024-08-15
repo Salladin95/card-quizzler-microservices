@@ -4,14 +4,11 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/db/migrations"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/server"
-	"github.com/Salladin95/rmqtools"
-	"github.com/go-redis/redis"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/labstack/echo/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
-	"os"
-	"time"
 )
 
 func main() {
@@ -29,27 +26,10 @@ func main() {
 
 	migrations.Migrate(db)
 
-	// Connect to RabbitMQ s using the provided URL.
-	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.RabbitUrl)
-	if err != nil {
-		log.Println(err) // Log error if RabbitMQ connection fails
-		os.Exit(1)       // Exit program if RabbitMQ connection fails
-	}
+	services := lib.InitializeServices(cfg.ServicesCfg)
+	// Close connections when main function exits
+	defer services.Rabbit.Close() // Close RabbitMQ connection
+	defer services.Redis.Close()  // Close Redis connection
 
-	redis := connectToRedis(cfg.RedisUrl)
-
-	server.NewApp(cfg, rabbitConn, db, redis).Start()
-}
-
-// connectToRedis establishes a connection to a Redis server and returns a Redis client.
-// It takes the address of the Redis server as a parameter.
-func connectToRedis(addr string) *redis.Client {
-	// Create a new Redis client with specified options
-	return redis.NewClient(&redis.Options{
-		Addr:         addr,
-		WriteTimeout: 5 * time.Second, // Maximum time to wait for write operations
-		ReadTimeout:  5 * time.Second, // Maximum time to wait for read operations
-		DialTimeout:  3 * time.Second, // Maximum time to wait for a connection to be established
-		MaxRetries:   3,               // Maximum number of retries before giving up on a command
-	})
+	server.NewApp(cfg, services.Rabbit, db, services.Redis).Start()
 }

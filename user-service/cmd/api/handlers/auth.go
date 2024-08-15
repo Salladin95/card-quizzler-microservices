@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	userService "github.com/Salladin95/card-quizzler-microservices/user-service/proto"
 	"net/http"

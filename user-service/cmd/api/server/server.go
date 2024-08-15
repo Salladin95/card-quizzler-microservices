@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/handlers"
-	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/subscribers"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/cachedRepository"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/repository"
@@ -87,8 +88,8 @@ func (app *App) gRPCListen(cachedRepo cachedRepository.CachedRepository) {
 			app.config.AppCfg.GrpcPort,
 			err.Error(),
 		)
-		log.Fatalf(msg)   // Fatal log and exit if listener creation fails
-		lib.LogError(msg) // Log error message
+		log.Fatalf(msg)               // Fatal log and exit if listener creation fails
+		lib.LogError(errors.New(msg)) // Log error message
 	}
 
 	// Create a new gRPC server instance.
@@ -109,7 +110,7 @@ func (app *App) gRPCListen(cachedRepo cachedRepository.CachedRepository) {
 	// Start serving gRPC requests on the listener.
 	if err := gRPCServer.Serve(listener); err != nil {
 		msg := fmt.Sprintf("Failed to listen for gRPC: %v", err)
-		lib.LogError(msg) // Log error message
-		log.Fatalf(msg)   // Fatal log and exit if server fails to serve
+		lib.LogError(errors.New(msg)) // Log error message
+		log.Fatalf(msg)               // Fatal log and exit if server fails to serve
 	}
 }

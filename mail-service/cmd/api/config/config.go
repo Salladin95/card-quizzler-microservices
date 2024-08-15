@@ -1,10 +1,8 @@
 package config
 
 import (
-	"fmt"
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
-	"os"
 )
 
 type Config struct {
@@ -18,16 +16,17 @@ type Config struct {
 }
 
 func GetConfig() (*Config, error) {
-	config := loadEnv()
+	env := lib.LoadEnv()
+	lib.LogInfo("MAIL SERVICE ENV", env)
 
 	cfg := Config{
-		Port:              config["PORT"],
-		RabbitUrl:         config["RABBITMQ_URL"],
-		SmtpServerAddress: config["SMTP_SERVER_ADDRESS"],
-		SmtpAuthAddress:   config["SMTP_AUTH_ADDRESS"],
-		EmailName:         config["APP_EMAIL_NAME"],
-		EmailAddress:      config["APP_EMAIL"],
-		EmailPassword:     config["APP_EMAIL_PASSWORD"],
+		Port:              env["PORT"],
+		RabbitUrl:         env["RABBITMQ_URL"],
+		SmtpServerAddress: env["SMTP_SERVER_ADDRESS"],
+		SmtpAuthAddress:   env["SMTP_AUTH_ADDRESS"],
+		EmailName:         env["APP_EMAIL_NAME"],
+		EmailAddress:      env["APP_EMAIL"],
+		EmailPassword:     env["APP_EMAIL_PASSWORD"],
 	}
 
 	// Validate the cfg structure using the validator package.
@@ -36,13 +35,4 @@ func GetConfig() (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
-}
-
-func loadEnv() map[string]string {
-	config, err := godotenv.Read()
-	if err != nil {
-		fmt.Println("Error loading .env file:", err)
-		os.Exit(1)
-	}
-	return config
 }

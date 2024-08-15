@@ -2,9 +2,9 @@ package cachedRepository
 
 import (
 	"context"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
 	appEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/entities"
-	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	userEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	userRepo "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/repository"

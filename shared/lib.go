@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"github.com/Salladin95/card-quizzler-microservices/api-service/cmd/api/config"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
 	"github.com/rabbitmq/amqp091-go"
@@ -14,7 +13,7 @@ type services struct {
 	Rabbit *amqp091.Connection
 }
 
-func InitializeServices(cfg config.AppCfg) services {
+func InitializeServices(cfg ServicesCfg) services {
 	// Connect to RabbitMQ server using the provided URL.
 	rabbitConn, err := rmqtools.ConnectToRabbit(cfg.RabbitUrl)
 	if err != nil {
@@ -22,7 +21,7 @@ func InitializeServices(cfg config.AppCfg) services {
 		os.Exit(1)
 	}
 	// Establish a Redis connection
-	redisConn := connectToRedis(cfg.RedisUrl)
+	redisConn := ConnectToRedis(cfg.RedisUrl)
 	return services{
 		Redis:  redisConn,
 		Rabbit: rabbitConn,

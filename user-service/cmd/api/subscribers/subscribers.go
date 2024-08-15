@@ -2,8 +2,8 @@ package subscribers
 
 import (
 	"context"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/constants"
-	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/cachedRepository"
 	"github.com/Salladin95/rmqtools"
 )
@@ -32,7 +32,7 @@ func (s *subscribers) SubscribeToEmailVerificationReqs(ctx context.Context) {
 		[]string{constants.EmailVerificationCodeCommand},
 		func(_ string, payload []byte) {
 			if err := s.cachedRepo.SetEmailVerificationCode(ctx, payload); err != nil {
-				lib.LogError(err.Error())
+				lib.LogError(err)
 			}
 		},
 	)

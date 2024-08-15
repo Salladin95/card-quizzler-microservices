@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	sharedLib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/server"
@@ -24,18 +25,19 @@ func main() {
 	}
 
 	// Initialize services using the loaded configuration
-	services := lib.InitializeServices(ctx, cfg)
+	services := sharedLib.InitializeServices(cfg.AppCfg.ServicesCfg)
+	mongo := lib.ConnectToMongo(cfg.MongoCfg, ctx)
 
 	// Close connections when main function exits
 	defer services.Rabbit.Close() // Close RabbitMQ connection
 	defer services.Redis.Close()  // Close Redis connection
 	defer func() {
 		// Disconnect from MongoDB and handle error if any
-		if err = services.Mongo.Disconnect(ctx); err != nil {
+		if err = mongo.Disconnect(ctx); err != nil {
 			panic(err) // Panic if MongoDB disconnection fails
 		}
 	}()
 
 	// Create a new instance of the application using the loaded configuration and service connections, then start it
-	server.NewApp(cfg, services.Rabbit, services.Mongo, services.Redis).Start()
+	server.NewApp(cfg, services.Rabbit, mongo, services.Redis).Start()
 }

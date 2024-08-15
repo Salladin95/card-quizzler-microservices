@@ -6,9 +6,9 @@ import (
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/config"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/constants"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/handlers"
-	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/lib"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/repositories"
 	"github.com/Salladin95/card-quizzler-microservices/card-quizzler-service/cmd/api/subscribers"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/Salladin95/rmqtools"
 	"github.com/go-redis/redis"
 	"github.com/rabbitmq/amqp091-go"
@@ -68,13 +68,13 @@ func (app *App) gRPCListen(repo repositories.Repository) {
 	// Create a TCP listener for the specified gRPC port.
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", app.config.GrpcPort))
 	if err != nil {
-		msg := fmt.Sprintf(
+		msg := fmt.Errorf(
 			"failed to listen tcp port - %s. Err - %s",
 			app.config.GrpcPort,
 			err.Error(),
 		)
-		log.Fatalf(msg)   // Fatal log and exit if listener creation fails
-		lib.LogError(msg) // Log error message
+		lib.LogError(msg)       // Log error message
+		log.Fatalf(msg.Error()) // Fatal log and exit if listener creation fails
 	}
 
 	// Create a new gRPC server instance.
@@ -92,8 +92,8 @@ func (app *App) gRPCListen(repo repositories.Repository) {
 
 	// Start serving gRPC requests on the listener.
 	if err := gRPCServer.Serve(listener); err != nil {
-		msg := fmt.Sprintf("Failed to listen for gRPC: %v", err)
-		lib.LogError(msg) // Log error message
-		log.Fatalf(msg)   // Fatal log and exit if server fails to serve
+		msg := fmt.Errorf("failed to listen for gRPC: %v", err)
+		lib.LogError(msg)       // Log error message
+		log.Fatalf(msg.Error()) // Fatal log and exit if server fails to serve
 	}
 }

@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
-	"github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/lib"
+	"github.com/Salladin95/card-quizzler-microservices/shared"
 	userEntities "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/entities"
 	user "github.com/Salladin95/card-quizzler-microservices/user-service/cmd/api/user/model"
 	"github.com/Salladin95/goErrorHandler"

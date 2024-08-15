@@ -1,10 +1,8 @@
 package config
 
 import (
+	lib "github.com/Salladin95/card-quizzler-microservices/shared"
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
-	"github.com/labstack/gommon/log"
-	"os"
 	"time"
 )
 
@@ -13,9 +11,6 @@ type AppCfg struct {
 	ApiServicePort     string `validate:"required"`
 	UserServiceUrl     string `validate:"required"`
 	CardQuizServiceUrl string `validate:"required"`
-	RabbitUrl          string `validate:"required"`
-	RedisUrl           string `validate:"required"`
-	RedisPort          string `validate:"required"`
 }
 
 type JwtCfg struct {
@@ -27,27 +22,26 @@ type JwtCfg struct {
 
 // Config holds the complete configuration for the application.
 type Config struct {
-	AppCfg AppCfg
-	JwtCfg JwtCfg
+	AppCfg      AppCfg
+	JwtCfg      JwtCfg
+	ServicesCfg lib.ServicesCfg
 }
 
 // NewConfig creates a new configuration instance by loading environment variables and validating them.
 func NewConfig() (*Config, error) {
 	// Load environment variables from a .env file.
-	env := loadEnv()
+	env := lib.LoadEnv()
+	lib.LogInfo("API SERVICE ENV", env)
 
 	// Create an AppCfg instance from the loaded environment variables.
 	appCfg := AppCfg{
 		ApiServicePort:     env["API_SERVICE_PORT"],
 		UserServiceUrl:     env["USER_SERVICE_URL"],
 		CardQuizServiceUrl: env["CARD_QUIZ_SERVICE_URL"],
-		RabbitUrl:          env["RABBITMQ_URL"],
-		RedisUrl:           env["REDIS_URL"],
-		RedisPort:          env["REDIS_PORT"],
 	}
 
-	accessTokenExpireTime := parseDuration(env, "JWT_ACCESS_TOKEN_EXP", time.Hour*48)
-	refreshTokenExpireTime := parseDuration(env, "JWT_REFRESH_TOKEN_EXP", time.Hour*72)
+	accessTokenExpireTime := lib.ParseDuration(env, "JWT_ACCESS_TOKEN_EXP", time.Hour*48)
+	refreshTokenExpireTime := lib.ParseDuration(env, "JWT_REFRESH_TOKEN_EXP", time.Hour*72)
 
 	jwtCfg := JwtCfg{
 		AccessTokenExpTime:  accessTokenExpireTime,
@@ -69,28 +63,8 @@ func NewConfig() (*Config, error) {
 
 	// Create a new Config instance with the validated AppCfg.
 	return &Config{
-		AppCfg: appCfg,
-		JwtCfg: jwtCfg,
+		AppCfg:      appCfg,
+		JwtCfg:      jwtCfg,
+		ServicesCfg: lib.GetServicesCfg(),
 	}, nil
-}
-
-// loadEnv reads environment variables from a .env file and returns them as a map.
-func loadEnv() map[string]string {
-	// Read environment variables from a .env file.
-	config, err := godotenv.Read()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-
-	return config
-}
-
-// Parse duration parses hours
-func parseDuration(config map[string]string, key string, defaultValue time.Duration) time.Duration {
-	duration, err := time.ParseDuration(config[key] + "h")
-	if err != nil {
-		return defaultValue
-	}
-	return duration
 }
