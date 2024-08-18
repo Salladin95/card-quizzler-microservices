@@ -54,6 +54,7 @@ func (dto *CreateModuleDto) ToModel() (models.Module, error) {
 }
 
 type CreateTermDto struct {
+	Index       int    `json:"index" validate:"gte=0"` // Index must be 0 or greater
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description" validate:"required"`
 }
@@ -65,6 +66,8 @@ func (dto *CreateTermDto) Verify() error {
 func (dto *CreateTermDto) ToModel(moduleID uuid.UUID) (models.Term, error) {
 	var model models.Term
 	err := dto.Verify()
+	lib.LogInfo("DTO.TERM", "dto", dto)
+	lib.LogInfo("DTO.TERM.INDEX", "index", dto.Index)
 	if err != nil {
 		return model, err
 	}
@@ -80,6 +83,7 @@ func (dto *CreateTermDto) ToModel(moduleID uuid.UUID) (models.Term, error) {
 		Description: dto.Description,
 		Title:       dto.Title,
 		ModuleID:    moduleID,
+		Index:       dto.Index,
 	}, nil
 }
 
@@ -120,6 +124,7 @@ type UpdateTermDto struct {
 	ModuleID    uuid.UUID `json:"moduleID" validate:"required"`
 	Title       string    `json:"title" validate:"omitempty"`
 	Description string    `json:"description" validate:"omitempty"`
+	Index       int       `json:"index" validate:"required"`
 }
 
 func (dto *UpdateTermDto) Verify() error {

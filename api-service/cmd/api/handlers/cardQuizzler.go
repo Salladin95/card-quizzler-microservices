@@ -984,6 +984,7 @@ func (ah *apiHandlers) UpdateTerm(c echo.Context) error {
 			ModuleID:    dto.ModuleID,
 			Title:       dto.Title,
 			Description: dto.Description,
+			Index:       int64(dto.Index),
 		})
 	if err != nil {
 		return goErrorHandler.OperationFailure("UpdateTerm", err)

@@ -458,6 +458,7 @@ func (cq *CardQuizzlerServer) UpdateTerm(ctx context.Context, req *quizService.U
 		ModuleID:    moduleID,
 		Title:       req.GetTitle(),
 		Description: req.GetDescription(),
+		Index:       int(req.Index),
 	}
 
 	if err := updateTermDto.Verify(); err != nil {

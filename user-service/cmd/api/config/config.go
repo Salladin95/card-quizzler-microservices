@@ -32,7 +32,7 @@ func NewConfig() (*Config, error) {
 	// Create an AppCfg instance from the loaded environment variables.
 	appCfg := AppCfg{
 		GrpcPort:    env["GRPC_PORT"],
-		ServicesCfg: lib.GetServicesCfg(),
+		ServicesCfg: lib.GetServicesCfg(env),
 	}
 
 	// Validate the AppCfg structure using the validator package.

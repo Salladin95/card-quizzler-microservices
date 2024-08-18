@@ -13,6 +13,7 @@ type Term struct {
 	NegativeAnswerStreak int       `json:"negativeAnswerStreak"`
 	PositiveAnswerStreak int       `json:"negativeAnswerStreak"`
 	IsDifficult          bool      `json:"isDifficult"`
+	Index                int       `json:"index"`
 }
 
 type SecureAccess struct {
@@ -58,6 +59,7 @@ type QuizResultDto struct {
 type CreateTermDto struct {
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description" validate:"required"`
+	Index       int    `json:"index" validate:"required"`
 }
 
 type CreateModuleDto struct {
@@ -87,4 +89,5 @@ type UpdateTermDto struct {
 	ModuleID    string `json:"moduleID" validate:"required"`
 	Title       string `json:"title" validate:"omitempty"`
 	Description string `json:"description" validate:"omitempty"`
+	Index       int    `json:"index"`
 }

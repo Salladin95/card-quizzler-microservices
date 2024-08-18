@@ -19,6 +19,7 @@ type Term struct {
 	NegativeAnswerStreak int       `gorm:"column:negative_answer_streak" json:"negativeAnswerStreak"`
 	PositiveAnswerStreak int       `gorm:"column:positive_answer_streak" json:"negativeAnswerStreak"`
 	IsDifficult          bool      `json:"isDifficult"`
+	Index                int       `json:"index"`
 }
 
 // AccessType represents the type of access for the Module.

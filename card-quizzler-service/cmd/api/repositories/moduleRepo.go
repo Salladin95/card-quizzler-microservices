@@ -41,8 +41,7 @@ func (r *repo) GetModulesByTitle(payload GetByTitlePayload) ([]models.Module, er
 // GetOpenModules retrieves modules where isOpen=true
 func (r *repo) GetOpenModules(payload GetByUIDPayload) ([]models.Module, error) {
 	var modules []models.Module
-	if err := r.db.
-		Preload("Terms").
+	if err := preloadTermsSortedByIndex(r.db).
 		Where("access = ?", "open").
 		Order(payload.SortBy).
 		Scopes(newPaginate(int(payload.Limit), int(payload.Page)).paginatedResult).
@@ -129,8 +128,7 @@ func (r *repo) UpdateModule(payload UpdateModulePayload) (models.Module, error) 
 	// Define the function to be executed within the transaction
 	if err := r.withTransaction(func(tx *gorm.DB) error {
 		// Fetch module within the transaction
-		if err := tx.
-			Preload("Terms").
+		if err := preloadTermsSortedByIndex(tx).
 			Preload("Folders").
 			First(&module, payload.ModuleID).Error; err != nil {
 			return goErrorHandler.NewError(goErrorHandler.ErrNotFound, err)
@@ -296,8 +294,7 @@ func (r *repo) GetModuleByID(ctx context.Context, id uuid.UUID) (models.Module, 
 	var module models.Module
 
 	// Retrieve the module with the given ID from the database
-	if err := r.db.
-		Preload("Terms").   // Preload associated terms
+	if err := preloadTermsSortedByIndex(r.db).
 		First(&module, id). // Execute query and store result in 'module'
 		Error; err != nil { // Check for errors
 		// If an error occurred, return a not found error
@@ -315,8 +312,7 @@ func (r *repo) AddModuleToFolder(payload FolderModuleAssociation) error {
 	var module models.Module
 	// Execute the provided function within a transaction
 	if err := r.withTransaction(func(tx *gorm.DB) error {
-		if err := r.db.
-			Preload("Terms").
+		if err := preloadTermsSortedByIndex(tx).
 			Preload("Folders").
 			First(&module, payload.ModuleID).
 			Error; err != nil {
@@ -351,8 +347,7 @@ func (r *repo) DeleteModule(ctx context.Context, id uuid.UUID) error {
 	if err := r.withTransaction(func(tx *gorm.DB) error {
 
 		// Retrieve the module from the database by its ID, preloading its associated terms
-		if err := tx.
-			Preload("Terms").
+		if err := preloadTermsSortedByIndex(tx).
 			Preload("Folders").
 			First(&module, id).Error; err != nil {
 			// If the module is not found, return a not found error

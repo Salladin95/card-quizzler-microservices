@@ -65,6 +65,6 @@ func NewConfig() (*Config, error) {
 	return &Config{
 		AppCfg:      appCfg,
 		JwtCfg:      jwtCfg,
-		ServicesCfg: lib.GetServicesCfg(),
+		ServicesCfg: lib.GetServicesCfg(env),
 	}, nil
 }

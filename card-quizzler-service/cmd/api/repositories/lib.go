@@ -9,6 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// preloadTermsSortedByIndex returns a GORM DB instance that preloads the Terms sorted by Index.
+func preloadTermsSortedByIndex(db *gorm.DB) *gorm.DB {
+	return db.Preload("Terms", func(db *gorm.DB) *gorm.DB {
+		return db.Order("terms.index ASC")
+	})
+}
+
 type paginate struct {
 	limit int
 	page  int

@@ -22,8 +22,7 @@ func LoadEnv() map[string]string {
 	return config
 }
 
-func GetServicesCfg() ServicesCfg {
-	env := LoadEnv()
+func GetServicesCfg(env map[string]string) ServicesCfg {
 	return ServicesCfg{
 		RabbitUrl: env["RABBITMQ_URL"],
 		RedisUrl:  env["REDIS_URL"],

@@ -5,6 +5,9 @@ import (
 	"log/slog"
 )
 
+// LogInfo("DTO.TERM", "dto", dto)
+// LogInfo("DTO.TERM.INDEX", "index", dto.Index)
+
 func LogInfo(msg string, args ...any) {
 	slog.Info(msg, args...)
 }

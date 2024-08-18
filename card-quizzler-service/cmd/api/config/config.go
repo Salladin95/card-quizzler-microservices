@@ -22,7 +22,7 @@ func NewConfig() (*Config, error) {
 	appCfg := Config{
 		GrpcPort:    env["GRPC_PORT"],
 		DbUrl:       env["DB_URL"],
-		ServicesCfg: lib.GetServicesCfg(),
+		ServicesCfg: lib.GetServicesCfg(env),
 	}
 
 	// Validate the AppCfg structure using the validator package.
