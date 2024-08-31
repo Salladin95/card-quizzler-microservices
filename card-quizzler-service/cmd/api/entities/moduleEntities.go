@@ -124,7 +124,7 @@ type UpdateTermDto struct {
 	ModuleID    uuid.UUID `json:"moduleID" validate:"required"`
 	Title       string    `json:"title" validate:"omitempty"`
 	Description string    `json:"description" validate:"omitempty"`
-	Index       int       `json:"index" validate:"required"`
+	Index       int       `json:"index" validate:"gte=0"`
 }
 
 func (dto *UpdateTermDto) Verify() error {
